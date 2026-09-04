@@ -4,8 +4,7 @@ on:
     branches: [main, 'refactor/**']
   pull_request:
     branches: [main]
-permissions:
-  contents: read
+permissions: {contents: read}
 jobs:
   structure:
     runs-on: ubuntu-latest
@@ -31,9 +30,19 @@ jobs:
         with: {python-version: '3.12'}
       - working-directory: backend
         run: pip install -r requirements.txt ruff
-      - working-directory: backend
+      - name: Syntax
+        working-directory: backend
+        run: python -m compileall -q app
+      - name: Dependency consistency
+        working-directory: backend
+        run: pip check
+      - name: Lint
+        working-directory: backend
+        run: ruff check app ../tests/backend
+      - name: Unit/security tests
+        working-directory: backend
         env: {APP_ENV: test}
-        run: python -m compileall -q app && pip check && ruff check app ../tests/backend && pytest -q ../tests/backend
+        run: pytest -q ../tests/backend
   frontend:
     runs-on: ubuntu-latest
     steps:
