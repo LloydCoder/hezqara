@@ -1,4 +1,4 @@
-# HEZQARA AI — local development stack
+# HEZQARA local development stack
 services:
   backend:
     build:
@@ -6,22 +6,14 @@ services:
       dockerfile: Dockerfile
       target: production
     container_name: hezqara-backend
-    ports:
-      - "8004:8004"
-    env_file:
-      - ./backend/.env
+    ports: ["8004:8004"]
+    env_file: [./backend/.env]
     environment:
       APP_ENV: development
       REDIS_URL: redis://redis:6379/4
-      GRAPHITI_URL: http://graphiti:8005
-      FALKORDB_URL: redis://falkordb:6379
-    volumes:
-      - ./backend/app:/app/app
+    volumes: [./backend/app:/app/app]
     depends_on:
-      redis:
-        condition: service_healthy
-      falkordb:
-        condition: service_started
+      redis: {condition: service_healthy}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
@@ -31,46 +23,30 @@ services:
       start_period: 10s
 
   celery-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
+    build: {context: ./backend, dockerfile: Dockerfile, target: production}
     container_name: hezqara-celery
-    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=hezqara
-    env_file:
-      - ./backend/.env
-    environment:
-      REDIS_URL: redis://redis:6379/4
+    command: celery -A app.tasks.celery worker --loglevel=info --queues=hezqara
+    env_file: [./backend/.env]
+    environment: {REDIS_URL: redis://redis:6379/4}
     depends_on:
-      backend:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      backend: {condition: service_healthy}
+      redis: {condition: service_healthy}
     restart: unless-stopped
 
   celery-beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
+    build: {context: ./backend, dockerfile: Dockerfile, target: production}
     container_name: hezqara-beat
-    command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
-    env_file:
-      - ./backend/.env
-    environment:
-      REDIS_URL: redis://redis:6379/4
-    depends_on:
-      redis:
-        condition: service_healthy
+    command: celery -A app.tasks.celery beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+    env_file: [./backend/.env]
+    environment: {REDIS_URL: redis://redis:6379/4}
+    depends_on: {redis: {condition: service_healthy}}
     restart: unless-stopped
 
   redis:
     image: redis:7.4-alpine
     container_name: hezqara-redis
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
+    ports: ["6380:6379"]
+    volumes: [redis_data:/data]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -78,40 +54,13 @@ services:
       timeout: 5s
       retries: 5
 
-  falkordb:
-    image: falkordb/falkordb:latest
-    container_name: hezqara-falkordb
-    ports:
-      - "6381:6379"
-    volumes:
-      - falkordb_data:/data
-    restart: unless-stopped
-
-  graphiti:
-    image: zepai/graphiti-mcp:latest
-    container_name: hezqara-graphiti
-    ports:
-      - "8005:8005"
-    environment:
-      GRAPH_DATABASE_URL: falkordb://falkordb:6379
-    depends_on:
-      - falkordb
-    restart: unless-stopped
-
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    build: {context: ./frontend, dockerfile: Dockerfile}
     container_name: hezqara-frontend
-    ports:
-      - "3004:3004"
-    environment:
-      NEXT_PUBLIC_API_URL: http://backend:8004
-    depends_on:
-      backend:
-        condition: service_healthy
+    ports: ["3004:3004"]
+    environment: {NEXT_PUBLIC_API_URL: http://backend:8004}
+    depends_on: {backend: {condition: service_healthy}}
     restart: unless-stopped
 
 volumes:
   redis_data:
-  falkordb_data:
