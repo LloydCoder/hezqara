@@ -1,38 +1,23 @@
 # HEZQARA local development stack
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
+    build: {context: ./backend, dockerfile: Dockerfile, target: production}
     container_name: hezqara-backend
     ports: ["8004:8004"]
     env_file: [./backend/.env]
-    environment:
-      APP_ENV: development
-      REDIS_URL: redis://redis:6379/4
+    environment: {APP_ENV: development, REDIS_URL: redis://redis:6379/4}
     volumes: [./backend/app:/app/app]
-    depends_on:
-      redis: {condition: service_healthy}
+    depends_on: {redis: {condition: service_healthy}}
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
+    healthcheck: {test: ["CMD","curl","-f","http://localhost:8004/health"], interval: 30s, timeout: 10s, retries: 3, start_period: 10s}
   celery-worker:
     build: {context: ./backend, dockerfile: Dockerfile, target: production}
     container_name: hezqara-celery
     command: celery -A app.tasks.celery worker --loglevel=info --queues=hezqara
     env_file: [./backend/.env]
     environment: {REDIS_URL: redis://redis:6379/4}
-    depends_on:
-      backend: {condition: service_healthy}
-      redis: {condition: service_healthy}
+    depends_on: {backend: {condition: service_healthy}, redis: {condition: service_healthy}}
     restart: unless-stopped
-
   celery-beat:
     build: {context: ./backend, dockerfile: Dockerfile, target: production}
     container_name: hezqara-beat
@@ -41,26 +26,19 @@ services:
     environment: {REDIS_URL: redis://redis:6379/4}
     depends_on: {redis: {condition: service_healthy}}
     restart: unless-stopped
-
   redis:
     image: redis:7.4-alpine
     container_name: hezqara-redis
     ports: ["6380:6379"]
     volumes: [redis_data:/data]
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+    healthcheck: {test: ["CMD","redis-cli","ping"], interval: 10s, timeout: 5s, retries: 5}
   frontend:
     build: {context: ./frontend, dockerfile: Dockerfile}
     container_name: hezqara-frontend
     ports: ["3004:3004"]
-    environment: {NEXT_PUBLIC_API_URL: http://backend:8004}
+    environment: {HEZQARA_API_INTERNAL_URL: http://backend:8004}
     depends_on: {backend: {condition: service_healthy}}
     restart: unless-stopped
-
 volumes:
   redis_data:
