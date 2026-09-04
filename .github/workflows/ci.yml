@@ -41,7 +41,9 @@ jobs:
         run: ruff check app ../tests/backend
       - name: Unit/security tests
         working-directory: backend
-        env: {APP_ENV: test}
+        env:
+          APP_ENV: test
+          PYTHONPATH: .
         run: pytest -q ../tests/backend
   frontend:
     runs-on: ubuntu-latest
