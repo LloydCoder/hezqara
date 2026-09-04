@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -13,7 +14,8 @@ def _session_factory():
         _sessions=async_sessionmaker(_engine,class_=AsyncSession,expire_on_commit=False)
     return _sessions
 
-async def tenant_session(organization_id:str)->AsyncGenerator[AsyncSession,None]:
+@asynccontextmanager
+async def tenant_session_context(organization_id:str):
     if not organization_id: raise ValueError("organization_id is required")
     async with _session_factory()() as session:
         try:
@@ -23,8 +25,10 @@ async def tenant_session(organization_id:str)->AsyncGenerator[AsyncSession,None]
         except Exception:
             await session.rollback(); raise
 
+async def tenant_session(organization_id:str)->AsyncGenerator[AsyncSession,None]:
+    async with tenant_session_context(organization_id) as session: yield session
+
 async def close_database() -> None:
     global _engine,_sessions
-    if _engine is not None:
-        await _engine.dispose()
+    if _engine is not None: await _engine.dispose()
     _engine=None; _sessions=None
