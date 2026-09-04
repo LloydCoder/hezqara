@@ -1,0 +1,75 @@
+# Carenova AI — Deploy Pipeline
+# Fires on push to main AFTER CI passes
+# Deploys to EC2 Stockholm (13.50.16.19) port 8004
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Only one deploy at a time
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+
+  deploy:
+    name: Deploy to EC2 Stockholm
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 13.50.16.19
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          timeout: 300s
+          script: |
+            set -euo pipefail
+            cd /home/ubuntu/carenova
+            bash infrastructure/scripts/deploy.sh
+
+      - name: Verify deployment
+        run: |
+          sleep 15
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://carenova.tinlance.com/health)
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Deployment verified — health check passed"
+          else
+            echo "❌ Health check failed: HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Notify FusionOps
+        if: always()
+        run: |
+          curl -X POST "${{ secrets.FUSIONOPS_URL }}/events" \
+            -H "X-API-Key: ${{ secrets.FUSIONOPS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "source": "carenova",
+              "event_type": "deployment_${{ job.status }}",
+              "payload": {
+                "sha": "${{ github.sha }}",
+                "actor": "${{ github.actor }}",
+                "status": "${{ job.status }}"
+              }
+            }' || true
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Carenova deployment failed"
+          echo "SHA: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          # Production: send Resend email or Slack notification here

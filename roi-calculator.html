@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carenova AI ROI Calculator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .calculator {
+    max-width: 680px;
+    margin: 48px auto;
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  .calc-header {
+    background: linear-gradient(135deg, #059669, #0d9488);
+    color: white;
+    padding: 32px;
+    text-align: center;
+  }
+  .calc-header h2 { font-size: 22px; font-weight: 700; }
+  .calc-header p { font-size: 14px; opacity: 0.85; margin-top: 6px; }
+
+  .calc-body { padding: 32px; }
+
+  .field { margin-bottom: 24px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 16px; }
+  .slider-value {
+    min-width: 64px;
+    text-align: right;
+    font-size: 18px;
+    font-weight: 700;
+    color: #059669;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    background: #059669;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(5,150,105,0.4);
+  }
+
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    color: #0f172a;
+    background: white;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    outline: none;
+  }
+
+  .results {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 8px;
+  }
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .result-item { text-align: center; }
+  .result-item .val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #065f46;
+  }
+  .result-item .lbl {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .roi-bar-wrap { margin-top: 8px; }
+  .roi-bar-wrap p { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+  .roi-bar-bg { background: #d1fae5; height: 10px; border-radius: 5px; overflow: hidden; }
+  .roi-bar-fill { height: 100%; background: linear-gradient(90deg, #059669, #0d9488); border-radius: 5px; transition: width 0.4s ease; }
+
+  .cta-row { margin-top: 24px; text-align: center; }
+  .cta-btn {
+    display: inline-block;
+    background: #0f172a;
+    color: white;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+  .cta-btn:hover { background: #1e293b; }
+  .cta-sub { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+
+  .plan-suggest {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #92400e;
+  }
+  .plan-suggest strong { color: #78350f; }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="calc-header">
+    <h2>Calculate Your ROI with Carenova AI</h2>
+    <p>See how much revenue you're leaving on the table</p>
+  </div>
+
+  <div class="calc-body">
+
+    <div class="field">
+      <label>Monthly patient calls</label>
+      <div class="slider-row">
+        <input type="range" id="calls" min="100" max="2000" step="50" value="500" oninput="calc()">
+        <span class="slider-value" id="callsVal">500</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Calls currently missed or going to voicemail (%)</label>
+      <div class="slider-row">
+        <input type="range" id="missed" min="5" max="50" step="5" value="20" oninput="calc()">
+        <span class="slider-value" id="missedVal">20%</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Average appointment value</label>
+      <div class="slider-row">
+        <input type="range" id="apptValue" min="80" max="500" step="10" value="180" oninput="calc()">
+        <span class="slider-value" id="apptVal">$180</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Practice specialty</label>
+      <select id="specialty" onchange="calc()">
+        <option value="1.0">Primary care / Family medicine</option>
+        <option value="0.85">Internal medicine</option>
+        <option value="1.2">Dermatology</option>
+        <option value="1.3">Dental</option>
+        <option value="1.1">Physical therapy</option>
+        <option value="0.9">Pediatrics</option>
+        <option value="1.4">Orthopedics</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Number of providers</label>
+      <select id="providers" onchange="calc()">
+        <option value="499" data-tier="Starter">1–2 providers — Starter ($499/mo)</option>
+        <option value="999" data-tier="Pro" selected>3–5 providers — Pro ($999/mo)</option>
+        <option value="1999" data-tier="Growth">6–15 providers — Growth ($1,999/mo)</option>
+        <option value="3999" data-tier="Enterprise">15+ providers — Enterprise ($3,999/mo)</option>
+      </select>
+    </div>
+
+    <div class="results">
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="val" id="missedRev">—</div>
+          <div class="lbl">Revenue lost per month</div>
+        </div>
+        <div class="result-item">
+          <div class="val" id="carenoCost">—</div>
+          <div class="lbl">Carenova monthly cost</div>
+        </div>
+        <div class="result-item">
+          <div class="val" id="netGain">—</div>
+          <div class="lbl">Net gain per month</div>
+        </div>
+        <div class="result-item">
+          <div class="val" id="roiPct">—</div>
+          <div class="lbl">ROI</div>
+        </div>
+      </div>
+
+      <div class="roi-bar-wrap">
+        <p>ROI visualised</p>
+        <div class="roi-bar-bg">
+          <div class="roi-bar-fill" id="roiBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="plan-suggest" id="planSuggest"></div>
+    </div>
+
+    <div class="cta-row">
+      <button class="cta-btn" onclick="window.location.href='https://carenova.tinlance.com/#demo'">
+        Start Free Trial →
+      </button>
+      <p class="cta-sub">14-day free trial · No credit card required · Set up in 20 minutes</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function calc() {
+  const calls = +document.getElementById('calls').value;
+  const missedPct = +document.getElementById('missed').value / 100;
+  const apptValue = +document.getElementById('apptValue').value;
+  const specialty = +document.getElementById('specialty').value;
+  const providerEl = document.getElementById('providers');
+  const cost = +providerEl.value;
+  const tier = providerEl.options[providerEl.selectedIndex].dataset.tier;
+
+  document.getElementById('callsVal').textContent = calls.toLocaleString();
+  document.getElementById('missedVal').textContent = Math.round(missedPct * 100) + '%';
+  document.getElementById('apptVal').textContent = '$' + apptValue;
+
+  const missedCalls = calls * missedPct;
+  // Not all missed calls would have booked — assume 35% conversion
+  const missedAppts = missedCalls * 0.35;
+  const revenueAtRisk = missedAppts * apptValue * specialty;
+  // Carenova recovers ~85% of those calls
+  const recovered = revenueAtRisk * 0.85;
+  const netGain = recovered - cost;
+  const roi = cost > 0 ? (recovered / cost) * 100 : 0;
+
+  document.getElementById('missedRev').textContent = fmt(revenueAtRisk);
+  document.getElementById('carenoCost').textContent = fmt(cost);
+  document.getElementById('netGain').textContent = (netGain >= 0 ? '+' : '') + fmt(netGain);
+  document.getElementById('roiPct').textContent = Math.round(roi) + 'x';
+
+  const barWidth = Math.min(100, (roi / 20) * 100);
+  document.getElementById('roiBar').style.width = barWidth + '%';
+
+  const suggest = document.getElementById('planSuggest');
+  if (roi >= 5) {
+    suggest.innerHTML = `<strong>✓ Recommended: ${tier} plan.</strong> At ${Math.round(roi)}x ROI, Carenova pays for itself after the first ${Math.ceil(cost / (recovered / 30))} days of the month.`;
+  } else if (roi >= 2) {
+    suggest.innerHTML = `<strong>Good fit.</strong> You're recovering ${fmt(recovered)}/month in appointments that would otherwise be lost.`;
+  } else {
+    suggest.innerHTML = `<strong>Start with Starter plan.</strong> As call volume grows, ROI will increase significantly.`;
+  }
+}
+
+calc();
+</script>
+</body>
+</html>

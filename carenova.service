@@ -1,0 +1,56 @@
+# Carenova AI — systemd service
+# EC2 Stockholm: 13.50.16.19 — port 8004
+# Install: sudo cp carenova.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable carenova
+
+[Unit]
+Description=Carenova AI — Medical Front Office Platform
+Documentation=https://github.com/Tinlance/carenova
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=ubuntu
+Group=docker
+WorkingDirectory=/home/ubuntu/carenova
+
+# Start — bring up all services
+ExecStart=/usr/bin/docker compose \
+    -f infrastructure/docker/docker-compose.yml \
+    -f infrastructure/docker/docker-compose.prod.yml \
+    up -d --remove-orphans
+
+# Stop — graceful shutdown
+ExecStop=/usr/bin/docker compose \
+    -f infrastructure/docker/docker-compose.yml \
+    -f infrastructure/docker/docker-compose.prod.yml \
+    down
+
+# Reload — pull latest images and restart
+ExecReload=/usr/bin/docker compose \
+    -f infrastructure/docker/docker-compose.yml \
+    -f infrastructure/docker/docker-compose.prod.yml \
+    pull && \
+    /usr/bin/docker compose \
+    -f infrastructure/docker/docker-compose.yml \
+    -f infrastructure/docker/docker-compose.prod.yml \
+    up -d --remove-orphans
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+TimeoutStartSec=120s
+TimeoutStopSec=30s
+
+# Environment
+EnvironmentFile=/home/ubuntu/carenova/backend/.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=carenova
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carenova — Acquisition Dashboard</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #0f172a; -webkit-font-smoothing: antialiased; }
+.header { background: #0f172a; color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+.header h1 { font-size: 16px; font-weight: 700; }
+.header p { font-size: 12px; color: #94a3b8; }
+.logo { width: 32px; height: 32px; background: #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; font-size: 14px; }
+.page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.target-bar { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; }
+.target-bar h2 { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.progress-row { display: flex; align-items: center; gap: 16px; }
+.progress-label { font-size: 13px; color: #475569; min-width: 120px; }
+.progress-track { flex: 1; background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 4px; transition: width 0.5s ease; }
+.progress-val { font-size: 13px; font-weight: 700; color: #0f172a; min-width: 80px; text-align: right; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.metric { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; }
+.metric .val { font-size: 32px; font-weight: 800; color: #0f172a; letter-spacing: -0.04em; line-height: 1; }
+.metric .lbl { font-size: 11px; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.metric .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+.metric .green { color: #10b981; }
+.metric .amber { color: #f59e0b; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .cols { grid-template-columns: 1fr; } }
+.card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+.card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+.card-header h3 { font-size: 14px; font-weight: 700; color: #0f172a; }
+.card-header span { font-size: 12px; color: #94a3b8; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 20px; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+td { padding: 12px 20px; border-bottom: 1px solid #f8fafc; color: #334155; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fafc; }
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.badge-waitlist { background: #f1f5f9; color: #64748b; }
+.badge-demo     { background: #eff6ff; color: #3b82f6; }
+.badge-pilot    { background: #fefce8; color: #ca8a04; }
+.badge-paying   { background: #f0fdf4; color: #16a34a; }
+.badge-lost     { background: #fef2f2; color: #dc2626; }
+.script-card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-top: 20px; }
+.script-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.script-card h4 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
+.script-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #334155; line-height: 1.6; white-space: pre-wrap; }
+.copy-btn { margin-top: 8px; padding: 6px 14px; background: #0f172a; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.copy-btn:hover { background: #1e293b; }
+.week-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.goal-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; display: flex; align-items: center; gap: 12px; }
+.goal-check { width: 20px; height: 20px; border: 2px solid #e2e8f0; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.goal-check.done { background: #10b981; border-color: #10b981; color: white; }
+.goal-text { font-size: 13px; color: #475569; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">C</div>
+  <div>
+    <h1>Carenova — Acquisition Dashboard</h1>
+    <p>Lloyd's private GTM tracking · Week 1 targets</p>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- MRR progress bar -->
+  <div class="target-bar">
+    <h2>Month 1 Target: $5,000 MRR</h2>
+    <div class="progress-row" style="margin-bottom: 10px">
+      <span class="progress-label">MRR progress</span>
+      <div class="progress-track"><div class="progress-fill" id="mrrBar" style="width: 0%"></div></div>
+      <span class="progress-val" id="mrrVal">$0 / $5,000</span>
+    </div>
+    <div class="progress-row" style="margin-bottom: 10px">
+      <span class="progress-label">Demos booked</span>
+      <div class="progress-track"><div class="progress-fill" id="demoBar" style="width: 0%; background: linear-gradient(90deg, #3b82f6, #6366f1)"></div></div>
+      <span class="progress-val" id="demoVal">0 / 10</span>
+    </div>
+    <div class="progress-row">
+      <span class="progress-label">Outreach sent</span>
+      <div class="progress-track"><div class="progress-fill" id="outreachBar" style="width: 0%; background: linear-gradient(90deg, #f59e0b, #ef4444)"></div></div>
+      <span class="progress-val" id="outreachVal">0 / 100</span>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="val" id="metMRR">$0</div>
+      <div class="lbl">Current MRR</div>
+      <div class="sub">0 paying clinics</div>
+    </div>
+    <div class="metric">
+      <div class="val green" id="metLeads">0</div>
+      <div class="lbl">Total leads</div>
+      <div class="sub">Waitlist + outreach</div>
+    </div>
+    <div class="metric">
+      <div class="val" id="metDemos">0</div>
+      <div class="lbl">Demos booked</div>
+      <div class="sub">This week: 0</div>
+    </div>
+    <div class="metric">
+      <div class="val amber" id="metConv">—</div>
+      <div class="lbl">Conv. rate</div>
+      <div class="sub">Demo → paid</div>
+    </div>
+    <div class="metric">
+      <div class="val" id="metUS">0</div>
+      <div class="lbl">US leads</div>
+      <div class="sub">Target: 80%</div>
+    </div>
+    <div class="metric">
+      <div class="val" id="metNG">0</div>
+      <div class="lbl">Nigeria leads</div>
+      <div class="sub">WhatsApp-first</div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <!-- Lead pipeline -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Lead Pipeline</h3>
+        <span>Add via Supabase or /api/waitlist</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Clinic / Email</th>
+            <th>Region</th>
+            <th>Status</th>
+            <th>MRR</th>
+          </tr>
+        </thead>
+        <tbody id="leadsTable">
+          <tr>
+            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 32px;">
+              No leads yet. Start outreach today →
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Outreach log -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Outreach Log</h3>
+        <span>Track every touchpoint</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Contact</th>
+            <th>Channel</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="outreachTable">
+          <tr>
+            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 32px;">
+              Log your first outreach to start tracking
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Week 1 goals checklist -->
+  <div class="card" style="margin-top: 20px; padding: 20px;">
+    <div class="card-header" style="padding: 0 0 16px; border: none;">
+      <h3>Week 1 Goals</h3>
+      <span id="goalCount">0 / 8 complete</span>
+    </div>
+    <div class="week-goals" id="goalsList">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <div class="script-card">
+    <h3>Ready-to-Send Outreach Scripts</h3>
+
+    <h4>LinkedIn Connection (US) — 280 chars max</h4>
+    <div class="script-box" id="script1">Hi {{FirstName}}, noticed you run {{ClinicName}} on athenahealth. We built Carenova to help small practices answer every call with AI, book directly in Athena, and cut front desk costs by 80%. Open to a quick 10-min demo? Lloyd @ Tinlance</div>
+    <button class="copy-btn" onclick="copy('script1')">Copy</button>
+
+    <h4>LinkedIn Message After Acceptance (US)</h4>
+    <div class="script-box" id="script2">Hi {{FirstName}}, thanks for connecting.
+
+Quick one: most athenahealth practices I talk to are losing $15k–$20k/month in appointments because calls go unanswered or staff are tied up with insurance calls.
+
+Carenova's AI receptionist answers in 600ms, books directly in Athena, verifies insurance, and handles refills — all for $999/month. We can show your live availability in a 10-min demo.
+
+Would next week work? No pressure.
+
+Lloyd
+Tinlance / Carenova — carenova.tinlance.com</div>
+    <button class="copy-btn" onclick="copy('script2')">Copy</button>
+
+    <h4>Cold Email Subject Lines (test all three)</h4>
+    <div class="script-box" id="script3">A: "Quick way to cut {{ClinicName}} front desk costs by ~80%?"
+B: "{{ClinicName}} + AI receptionist that books directly in AthenaHealth"
+C: "Stop losing appointments to unanswered phones"</div>
+    <button class="copy-btn" onclick="copy('script3')">Copy</button>
+
+    <h4>Nigeria WhatsApp Opening</h4>
+    <div class="script-box" id="script4">Hi {{FirstName}}, I'm Lloyd from Tinlance. Built Carenova to help clinics like {{ClinicName}} automate calls, WhatsApp bookings, and patient reminders so you never miss patients again.
+
+Works with Helium Health, works on 2G, patients book via WhatsApp. Very affordable in NGN.
+
+Can we do a quick 10-min WhatsApp demo this week?
+
+carenova.tinlance.com</div>
+    <button class="copy-btn" onclick="copy('script4')">Copy</button>
+  </div>
+
+</div>
+
+<script>
+const GOALS = [
+  { id: 'g1', text: 'Landing page live at carenova.tinlance.com' },
+  { id: 'g2', text: 'LinkedIn profile updated — Carenova founder' },
+  { id: 'g3', text: 'First LinkedIn post: ROI story or demo video' },
+  { id: 'g4', text: 'Apply to athenahealth Marketplace partner program' },
+  { id: 'g5', text: 'Send 50 LinkedIn connection requests (US clinic owners)' },
+  { id: 'g6', text: 'Contact Chinaza — confirm first pilot clinic name' },
+  { id: 'g7', text: 'Send 20 cold emails to US primary care practices' },
+  { id: 'g8', text: 'Post ROI calculator on X (@lloydambition)' },
+];
+
+const STORED_GOALS = JSON.parse(localStorage.getItem('carenova_goals') || '{}');
+
+function renderGoals() {
+  const container = document.getElementById('goalsList');
+  container.innerHTML = '';
+  let done = 0;
+  GOALS.forEach(g => {
+    const isDone = STORED_GOALS[g.id];
+    if (isDone) done++;
+    const div = document.createElement('div');
+    div.className = 'goal-item';
+    div.innerHTML = `
+      <div class="goal-check ${isDone ? 'done' : ''}" onclick="toggleGoal('${g.id}', this)">
+        ${isDone ? '✓' : ''}
+      </div>
+      <span class="goal-text">${g.text}</span>
+    `;
+    container.appendChild(div);
+  });
+  document.getElementById('goalCount').textContent = `${done} / ${GOALS.length} complete`;
+}
+
+function toggleGoal(id, el) {
+  STORED_GOALS[id] = !STORED_GOALS[id];
+  localStorage.setItem('carenova_goals', JSON.stringify(STORED_GOALS));
+  renderGoals();
+}
+
+function copy(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.activeElement;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+renderGoals();
+</script>
+</body>
+</html>
