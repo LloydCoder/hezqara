@@ -1,7 +1,8 @@
 import stripe
 from fastapi import APIRouter,HTTPException,Request
 from app.core.config import settings
-router=APIRouter(prefix='/webhooks/stripe',tags=['webhooks'])
+from app.security.webhook import WebhookReplayStore
+router=APIRouter(prefix='/webhooks/stripe',tags=['webhooks']); replay=WebhookReplayStore()
 @router.post('')
 async def stripe_webhook(request:Request):
     if not settings.stripe_webhook_secret: raise HTTPException(status_code=503,detail='stripe webhook is not configured')
@@ -10,4 +11,5 @@ async def stripe_webhook(request:Request):
     except (ValueError,stripe.error.SignatureVerificationError) as exc: raise HTTPException(status_code=400,detail='invalid stripe webhook') from exc
     event_id=event.get('id')
     if not event_id: raise HTTPException(status_code=400,detail='stripe event id required')
-    return {'received':True,'event_id':event_id,'type':event.get('type'),'payload_valid':isinstance(event.get('data'),dict)}
+    if not await replay.claim('stripe',event_id): return {'received':True,'event_id':event_id,'duplicate':True}
+    return {'received':True,'event_id':event_id,'type':event.get('type')}
