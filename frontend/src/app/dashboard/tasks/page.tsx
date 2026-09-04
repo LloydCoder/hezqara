@@ -1,0 +1,2 @@
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+export default function TasksPage(){return <WorkspacePage title="Tasks" description="A unified queue for administrative work, exceptions, and human escalations." capability="Task records will be populated from organization-scoped workflow services. Filters, priority, assignment, timestamps, agent attribution, and escalation details belong here once those contracts are live."/>}
