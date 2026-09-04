@@ -1,15 +1,13 @@
-"""
-Celery Application — async task queue for Carenova.
-Broker: Redis (same instance as cache).
-Beat schedule: recall campaigns, PA polling, reminders, analytics.
-"""
+"""Celery application for asynchronous HEZQARA workflows."""
 from celery import Celery
 from celery.schedules import crontab
 
+from app.config import settings
+
 celery_app = Celery(
-    "carenova",
-    broker="redis://localhost:6379/4",
-    backend="redis://localhost:6379/5",
+    "hezqara",
+    broker=settings.redis_url,
+    backend=settings.redis_url,
     include=[
         "app.tasks.recall_runner",
         "app.tasks.prior_auth_poller",
@@ -27,22 +25,18 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
+    task_default_queue="hezqara",
 )
 
 celery_app.conf.beat_schedule = {
-    # Analytics: every day at midnight UTC
     "daily-analytics-rollup": {
         "task": "app.tasks.analytics_rollup.compute_daily_analytics",
         "schedule": crontab(hour=0, minute=0),
-        "kwargs": {},
     },
-    # Prior auth polling: every 4 hours
     "prior-auth-poller": {
         "task": "app.tasks.prior_auth_poller.poll_pending_prior_auths",
         "schedule": crontab(minute=0, hour="*/4"),
-        "kwargs": {},
     },
-    # Appointment reminders: every hour
     "appointment-reminders": {
         "task": "app.tasks.appointment_reminder.send_appointment_reminders",
         "schedule": crontab(minute=0),
