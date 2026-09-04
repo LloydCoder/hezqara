@@ -1,180 +1,97 @@
-# Carenova AI
+# HEZQARA
 
-**AI Medical Front Office Platform**
+**AI Workforce for Healthcare**
 
-Carenova replaces the human medical receptionist with 10 specialised AI agents that answer every patient call, book appointments directly in the EHR, verify insurance, process refills, and recover lost revenue — 24 hours a day, at $0.22 per call.
+Hezqara automates routine healthcare front-office and administrative workflows across calls, scheduling, intake, insurance, prior authorization, refills, records, referrals, recall, and email—while keeping sensitive actions behind explicit authorization, audit, and human-review controls.
 
-[![CI](https://github.com/Tinlance/carenova/actions/workflows/ci.yml/badge.svg)](https://github.com/Tinlance/carenova/actions/workflows/ci.yml)
-[![HIPAA Compliant](https://img.shields.io/badge/HIPAA-Compliant-emerald)](https://github.com/Tinlance/carenova-public)
-[![Tests](https://img.shields.io/badge/tests-447%20passing-emerald)](https://github.com/Tinlance/carenova/actions)
+> **Product status:** engineering hardening in progress. This repository is not yet a production-compliance certification.
 
----
-
-## The Problem
-
-A US medical receptionist costs **$3,100/month** and handles **one call at a time**.
-
-A clinic receiving 500 calls/month misses **20%** of them — that's 100 missed appointments, each worth ~$180 in revenue. **$18,000/month in recoverable revenue, lost.**
-
-## The Solution
-
-Carenova answers every call in 600ms, handles unlimited simultaneous calls, writes appointments directly back to the EHR, and costs **$499–$3,999/month**.
-
----
-
-## The 10 AI Agents
+## Core workforce
 
 | Agent | Responsibility |
 |---|---|
-| **Reception** | Answers every inbound call, detects intent, routes to specialist agent |
-| **Scheduling** | Fetches slots, matches patient preference, books in EHR (write-back) |
-| **Intake** | Collects demographics, insurance, and medical history before visit |
-| **Insurance** | Real-time eligibility verification and benefits check via Availity |
-| **Prior Auth** | Submits PA requests via FHIR Da Vinci PAS, polls for decisions |
-| **Refill** | Parses medication requests, checks eligibility, sends to pharmacy |
-| **Records** | Identity verification + HIPAA-compliant medical record release |
-| **Referrals** | Creates specialist referrals, tracks status end-to-end |
-| **Recall** | Proactive patient outreach campaigns — SMS, email, voice, WhatsApp |
-| **Email** | Inbox triage, draft replies, appointment confirmations |
+| **Reception** | Inbound patient communication, intent detection, and routing |
+| **Scheduling** | Availability lookup, appointment workflows, and EHR write-back |
+| **Intake** | Demographics, insurance, and pre-visit information collection |
+| **Insurance** | Eligibility and benefits workflow support |
+| **Prior Authorization** | Authorization workflow preparation, submission, and status tracking |
+| **Refill** | Medication-request intake and routing for authorized workflows |
+| **Records** | Identity verification and medical-record request workflows |
+| **Referrals** | Specialist referral creation and status tracking |
+| **Recall** | Patient outreach campaigns across supported channels |
+| **Email** | Inbox triage, drafting, and appointment communications |
 
----
+## Platform capabilities
 
-## Architecture
+- AI front-office automation
+- Scheduling and patient engagement
+- Insurance and revenue-cycle workflow support
+- Prior-authorization and referral operations
+- Voice and WhatsApp communication adapters
+- EHR integration layer with FHIR-oriented interfaces
+- Tenant isolation and role-based access controls
+- Audit logging and security controls
+- Analytics and operational visibility
+- Standalone workflows for environments without an EHR
 
-```
-Patient Call (Retell AI, 600ms)
-        ↓
-Reception Agent (intent detection)
-        ↓
-Specialist Agent (Scheduling / Insurance / Refill / ...)
-        ↓
-EHR Write-Back (athenahealth, Epic, Helium Health)
-        ↓
-FusionOps Hub (all events routed through)
-        ↓
-Analytics + HIPAA Audit Log
-```
+## Architecture direction
 
-**AI Model Routing (cost discipline):**
-- Routine tasks (greeting, intent, scheduling) → Local Ollama (DeepSeek/Qwen3) — **$0**
-- Clinical reasoning (prior auth, Parliament vote) → Claude Sonnet 4.6 — **pay per use**
-- 80% of agent calls cost $0. Average per-call cost: $0.22 (voice only)
+The target architecture is a modular monolith with clear boundaries between:
 
----
+- domain logic
+- workflow orchestration
+- AI/model routing
+- healthcare integrations
+- tenant/security enforcement
+- data access
+- observability and evaluation
 
-## Tech Stack
+AI agents must not bypass workflow authorization or directly perform unrestricted database mutations. External side effects should pass tenant, authorization, safety, and audit controls.
+
+## Technology
 
 | Layer | Technology |
 |---|---|
-| Backend | FastAPI + Python 3.12 |
-| Frontend | Next.js 15 + TypeScript + Tailwind |
-| Database | Supabase Frankfurt (PostgreSQL 16 + RLS) |
-| Auth | Clerk (per-clinic Organisation isolation) |
-| Voice (US) | Retell AI — HIPAA BAA signed, $0.07/min |
-| Voice (Nigeria) | WhatsApp Business API |
-| EHR (US) | athenahealth REST + FHIR R4, Epic (Phase 2) |
-| EHR (Nigeria) | Helium Health |
-| Billing (US) | LemonSqueezy (Starter/Pro/Growth) + Stripe (Enterprise) |
-| Billing (Nigeria) | Paystack |
-| AI Gateway | Policy-based routing: Ollama → Groq → Claude |
-| Memory | Graphiti + FalkorDB |
+| API | FastAPI + Python 3.12 |
+| Web | Next.js + React + TypeScript |
+| Database | PostgreSQL / Supabase |
+| Authentication | Clerk |
+| Voice | Retell AI adapter |
+| Messaging | WhatsApp adapter |
+| AI | Policy-based model routing |
+| Memory | Graphiti / FalkorDB adapter |
 | Tasks | Celery + Redis |
-| Deployment | AWS EC2 Stockholm, Docker, nginx, systemd |
+| Storage | S3-compatible object storage |
+| Deployment | Docker + AWS |
 | CI/CD | GitHub Actions |
-| Compliance | HIPAA (US) + NDPR (Nigeria) |
 
----
+## Security and healthcare boundary
 
-## Pricing
+Hezqara is designed for healthcare workloads, but software code alone does not establish HIPAA compliance, GDPR compliance, or any other regulatory certification. Production deployment requires documented risk analysis, appropriate contracts/BAAs where applicable, least-privilege configuration, vendor due diligence, incident response, retention/deletion controls, access reviews, and operational safeguards.
 
-| Plan | Price | Providers |
-|---|---|---|
-| Starter | $499/month | 1–2 |
-| Pro | $999/month | 3–5 |
-| Growth | $1,999/month | 6–15 |
-| Enterprise | $3,999/month | 15+ (Stripe, ACH, NET-30) |
+The product should remain focused on administrative and workflow automation. High-risk clinical decisions, diagnosis, prescribing, emergency triage, and other regulated clinical functions require explicit product-specific regulatory analysis and appropriate clinician oversight.
 
-**Nigeria:** ₦50,000–₦500,000/month via Paystack
+## Development
 
----
+The repository is currently being consolidated from an earlier multi-layout build. Before a production release, the following gates must pass:
 
-## Markets
+1. One canonical application layout.
+2. No generated caches or compiled artifacts committed.
+3. Reproducible dependency installation with lockfiles where appropriate.
+4. Backend imports and startup verified from a clean checkout.
+5. Frontend type-check, lint, and production build verified.
+6. Docker images build from clean contexts.
+7. Database migrations execute in order against a clean database.
+8. Tenant isolation/RLS tests pass.
+9. Security and secret-scanning checks pass.
+10. AI safety, prompt-injection, tool-authorization, and data-egress evaluations pass.
+11. End-to-end critical workflows pass in a production-like environment.
+12. Only then should external customer outreach represent the platform as production-ready.
 
-- **Wave 1 — US:** 230,000 independent practices. athenahealth + Epic. HIPAA.
-- **Wave 2 — Nigeria:** 39,914 clinics. Zero direct competitors. WhatsApp-first. NDPR.
-- **Wave 3 — UK/EU:** GDPR. NHS integration pathway.
-- **Wave 4 — Philippines/SEA:** WhatsApp. Local EMRs.
+## Repository hygiene
 
----
+Generated Python bytecode, pytest caches, Node build output, local environments, logs, and local secrets are excluded by `.gitignore`. Existing historical generated artifacts still need to be removed from Git history/tree as part of the repository consolidation.
 
-## Quick Start (Local Development)
+## License
 
-```bash
-# Clone
-git clone git@github.com:Tinlance/carenova.git
-cd carenova
-
-# Backend
-cp backend/.env.example backend/.env
-# Fill in: ANTHROPIC_API_KEY, RETELL_API_KEY, SUPABASE_URL,
-#          CLERK_SECRET_KEY, LEMONSQUEEZY_API_KEY, STRIPE_SECRET_KEY
-
-# Start all services
-make dev
-
-# Run tests
-make test
-
-# Health check
-make health
-```
-
----
-
-## Deploy to EC2
-
-```bash
-# On fresh EC2 (Ubuntu 24.04)
-bash infrastructure/scripts/setup_ec2.sh
-
-# Start
-sudo systemctl start carenova
-
-# Verify
-curl https://carenova.tinlance.com/health
-```
-
----
-
-## HIPAA Compliance
-
-- ✅ HIPAA BAA signed with Retell AI and Supabase
-- ✅ Row-Level Security on all 12 database tables
-- ✅ PHI audit log on every data access
-- ✅ Phone numbers masked in all logs
-- ✅ AI Shield injection protection on all agent prompts
-- ✅ AES-256 encryption at rest, TLS 1.3 in transit
-- ✅ TruffleHog secret scanning in CI on every PR
-
----
-
-## Built by
-
-**Lloyd Nwachukwu** — Tinlance Limited (RC: 7962164)  
-Forward Deployed Security Engineer | AI + Cybersecurity  
-5 merged PRs to Nuclei, TruffleHog, Semgrep, Gitleaks, Slither
-
-Co-founder/domain expert: **Obinwa Chinaza** — Medical scribe, US hospital
-
----
-
-## Related
-
-- [Public repo](https://github.com/Tinlance/carenova-public) — HIPAA docs, FHIR examples, changelog
-- [FusionOps](http://13.50.16.19:8080) — Tinlance technical hub
-- [KalevioAI](https://kalevio.tinlance.com) — HIPAA compliance intelligence
-- [ThreatFade](https://github.com/LloydCoder/tinlance-threatfade) — Fraud detection (validated against Merlin QUIC C2, Z-score 14.76)
-
----
-
-*Carenova is built on the Tinlance 20-product ecosystem. All products communicate via FusionOps. Nothing connects product-to-product directly.*
+Proprietary — Tinlance Limited. All rights reserved.
