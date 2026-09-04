@@ -8,9 +8,11 @@ COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund
 
 FROM base AS builder
+ARG HEZQARA_API_INTERNAL_URL=http://backend:8004
+ENV HEZQARA_API_INTERNAL_URL=${HEZQARA_API_INTERNAL_URL}
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM base AS runner
