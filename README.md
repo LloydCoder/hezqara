@@ -2,95 +2,87 @@
 
 **AI Workforce for Healthcare**
 
-Hezqara automates routine healthcare front-office and administrative workflows across calls, scheduling, intake, insurance, prior authorization, refills, records, referrals, recall, and email—while keeping sensitive actions behind explicit authorization, audit, and human-review controls.
+Hezqara is a healthcare operations automation platform for clinic front offices. It coordinates AI agents for reception, scheduling, intake, insurance workflows, prior authorization, refills, records, referrals, recall, and email while keeping external side effects behind authorization, tenant controls, audit logging, and human-review boundaries.
 
-> **Product status:** engineering hardening in progress. This repository is not yet a production-compliance certification.
+> **Engineering status:** canonical architecture consolidation and production hardening. This repository is not a regulatory certification.
+
+## Canonical repository layout
+
+```text
+hezqara/
+├── backend/
+│   ├── app/
+│   │   ├── agents/        # AI workforce implementations
+│   │   ├── integrations/  # EHR, messaging, voice and external systems
+│   │   ├── llm/           # model routing and evaluation
+│   │   ├── models/        # persistence/domain models
+│   │   ├── routers/       # HTTP API boundary
+│   │   ├── security/      # authentication, authorization, audit/compliance
+│   │   ├── services/      # application services and data access
+│   │   ├── tasks/         # Celery workers/schedules
+│   │   ├── utils/         # pure shared utilities
+│   │   └── main.py
+│   ├── tests/
+│   ├── Dockerfile
+│   ├── pyproject.toml
+│   └── requirements*.txt
+├── frontend/
+│   ├── src/app/           # Next.js App Router
+│   ├── src/components/
+│   ├── src/hooks/
+│   ├── src/lib/
+│   ├── src/types/
+│   ├── src/proxy.ts       # Clerk/Next request boundary
+│   ├── Dockerfile
+│   └── package.json
+├── supabase/migrations/   # ordered database migrations
+├── docs/                  # architecture and operating documentation
+├── ops/                   # operational scripts
+├── docker-compose.yml
+└── .github/workflows/
+```
+
+## Product boundary
+
+Hezqara automates administrative and front-office work. Clinical diagnosis, prescribing, emergency triage, and other high-risk clinical decisions are outside the default product boundary and require separate clinical, regulatory, and human-oversight controls.
 
 ## Core workforce
 
 | Agent | Responsibility |
 |---|---|
-| **Reception** | Inbound patient communication, intent detection, and routing |
-| **Scheduling** | Availability lookup, appointment workflows, and EHR write-back |
-| **Intake** | Demographics, insurance, and pre-visit information collection |
-| **Insurance** | Eligibility and benefits workflow support |
-| **Prior Authorization** | Authorization workflow preparation, submission, and status tracking |
-| **Refill** | Medication-request intake and routing for authorized workflows |
-| **Records** | Identity verification and medical-record request workflows |
-| **Referrals** | Specialist referral creation and status tracking |
-| **Recall** | Patient outreach campaigns across supported channels |
-| **Email** | Inbox triage, drafting, and appointment communications |
-
-## Platform capabilities
-
-- AI front-office automation
-- Scheduling and patient engagement
-- Insurance and revenue-cycle workflow support
-- Prior-authorization and referral operations
-- Voice and WhatsApp communication adapters
-- EHR integration layer with FHIR-oriented interfaces
-- Tenant isolation and role-based access controls
-- Audit logging and security controls
-- Analytics and operational visibility
-- Standalone workflows for environments without an EHR
-
-## Architecture direction
-
-The target architecture is a modular monolith with clear boundaries between:
-
-- domain logic
-- workflow orchestration
-- AI/model routing
-- healthcare integrations
-- tenant/security enforcement
-- data access
-- observability and evaluation
-
-AI agents must not bypass workflow authorization or directly perform unrestricted database mutations. External side effects should pass tenant, authorization, safety, and audit controls.
+| Reception | Inbound patient communication, intent detection, routing |
+| Scheduling | Availability, booking, rescheduling and EHR write-back |
+| Intake | Demographics, insurance and pre-visit collection |
+| Insurance | Eligibility and benefits workflow support |
+| Prior Authorization | Preparation, submission and status tracking |
+| Refill | Medication-request intake and authorized routing |
+| Records | Identity verification and record-release workflows |
+| Referrals | Specialist referral creation and tracking |
+| Recall | Proactive patient outreach campaigns |
+| Email | Inbox triage, drafting and appointment communications |
 
 ## Technology
 
-| Layer | Technology |
-|---|---|
-| API | FastAPI + Python 3.12 |
-| Web | Next.js + React + TypeScript |
-| Database | PostgreSQL / Supabase |
-| Authentication | Clerk |
-| Voice | Retell AI adapter |
-| Messaging | WhatsApp adapter |
-| AI | Policy-based model routing |
-| Memory | Graphiti / FalkorDB adapter |
-| Tasks | Celery + Redis |
-| Storage | S3-compatible object storage |
-| Deployment | Docker + AWS |
-| CI/CD | GitHub Actions |
+- **API:** FastAPI / Python 3.12
+- **Web:** Next.js / React / TypeScript
+- **Data:** PostgreSQL / Supabase
+- **Auth:** Clerk
+- **Voice:** Retell adapter
+- **Messaging:** WhatsApp adapter
+- **Tasks:** Celery / Redis
+- **Memory:** Graphiti / FalkorDB adapter
+- **Deployment:** Docker / AWS
+- **CI:** GitHub Actions
 
-## Security and healthcare boundary
+## Security boundary
 
-Hezqara is designed for healthcare workloads, but software code alone does not establish HIPAA compliance, GDPR compliance, or any other regulatory certification. Production deployment requires documented risk analysis, appropriate contracts/BAAs where applicable, least-privilege configuration, vendor due diligence, incident response, retention/deletion controls, access reviews, and operational safeguards.
+Authentication and tenant context are enforced through Clerk at the API boundary; client API requests obtain and forward the active Clerk session token. Sensitive audit metadata is sanitized before structured logging. Secrets are environment-driven and production credentials have no code-level fallback.
 
-The product should remain focused on administrative and workflow automation. High-risk clinical decisions, diagnosis, prescribing, emergency triage, and other regulated clinical functions require explicit product-specific regulatory analysis and appropriate clinician oversight.
+Healthcare workloads still require operational controls beyond source code: risk analysis, least privilege, vendor/BAA review, retention and deletion policy, access reviews, incident response, backups, monitoring, and appropriate regulatory/legal assessment.
 
-## Development
+## Engineering gates
 
-The repository is currently being consolidated from an earlier multi-layout build. Before a production release, the following gates must pass:
-
-1. One canonical application layout.
-2. No generated caches or compiled artifacts committed.
-3. Reproducible dependency installation with lockfiles where appropriate.
-4. Backend imports and startup verified from a clean checkout.
-5. Frontend type-check, lint, and production build verified.
-6. Docker images build from clean contexts.
-7. Database migrations execute in order against a clean database.
-8. Tenant isolation/RLS tests pass.
-9. Security and secret-scanning checks pass.
-10. AI safety, prompt-injection, tool-authorization, and data-egress evaluations pass.
-11. End-to-end critical workflows pass in a production-like environment.
-12. Only then should external customer outreach represent the platform as production-ready.
-
-## Repository hygiene
-
-Generated Python bytecode, pytest caches, Node build output, local environments, logs, and local secrets are excluded by `.gitignore`. Existing historical generated artifacts still need to be removed from Git history/tree as part of the repository consolidation.
+A release is not considered production-ready until clean-checkout backend startup, tests, database migrations, frontend type-check/build, Docker builds, tenant-isolation tests, secret scanning, AI safety/tool-authorization evaluations, and critical end-to-end workflows all pass.
 
 ## License
 
