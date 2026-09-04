@@ -1,0 +1,210 @@
+name: Canonicalize HEZQARA repository
+
+on:
+  push:
+    branches: ["refactor/canonical-architecture"]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: canonicalize
+  cancel-in-progress: true
+
+jobs:
+  canonicalize:
+    if: github.actor == 'LloydCoder'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Consolidate repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p backend/app backend/tests frontend/src/app frontend/src/components frontend/src/hooks frontend/src/lib frontend/src/types supabase/migrations
+
+          # Recover the previously generated canonical source tree while dropping
+          # interpreter caches. This tree is the source of truth for deep modules
+          # that were accidentally committed under mnt/user-data/outputs.
+          if [ -d mnt/user-data/outputs/carenova/backend/app ]; then
+            rsync -a --exclude='__pycache__' --exclude='*.pyc' \
+              mnt/user-data/outputs/carenova/backend/app/ backend/app/
+          fi
+          if [ -d mnt/user-data/outputs/carenova/frontend/src ]; then
+            rsync -a --exclude='__pycache__' --exclude='*.pyc' \
+              mnt/user-data/outputs/carenova/frontend/src/ frontend/src/
+          fi
+
+          # Canonical backend package mapping. Existing canonical files win over
+          # stale root copies; root-only modules are moved into app/ so imports
+          # remain deterministic during the consolidation.
+          declare -A MAP=(
+            [main.py]=backend/app/main.py
+            [config.py]=backend/app/config.py
+            [base.py]=backend/app/models/base.py
+            [clinic.py]=backend/app/models/clinic.py
+            [patient.py]=backend/app/models/patient.py
+            [appointment.py]=backend/app/models/appointment.py
+            [call.py]=backend/app/models/call.py
+            [agents.py]=backend/app/routers/agents.py
+            [appointments.py]=backend/app/routers/appointments.py
+            [patients.py]=backend/app/routers/patients.py
+            [calls.py]=backend/app/routers/calls.py
+            [insurance.py]=backend/app/routers/insurance.py
+            [prior_auth.py]=backend/app/routers/prior_auth.py
+            [recalls.py]=backend/app/routers/recalls.py
+            [referrals.py]=backend/app/routers/referrals.py
+            [analytics.py]=backend/app/routers/analytics.py
+            [waitlist.py]=backend/app/routers/waitlist.py
+            [health.py]=backend/app/routers/health.py
+            [voice.py]=backend/app/routers/voice.py
+            [whatsapp.py]=backend/app/routers/whatsapp.py
+            [billing_router.py]=backend/app/services/billing_router.py
+            [billing.py]=backend/app/services/billing.py
+            [database.py]=backend/app/services/database.py
+            [audit.py]=backend/app/security/audit.py
+            [clerk_auth.py]=backend/app/security/clerk_auth.py
+            [hipaa.py]=backend/app/security/hipaa.py
+            [ndpa.py]=backend/app/security/ndpa.py
+            [phone_formatter.py]=backend/app/utils/phone_formatter.py
+            [call_handler.py]=backend/app/voice/call_handler.py
+            [retell_client.py]=backend/app/voice/retell_client.py
+            [base_agent.py]=backend/app/agents/base_agent.py
+            [reception.py]=backend/app/agents/reception.py
+            [intake.py]=backend/app/agents/intake.py
+            [insurance_agent.py]=backend/app/agents/insurance_agent.py
+            [prior_auth_agent.py]=backend/app/agents/prior_auth_agent.py
+            [refill.py]=backend/app/agents/refill.py
+            [records.py]=backend/app/agents/records.py
+            [referrals_agent.py]=backend/app/agents/referrals_agent.py
+            [recall.py]=backend/app/agents/recall.py
+            [email_agent.py]=backend/app/agents/email_agent.py
+            [modules.py]=backend/app/standalone/modules.py
+            [standalone.py]=backend/app/routers/standalone.py
+          )
+
+          for src in "${!MAP[@]}"; do
+            dst="${MAP[$src]}"
+            if [ -f "$src" ]; then
+              mkdir -p "$(dirname "$dst")"
+              if [ ! -f "$dst" ]; then
+                mv "$src" "$dst"
+              else
+                rm -f "$src"
+              fi
+            fi
+          done
+
+          # Scheduling/agent compatibility: the old flat module is only a
+          # re-export and should not shadow the canonical agent package.
+          rm -f scheduling.py
+
+          # Move all remaining Python modules into the package root rather than
+          # leaving an unimportable flat repository. Test modules are handled below.
+          for src in *.py; do
+            [ -f "$src" ] || continue
+            case "$src" in
+              test_*.py|conftest.py) continue ;;
+            esac
+            mv "$src" "backend/app/$src"
+          done
+
+          # Move all root tests into backend/tests and normalize machine-local
+          # absolute paths that were captured in the old generated environment.
+          for src in test_*.py; do
+            [ -f "$src" ] || continue
+            dst="backend/tests/$src"
+            mv "$src" "$dst"
+            sed -i 's#/home/claude/carenova#../..#g' "$dst"
+          done
+          if [ -f conftest.py ]; then mv conftest.py backend/tests/conftest.py; fi
+
+          # SQL migrations belong to one ordered migration directory.
+          for src in 0*.sql; do
+            [ -f "$src" ] || continue
+            mv "$src" supabase/migrations/"$src"
+          done
+
+          # Frontend root files/components/types/hooks/libs.
+          [ -f package.json ] && { [ -f frontend/package.json ] || mv package.json frontend/package.json; }
+          [ -f package-lock.json ] && { [ -f frontend/package-lock.json ] || mv package-lock.json frontend/package-lock.json; }
+          [ -f tsconfig.json ] && { [ -f frontend/tsconfig.json ] || mv tsconfig.json frontend/tsconfig.json; }
+          [ -f next.config.ts ] && { [ -f frontend/next.config.ts ] || mv next.config.ts frontend/next.config.ts; }
+          [ -f postcss.config.mjs ] && { [ -f frontend/postcss.config.mjs ] || mv postcss.config.mjs frontend/postcss.config.mjs; }
+          [ -f tailwind.config.ts ] && { [ -f frontend/tailwind.config.ts ] || mv tailwind.config.ts frontend/tailwind.config.ts; }
+          [ -f eslint.config.mjs ] && { [ -f frontend/eslint.config.mjs ] || mv eslint.config.mjs frontend/eslint.config.mjs; }
+          [ -f layout.tsx ] && { [ -f frontend/src/app/layout.tsx ] || mv layout.tsx frontend/src/app/layout.tsx; }
+          [ -f globals.css ] && { [ -f frontend/src/app/globals.css ] || mv globals.css frontend/src/app/globals.css; }
+          [ -f page.tsx ] && { [ -f frontend/src/app/page.tsx ] || mv page.tsx frontend/src/app/page.tsx; }
+          [ -f middleware.ts ] && { [ -f frontend/src/proxy.ts ] || mv middleware.ts frontend/src/proxy.ts; }
+          [ -f useAgents.ts ] && { [ -f frontend/src/hooks/useAgents.ts ] || mv useAgents.ts frontend/src/hooks/useAgents.ts; }
+          [ -f utils.ts ] && { [ -f frontend/src/lib/utils.ts ] || mv utils.ts frontend/src/lib/utils.ts; }
+          [ -f api.ts ] && { [ -f frontend/src/lib/api.ts ] || mv api.ts frontend/src/lib/api.ts; }
+          [ -f agent.ts ] && { [ -f frontend/src/types/agent.ts ] || mv agent.ts frontend/src/types/agent.ts; }
+          [ -f patient.ts ] && { [ -f frontend/src/types/patient.ts ] || mv patient.ts frontend/src/types/patient.ts; }
+          [ -f analytics.ts ] && { [ -f frontend/src/types/analytics.ts ] || mv analytics.ts frontend/src/types/analytics.ts; }
+
+          for src in *.tsx; do
+            [ -f "$src" ] || continue
+            mv "$src" frontend/src/components/"$src"
+          done
+
+          # Move the existing frontend Dockerfile from the old root location.
+          if [ -f Dockerfile ]; then mv Dockerfile frontend/Dockerfile; fi
+
+          # Backend/infra files.
+          [ -f requirements.txt ] && { [ -f backend/requirements.txt ] || mv requirements.txt backend/requirements.txt; }
+          [ -f requirements-dev.txt ] && { [ -f backend/requirements-dev.txt ] || mv requirements-dev.txt backend/requirements-dev.txt; }
+          [ -f pyproject.toml ] && { [ -f backend/pyproject.toml ] || mv pyproject.toml backend/pyproject.toml; }
+          [ -f alembic.ini ] && { [ -f backend/alembic.ini ] || mv alembic.ini backend/alembic.ini; }
+          if [ -d mnt/user-data/outputs/carenova/backend ] && [ ! -f backend/Dockerfile ]; then
+            cp mnt/user-data/outputs/carenova/backend/Dockerfile backend/Dockerfile
+          fi
+
+          # Remove generated/local artifacts and the temporary output tree.
+          find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' -delete
+          find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' -prune -exec rm -rf {} +
+          rm -rf mnt
+          rm -f CACHEDIR.TAG
+
+          # Normalize package imports to the canonical app layout where the old
+          # generated files used absolute app.* paths.
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('backend/app')
+          replacements = {
+              'from app.voice.call_handler import': 'from app.voice.call_handler import',
+              'from app.standalone.modules import': 'from app.standalone.modules import',
+          }
+          for path in root.rglob('*.py'):
+              text = path.read_text()
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              path.write_text(text)
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No canonicalization changes required.'
+            exit 0
+          fi
+          git commit -m 'refactor: consolidate HEZQARA into canonical application layout'
+          git push
+
+      - name: Run canonical validation after consolidation
+        if: success()
+        run: |
+          test -f backend/app/main.py
+          test -f backend/requirements.txt
+          test -f frontend/package.json
+          test -f frontend/next.config.ts
+          test -f frontend/src/app/layout.tsx
+          test -f frontend/src/app/page.tsx
+          ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
