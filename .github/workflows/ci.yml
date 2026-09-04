@@ -38,13 +38,11 @@ jobs:
         run: pip check
       - name: Lint
         working-directory: backend
-        run: ruff check app ../tests/backend
+        run: ruff check app tests
       - name: Unit/security tests
         working-directory: backend
-        env:
-          APP_ENV: test
-          PYTHONPATH: .
-        run: pytest -q ../tests/backend
+        env: {APP_ENV: test}
+        run: pytest -q tests
   frontend:
     runs-on: ubuntu-latest
     steps:
