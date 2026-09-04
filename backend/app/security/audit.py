@@ -1,12 +1,33 @@
-"""
-HIPAA Audit Log Writer.
-Every PHI access must be logged. This is non-negotiable.
-"""
+"""Structured audit logging with PHI-safe metadata handling."""
+from datetime import UTC, datetime
+from typing import Any, Optional
+
 import structlog
-from datetime import datetime, UTC
-from typing import Optional
 
 logger = structlog.get_logger(__name__)
+
+_SENSITIVE_KEYS = {
+    "name", "first_name", "last_name", "full_name", "phone", "email",
+    "date_of_birth", "dob", "address", "street", "city", "state", "zip",
+    "transcript", "message", "content", "notes", "diagnosis", "symptoms",
+    "medications", "member_id", "insurance_member_id", "ssn",
+}
+
+
+def _sanitize(value: Any, depth: int = 0) -> Any:
+    """Recursively redact likely PHI/secrets from arbitrary metadata."""
+    if depth > 4:
+        return "[truncated]"
+    if isinstance(value, dict):
+        return {
+            str(k): "[redacted]" if str(k).lower() in _SENSITIVE_KEYS else _sanitize(v, depth + 1)
+            for k, v in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_sanitize(v, depth + 1) for v in value[:50]]
+    if isinstance(value, str) and len(value) > 500:
+        return value[:500] + "…"
+    return value
 
 
 def write_audit_log(
@@ -18,13 +39,8 @@ def write_audit_log(
     action: Optional[str] = None,
     metadata: Optional[dict] = None,
 ) -> None:
-    """
-    Write a HIPAA-compliant audit log entry.
-
-    Every PHI access, every agent action, every call event
-    must be recorded here. No raw PHI in the log values.
-    """
-    log_entry = {
+    """Emit a PHI-minimized audit event; never log raw request content."""
+    entry = {
         "timestamp": datetime.now(UTC).isoformat(),
         "event_type": event_type,
         "clinic_id": clinic_id,
@@ -32,10 +48,6 @@ def write_audit_log(
         "patient_id": patient_id,
         "agent_type": agent_type,
         "action": action,
-        "metadata": metadata or {},
+        "metadata": _sanitize(metadata or {}),
     }
-
-    # Remove None values
-    log_entry = {k: v for k, v in log_entry.items() if v is not None}
-
-    logger.info("hipaa_audit", **log_entry)
+    logger.info("hipaa_audit", **{k: v for k, v in entry.items() if v is not None})
