@@ -1,42 +1,18 @@
-# Core framework
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 pydantic==2.11.2
 pydantic-settings==2.6.1
-
-# Database
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
 alembic==1.14.0
-
-# Authentication / security
 clerk-backend-api==6.0.1
 svix==1.99.1
-
-# HTTP
 httpx==0.28.1
-aiohttp==3.11.7
-
-# LLM
 anthropic==0.40.0
 openai==1.57.0
-
-# Voice
 retell-sdk==4.5.0
-
-# Memory / queues
-graphiti-core==0.4.1
 celery==5.4.0
 redis==5.2.0
-
-# Storage
-boto3==1.35.78
-
-# Utilities
-python-dotenv==1.0.1
-python-multipart==0.0.18
-structlog==24.4.0
-phonenumbers==8.13.50
-python-dateutil==2.9.0.post0
-pytz==2024.2
-qrcode[pil]==7.4.2
+stripe==11.4.1
+pytest==8.3.4
+pytest-asyncio==0.24.0

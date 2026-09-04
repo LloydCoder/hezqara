@@ -1,78 +1,15 @@
-"""HEZQARA AI — FastAPI application entry point."""
-import logging
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.config import settings
-from app.routers import (
-    agents,
-    analytics,
-    appointments,
-    billing,
-    calls,
-    health,
-    insurance,
-    patients,
-    prior_auth,
-    recalls,
-    referrals,
-    standalone,
-    voice,
-    waitlist,
-    whatsapp,
-)
-
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper(), logging.INFO),
-    format="%(asctime)s %(name)s %(levelname)s %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-
+from app.core.config import settings
+from app.core.logging import configure_logging
+from app.api.v1 import health,patients,scheduling,agents
+from app.api.webhooks import clerk_router,stripe_router,retell_router,whatsapp_router
+configure_logging(settings.log_level)
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("HEZQARA AI starting on port %s", settings.app_port)
-    yield
-    logger.info("HEZQARA AI shutting down")
-
-
-app = FastAPI(
-    title="HEZQARA AI",
-    description="AI healthcare front-office and administrative automation platform",
-    version="1.0.0",
-    lifespan=lifespan,
-    docs_url="/docs" if settings.app_env != "production" else None,
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://hezqara.tinlance.com",
-        "https://hezqara.ai",
-        "http://localhost:3004",
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
-)
-
-for router_module in (
-    health,
-    voice,
-    billing,
-    whatsapp,
-    agents,
-    appointments,
-    patients,
-    calls,
-    insurance,
-    prior_auth,
-    recalls,
-    referrals,
-    analytics,
-    waitlist,
-    standalone,
-):
-    app.include_router(router_module.router)
+async def lifespan(app:FastAPI): yield
+app=FastAPI(title="HEZQARA API",version="2.0.0",lifespan=lifespan,docs_url="/docs" if settings.app_env!="production" else None)
+origins=settings.authorized_parties or (["http://localhost:3004"] if settings.app_env!="production" else [])
+app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=True,allow_methods=["GET","POST","PATCH","DELETE","OPTIONS"],allow_headers=["Authorization","Content-Type","X-Request-ID","X-Hezqara-Signature"])
+app.include_router(health.router); app.include_router(patients.router,prefix="/api/v1"); app.include_router(scheduling.router,prefix="/api/v1"); app.include_router(agents.router,prefix="/api/v1")
+app.include_router(clerk_router); app.include_router(stripe_router); app.include_router(retell_router); app.include_router(whatsapp_router)

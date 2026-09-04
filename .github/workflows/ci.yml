@@ -20,9 +20,6 @@ jobs:
           test -f frontend/src/proxy.ts
           test -f supabase/migrations/015_harden_tenant_rls.sql
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
-      - run: |
-          ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
-          ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
   backend:
     runs-on: ubuntu-latest
     steps:

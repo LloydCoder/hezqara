@@ -1,53 +1,16 @@
-"""Structured audit logging with PHI-safe metadata handling."""
-from datetime import UTC, datetime
-from typing import Any, Optional
+import logging
+from typing import Any
 
-import structlog
+logger = logging.getLogger("hezqara.audit")
+_SENSITIVE = {"authorization", "token", "password", "secret", "api_key", "access_token", "refresh_token"}
 
-logger = structlog.get_logger(__name__)
+def sanitize_metadata(metadata: dict[str, Any] | None) -> dict[str, Any]:
+    clean = {}
+    for key, value in (metadata or {}).items():
+        if any(part in key.lower() for part in _SENSITIVE):
+            continue
+        clean[key] = value if isinstance(value, (str, int, float, bool, type(None))) else str(value)[:500]
+    return clean
 
-_SENSITIVE_KEYS = {
-    "name", "first_name", "last_name", "full_name", "phone", "email",
-    "date_of_birth", "dob", "address", "street", "city", "state", "zip",
-    "transcript", "message", "content", "notes", "diagnosis", "symptoms",
-    "medications", "member_id", "insurance_member_id", "ssn",
-}
-
-
-def _sanitize(value: Any, depth: int = 0) -> Any:
-    """Recursively redact likely PHI/secrets from arbitrary metadata."""
-    if depth > 4:
-        return "[truncated]"
-    if isinstance(value, dict):
-        return {
-            str(k): "[redacted]" if str(k).lower() in _SENSITIVE_KEYS else _sanitize(v, depth + 1)
-            for k, v in value.items()
-        }
-    if isinstance(value, (list, tuple)):
-        return [_sanitize(v, depth + 1) for v in value[:50]]
-    if isinstance(value, str) and len(value) > 500:
-        return value[:500] + "…"
-    return value
-
-
-def write_audit_log(
-    event_type: str,
-    clinic_id: str,
-    call_id: Optional[str] = None,
-    patient_id: Optional[str] = None,
-    agent_type: Optional[str] = None,
-    action: Optional[str] = None,
-    metadata: Optional[dict] = None,
-) -> None:
-    """Emit a PHI-minimized audit event; never log raw request content."""
-    entry = {
-        "timestamp": datetime.now(UTC).isoformat(),
-        "event_type": event_type,
-        "clinic_id": clinic_id,
-        "call_id": call_id,
-        "patient_id": patient_id,
-        "agent_type": agent_type,
-        "action": action,
-        "metadata": _sanitize(metadata or {}),
-    }
-    logger.info("hipaa_audit", **{k: v for k, v in entry.items() if v is not None})
+def record(*, tenant: str, actor: str, action: str, resource: str, resource_id: str | None, outcome: str, request_id: str | None = None, metadata: dict[str, Any] | None = None) -> None:
+    logger.info("audit actor=%s tenant=%s action=%s resource=%s resource_id=%s outcome=%s request_id=%s metadata=%s", actor, tenant, action, resource, resource_id, outcome, request_id, sanitize_metadata(metadata))
