@@ -14,11 +14,20 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>{children}</body>
-      </html>
-    </ClerkProvider>
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const content = (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>{children}</body>
+    </html>
+  );
+
+  // Clerk is required for authenticated production traffic, but keeping the
+  // provider conditional makes static/build validation deterministic when CI
+  // intentionally has no tenant/auth secrets. The protected proxy remains the
+  // runtime authorization boundary.
+  return publishableKey ? (
+    <ClerkProvider publishableKey={publishableKey}>{content}</ClerkProvider>
+  ) : (
+    content
   );
 }
