@@ -37,10 +37,10 @@ jobs:
       - working-directory: backend
         run: pip check
       - working-directory: backend
-        run: ruff check app tests
+        run: ruff check app tests ../tests/security
       - working-directory: backend
-        env: {APP_ENV: test}
-        run: pytest -q tests
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: pytest -q tests ../tests/security
   frontend:
     runs-on: ubuntu-latest
     steps:
