@@ -1,6 +1,6 @@
 """Application configuration.
 
-All secrets are supplied through environment variables. No production secret
+Secrets are supplied through environment variables. No production credential
 has a code-level fallback.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     clerk_secret_key: str = ""
+    clerk_publishable_key: str = ""
+    clerk_jwt_key: str = ""
+    clerk_authorized_parties: str = ""
     clerk_webhook_secret: str = ""
 
     lemonsqueezy_api_key: str = ""
@@ -32,11 +35,9 @@ class Settings(BaseSettings):
 
     resend_api_key: str = ""
     resend_from_email: str = ""
-
     retell_api_key: str = ""
     retell_phone_number: str = ""
     retell_webhook_secret: str = ""
-
     whatsapp_business_api_token: str = ""
     whatsapp_phone_number_id: str = ""
 
@@ -49,7 +50,6 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     groq_api_key: str = ""
-
     r2_account_id: str = ""
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
@@ -85,11 +85,9 @@ class Settings(BaseSettings):
     twinguard_api_key: str = ""
     reconos_url: str = ""
     reconos_api_key: str = ""
-
     availity_client_id: str = ""
     availity_client_secret: str = ""
     change_healthcare_api_key: str = ""
-
     posthog_api_key: str = ""
     sentry_dsn: str = ""
 
@@ -99,6 +97,10 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @property
+    def clerk_authorized_parties_list(self) -> list[str]:
+        return [p.strip() for p in self.clerk_authorized_parties.split(",") if p.strip()]
 
 
 settings = Settings()
