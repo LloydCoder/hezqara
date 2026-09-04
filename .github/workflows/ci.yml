@@ -19,6 +19,7 @@ jobs:
           test -f frontend/src/proxy.ts
           test -f supabase/migrations/015_harden_tenant_rls.sql
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
+          ! grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules
       - run: |
           ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
           ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
@@ -48,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: '22'}
+        with: {node-version: '24'}
       - working-directory: frontend
         run: npm install --no-audit --no-fund
       - working-directory: frontend
