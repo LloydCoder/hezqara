@@ -1,5 +1,3 @@
-// Agent types — all 9 agents + email
-
 export type AgentType =
   | "reception"
   | "scheduling"
@@ -12,7 +10,7 @@ export type AgentType =
   | "recall"
   | "email";
 
-export type AgentStatus = "active" | "idle" | "processing" | "error" | "disabled";
+export type AgentStatus = "active" | "idle" | "processing" | "error" | "disabled" | "busy";
 
 export interface Agent {
   id: AgentType;
@@ -24,6 +22,10 @@ export interface Agent {
   success_rate: number;
   cost_today_usd: number;
   last_action_at: string | null;
+  // Legacy API aliases kept optional while old installations migrate.
+  calls_handled?: number;
+  confidence_score?: number;
+  avg_handle_time?: number;
 }
 
 export interface AgentEvent {
@@ -50,14 +52,30 @@ export const AGENT_LABELS: Record<AgentType, string> = {
 };
 
 export const AGENT_DESCRIPTIONS: Record<AgentType, string> = {
-  reception: "Answers every inbound call, greets patients, detects intent",
-  scheduling: "Books, reschedules, and cancels appointments in EHR",
-  intake: "Collects demographics, insurance, and medical history",
-  insurance: "Verifies eligibility and benefits in real time",
-  prior_auth: "Submits and tracks prior authorization requests",
-  refill: "Processes medication refill requests to pharmacy",
-  records: "Releases medical records with identity verification",
-  referrals: "Creates and tracks specialist referrals",
-  recall: "Sends proactive recall campaigns to fill the schedule",
-  email: "Triages inbox, drafts replies, sends confirmations",
+  reception: "Inbound patient communication and routing",
+  scheduling: "Appointment availability and booking workflows",
+  intake: "Pre-visit information and insurance collection",
+  insurance: "Eligibility and benefits workflow support",
+  prior_auth: "Prior authorization preparation and tracking",
+  refill: "Medication request intake and routing",
+  records: "Medical-record request workflows",
+  referrals: "Specialist referral creation and tracking",
+  recall: "Proactive patient outreach campaigns",
+  email: "Inbox triage and appointment communications",
 };
+
+export function agentStatusColor(status: AgentStatus): string {
+  switch (status) {
+    case "active":
+    case "processing":
+      return "#00E5CC";
+    case "busy":
+      return "#F5A623";
+    case "idle":
+      return "#94A3B8";
+    case "error":
+      return "#FF4D6A";
+    case "disabled":
+      return "#64748B";
+  }
+}
