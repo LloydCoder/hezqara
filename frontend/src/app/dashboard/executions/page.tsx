@@ -1,0 +1,2 @@
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+export default function ExecutionsPage(){return <WorkspacePage title="AI executions" description="Inspect governed agent executions, validation, escalation, outcome, and audit context." capability="Execution records will appear when the backend execution store is exposed to this organization. The interface intentionally does not invent execution traces." href="/dashboard/agents"/>}
