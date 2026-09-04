@@ -1,31 +1,27 @@
-# Carenova AI — Docker Compose (Local Development)
-# Starts backend + all supporting services
-
-version: "3.9"
-
+# HEZQARA AI — local development stack
 services:
-
-  # ── FastAPI Backend ───────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: carenova-backend
+    container_name: hezqara-backend
     ports:
       - "8004:8004"
     env_file:
       - ./backend/.env
     environment:
-      - APP_ENV=development
-      - REDIS_URL=redis://redis:6379/4
-      - GRAPHITI_URL=http://graphiti:8005
-      - FALKORDB_URL=redis://falkordb:6379
+      APP_ENV: development
+      REDIS_URL: redis://redis:6379/4
+      GRAPHITI_URL: http://graphiti:8005
+      FALKORDB_URL: redis://falkordb:6379
     volumes:
-      - ./backend/app:/app/app   # Hot reload in dev
+      - ./backend/app:/app/app
     depends_on:
-      - redis
-      - falkordb
+      redis:
+        condition: service_healthy
+      falkordb:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
@@ -34,45 +30,45 @@ services:
       retries: 3
       start_period: 10s
 
-  # ── Celery Worker ─────────────────────────────────────────────────────────
   celery-worker:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: carenova-celery
-    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=carenova
+    container_name: hezqara-celery
+    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=hezqara
     env_file:
       - ./backend/.env
     environment:
-      - REDIS_URL=redis://redis:6379/4
+      REDIS_URL: redis://redis:6379/4
     depends_on:
-      - redis
-      - backend
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
-  # ── Celery Beat Scheduler ─────────────────────────────────────────────────
   celery-beat:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-    container_name: carenova-beat
+    container_name: hezqara-beat
     command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
     env_file:
       - ./backend/.env
     environment:
-      - REDIS_URL=redis://redis:6379/4
+      REDIS_URL: redis://redis:6379/4
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
-  # ── Redis — Broker + Cache ────────────────────────────────────────────────
   redis:
     image: redis:7.4-alpine
-    container_name: carenova-redis
+    container_name: hezqara-redis
     ports:
-      - "6380:6379"   # 6380 externally — avoids conflict with FusionOps redis
+      - "6380:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -82,40 +78,38 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── FalkorDB — Graph database for Graphiti ────────────────────────────────
   falkordb:
     image: falkordb/falkordb:latest
-    container_name: carenova-falkordb
+    container_name: hezqara-falkordb
     ports:
-      - "6381:6379"   # 6381 externally
+      - "6381:6379"
     volumes:
       - falkordb_data:/data
     restart: unless-stopped
 
-  # ── Graphiti MCP — Persistent agent memory ───────────────────────────────
   graphiti:
     image: zepai/graphiti-mcp:latest
-    container_name: carenova-graphiti
+    container_name: hezqara-graphiti
     ports:
       - "8005:8005"
     environment:
-      - GRAPH_DATABASE_URL=falkordb://falkordb:6379
+      GRAPH_DATABASE_URL: falkordb://falkordb:6379
     depends_on:
       - falkordb
     restart: unless-stopped
 
-  # ── Frontend — Next.js 15 ─────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: carenova-frontend
+    container_name: hezqara-frontend
     ports:
       - "3004:3004"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8004
+      NEXT_PUBLIC_API_URL: http://backend:8004
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
