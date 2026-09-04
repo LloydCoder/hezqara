@@ -1,0 +1,1 @@
+"""Patient intake workforce boundary."""

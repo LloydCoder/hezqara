@@ -1,0 +1,1 @@
+"""Insurance workforce boundary."""

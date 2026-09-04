@@ -1,0 +1,42 @@
+import { SignUp } from "@clerk/nextjs";
+
+export default function SignUpPage() {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500">
+            <span className="text-lg font-bold text-white">H</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">Start your free trial</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Put your healthcare front office on autopilot.
+          </p>
+        </div>
+
+        {publishableKey ? (
+          <SignUp
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                card: "rounded-2xl border border-slate-200 shadow-sm",
+                headerTitle: "hidden",
+                headerSubtitle: "hidden",
+              },
+            }}
+          />
+        ) : (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
+            Authentication is not configured for this deployment. Set
+            <code className="mx-1 rounded bg-amber-100 px-1.5 py-0.5">
+              NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+            </code>
+            before enabling account creation.
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

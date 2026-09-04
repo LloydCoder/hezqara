@@ -1,96 +1,87 @@
 # HEZQARA
 
-**AI Workforce for Healthcare**
+**AI Workforce for Healthcare Operations**
 
-Hezqara automates routine healthcare front-office and administrative workflows across calls, scheduling, intake, insurance, prior authorization, refills, records, referrals, recall, and email—while keeping sensitive actions behind explicit authorization, audit, and human-review controls.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and email workflows.
 
-> **Product status:** engineering hardening in progress. This repository is not yet a production-compliance certification.
+> **Engineering status:** architecture reconstruction and production hardening. Source-code controls do not constitute HIPAA/GDPR certification or legal compliance.
 
-## Core workforce
+## Architecture
 
-| Agent | Responsibility |
-|---|---|
-| **Reception** | Inbound patient communication, intent detection, and routing |
-| **Scheduling** | Availability lookup, appointment workflows, and EHR write-back |
-| **Intake** | Demographics, insurance, and pre-visit information collection |
-| **Insurance** | Eligibility and benefits workflow support |
-| **Prior Authorization** | Authorization workflow preparation, submission, and status tracking |
-| **Refill** | Medication-request intake and routing for authorized workflows |
-| **Records** | Identity verification and medical-record request workflows |
-| **Referrals** | Specialist referral creation and status tracking |
-| **Recall** | Patient outreach campaigns across supported channels |
-| **Email** | Inbox triage, drafting, and appointment communications |
+```text
+frontend/src/app + frontend/src/features
+                 │
+                 ▼
+        Clerk-authenticated API
+                 │
+                 ▼
+      tenant + permission boundary
+                 │
+                 ▼
+        HTTP adapters /api/v1
+                 │
+                 ▼
+          domain services
+          ┌──────┴──────┐
+          ▼             ▼
+     repositories   integration ports
+          │             │
+          ▼             ▼
+       PostgreSQL     provider adapters
+          │
+          └── tenant-scoped transaction context
 
-## Platform capabilities
+AI workforce follows:
+request → tenant/authz → agent policy → prompt/provider → deterministic validation →
+action/approved tool boundary → audit/observability → result or human escalation
+```
 
-- AI front-office automation
-- Scheduling and patient engagement
-- Insurance and revenue-cycle workflow support
-- Prior-authorization and referral operations
-- Voice and WhatsApp communication adapters
-- EHR integration layer with FHIR-oriented interfaces
-- Tenant isolation and role-based access controls
-- Audit logging and security controls
-- Analytics and operational visibility
-- Standalone workflows for environments without an EHR
+## Backend layout
 
-## Architecture direction
+```text
+backend/app/
+├── core/             configuration, errors, lifecycle, logging
+├── security/         Clerk auth, tenant context, permissions, audit, webhooks
+├── api/              HTTP adapters and independently verified webhooks
+├── domains/          patients, scheduling, billing, insurance, engagement,
+│                     analytics, compliance, operations and authorization workflows
+├── workforce/        common agent runtime + specialized healthcare agents
+├── ai/                providers, orchestration, prompts, guardrails, evaluation, memory
+├── integrations/     external-provider adapters
+├── repositories/     shared persistence contracts
+├── infrastructure/   database and transport infrastructure
+└── tasks/             Celery application, queues and thin background jobs
+```
 
-The target architecture is a modular monolith with clear boundaries between:
+## Multi-tenancy
 
-- domain logic
-- workflow orchestration
-- AI/model routing
-- healthcare integrations
-- tenant/security enforcement
-- data access
-- observability and evaluation
+The server derives the tenant from a verified Clerk Organization context. Client-supplied clinic identifiers are not trusted for authorization. Domain repositories additionally scope queries to the organization context. PostgreSQL RLS is maintained as a defense-in-depth boundary for exposed Supabase objects.
 
-AI agents must not bypass workflow authorization or directly perform unrestricted database mutations. External side effects should pass tenant, authorization, safety, and audit controls.
+The intended security path is:
 
-## Technology
+`Clerk user → organization → authenticated request → tenant context → permission → domain service → repository → tenant-scoped database transaction`
 
-| Layer | Technology |
-|---|---|
-| API | FastAPI + Python 3.12 |
-| Web | Next.js + React + TypeScript |
-| Database | PostgreSQL / Supabase |
-| Authentication | Clerk |
-| Voice | Retell AI adapter |
-| Messaging | WhatsApp adapter |
-| AI | Policy-based model routing |
-| Memory | Graphiti / FalkorDB adapter |
-| Tasks | Celery + Redis |
-| Storage | S3-compatible object storage |
-| Deployment | Docker + AWS |
-| CI/CD | GitHub Actions |
+## AI workforce
 
-## Security and healthcare boundary
+All agents share lifecycle and execution contracts covering tenant identity, permissions, idempotency, execution IDs, policy checks, provider abstraction, structured output, confidence, escalation, retries and audit events. Agents do not receive direct database access. External side effects must pass through approved services/tools and deterministic authorization.
 
-Hezqara is designed for healthcare workloads, but software code alone does not establish HIPAA compliance, GDPR compliance, or any other regulatory certification. Production deployment requires documented risk analysis, appropriate contracts/BAAs where applicable, least-privilege configuration, vendor due diligence, incident response, retention/deletion controls, access reviews, and operational safeguards.
+No AI agent is treated as the authority for tenant isolation, authorization, emergency clinical decisions, prescribing, or other high-risk decisions.
 
-The product should remain focused on administrative and workflow automation. High-risk clinical decisions, diagnosis, prescribing, emergency triage, and other regulated clinical functions require explicit product-specific regulatory analysis and appropriate clinician oversight.
+## Data and compliance boundary
 
-## Development
+Patient and operational data is minimized at each boundary. Secrets are environment-only. Audit records are sanitized to avoid credentials, authorization headers and unnecessary sensitive payloads. Healthcare deployments still require organizational controls including risk analysis, vendor/BAA review, retention/deletion procedures, access reviews, incident response, backups and monitoring.
 
-The repository is currently being consolidated from an earlier multi-layout build. Before a production release, the following gates must pass:
+## Local development
 
-1. One canonical application layout.
-2. No generated caches or compiled artifacts committed.
-3. Reproducible dependency installation with lockfiles where appropriate.
-4. Backend imports and startup verified from a clean checkout.
-5. Frontend type-check, lint, and production build verified.
-6. Docker images build from clean contexts.
-7. Database migrations execute in order against a clean database.
-8. Tenant isolation/RLS tests pass.
-9. Security and secret-scanning checks pass.
-10. AI safety, prompt-injection, tool-authorization, and data-egress evaluations pass.
-11. End-to-end critical workflows pass in a production-like environment.
-12. Only then should external customer outreach represent the platform as production-ready.
+Backend: FastAPI on `:8004`  
+Frontend: Next.js on `:3004`  
+Redis: `:6380`
 
-## Repository hygiene
+The Compose stack is for development. Production deployment must provide managed PostgreSQL/Supabase, secrets management, TLS, backups, monitoring and controlled network access.
 
-Generated Python bytecode, pytest caches, Node build output, local environments, logs, and local secrets are excluded by `.gitignore`. Existing historical generated artifacts still need to be removed from Git history/tree as part of the repository consolidation.
+## Validation
+
+CI enforces repository structure, absence of generated artifacts, Python syntax/lint/tests, dependency checks, frontend lint/type-check/build and security-oriented tests. Database policy tests and full environment-backed end-to-end validation must be run against an available Supabase/PostgreSQL environment before a production release.
 
 ## License
 

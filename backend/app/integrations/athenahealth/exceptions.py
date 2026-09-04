@@ -1,0 +1,1 @@
+class AthenaHealthError(Exception): pass

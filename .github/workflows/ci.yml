@@ -1,0 +1,71 @@
+name: HEZQARA CI
+on:
+  push:
+    branches: [main, 'refactor/**']
+  pull_request:
+    branches: [main]
+permissions: {contents: read}
+jobs:
+  structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Canonical architecture gates
+        run: |
+          test -f backend/app/main.py
+          test -f backend/app/security/clerk.py
+          test -f backend/app/domains/patients/service.py
+          test -f backend/app/workforce/base/contracts.py
+          test -f backend/app/ai/orchestration/executor.py
+          test -f frontend/src/proxy.ts
+          test -f supabase/migrations/015_harden_tenant_rls.sql
+          test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
+          ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
+          ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
+          ! grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules
+          ! grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - working-directory: backend
+        run: pip install -r requirements.txt ruff
+      - working-directory: backend
+        run: python -m compileall -q app
+      - working-directory: backend
+        run: pip check
+      - working-directory: backend
+        run: ruff check app tests ../tests/security
+      - working-directory: backend
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: pytest -q tests ../tests/security
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - working-directory: frontend
+        run: npm run lint
+      - working-directory: frontend
+        run: npm run type-check
+      - name: Production build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5jb20k
+        run: npm run build
+  docker:
+    runs-on: ubuntu-latest
+    needs: [structure, backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose syntax
+        run: docker compose config
+      - name: Backend image
+        run: docker build -f backend/Dockerfile --target production backend
+      - name: Frontend image
+        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jbGVyay5jb20k -f frontend/Dockerfile frontend
