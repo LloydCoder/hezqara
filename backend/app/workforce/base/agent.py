@@ -4,4 +4,5 @@ from app.workforce.base.policy import PermissionPolicy
 class BaseAgent:
     name="base";description="";permission="agents:execute"
     def __init__(self,executor:AgentExecutor):self.executor=executor;self.policy=PermissionPolicy(self.permission)
-    async def execute(self,context:AgentContext,request:AgentRequest)->AgentResponse:self.policy.validate(context,request);return await self.executor.execute(self.name,context,request)
+    async def execute(self,context:AgentContext,request:AgentRequest)->AgentResponse:return await self.executor.execute(self.name,context,request,policy=self.policy,tools=self.tools(context))
+    def tools(self,context:AgentContext):return ()
