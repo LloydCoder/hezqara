@@ -40,7 +40,11 @@ services:
     restart: unless-stopped
     healthcheck: {test: ["CMD","redis-cli","ping"], interval: 10s, timeout: 5s, retries: 5}
   frontend:
-    build: {context: ./frontend, dockerfile: Dockerfile}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        HEZQARA_API_INTERNAL_URL: http://backend:8004
     container_name: hezqara-frontend
     ports: ["3004:3004"]
     environment: {HEZQARA_API_INTERNAL_URL: http://backend:8004}
