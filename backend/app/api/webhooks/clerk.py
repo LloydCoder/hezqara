@@ -1,7 +1,11 @@
-from fastapi import APIRouter,Request
+from fastapi import APIRouter,HTTPException,Request
+from svix.webhooks import Webhook
 from app.core.config import settings
-from app.security.webhook import verify_hmac
-router=APIRouter(prefix="/webhooks/clerk",tags=["webhooks"])
-@router.post("")
+router=APIRouter(prefix='/webhooks/clerk',tags=['webhooks'])
+@router.post('')
 async def clerk_webhook(request:Request):
-    body=await request.body(); verify_hmac(body,request.headers.get("x-hezqara-signature", ""),settings.clerk_webhook_secret); return {"received":True}
+    if not settings.clerk_webhook_secret: raise HTTPException(status_code=503,detail='clerk webhook is not configured')
+    body=await request.body()
+    try: Webhook(settings.clerk_webhook_secret).verify(body,dict(request.headers))
+    except Exception: raise HTTPException(status_code=401,detail='invalid clerk webhook')
+    return {'received':True}
