@@ -13,5 +13,6 @@ async def db(tenant:TenantContext=Depends(require_permission("patients:read"))):
 async def list_patients(limit:int=Query(50,ge=1,le=100),offset:int=Query(0,ge=0),tenant:TenantContext=Depends(require_permission("patients:read")),session:AsyncSession=Depends(db)):
     return await PatientService(PatientRepository(session)).list(limit,offset)
 @router.post("",status_code=201)
-async def create_patient(data:PatientCreate,tenant:TenantContext=Depends(require_permission("patients:write")),session:AsyncSession=Depends(db)):
-    return await PatientService(PatientRepository(session)).create(data)
+async def create_patient(data:PatientCreate,tenant:TenantContext=Depends(require_permission("patients:write"))):
+    async for session in tenant_session(tenant.organization_id):
+        return await PatientService(PatientRepository(session)).create(data)
