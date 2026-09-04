@@ -1,88 +1,87 @@
 # HEZQARA
 
-**AI Workforce for Healthcare**
+**AI Workforce for Healthcare Operations**
 
-Hezqara is a healthcare operations automation platform for clinic front offices. It coordinates AI agents for reception, scheduling, intake, insurance workflows, prior authorization, refills, records, referrals, recall, and email while keeping external side effects behind authorization, tenant controls, audit logging, and human-review boundaries.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and email workflows.
 
-> **Engineering status:** canonical architecture consolidation and production hardening. This repository is not a regulatory certification.
+> **Engineering status:** architecture reconstruction and production hardening. Source-code controls do not constitute HIPAA/GDPR certification or legal compliance.
 
-## Canonical repository layout
+## Architecture
 
 ```text
-hezqara/
-├── backend/
-│   ├── app/
-│   │   ├── agents/        # AI workforce implementations
-│   │   ├── integrations/  # EHR, messaging, voice and external systems
-│   │   ├── llm/           # model routing and evaluation
-│   │   ├── models/        # persistence/domain models
-│   │   ├── routers/       # HTTP API boundary
-│   │   ├── security/      # authentication, authorization, audit/compliance
-│   │   ├── services/      # application services and data access
-│   │   ├── tasks/         # Celery workers/schedules
-│   │   ├── utils/         # pure shared utilities
-│   │   └── main.py
-│   ├── tests/
-│   ├── Dockerfile
-│   ├── pyproject.toml
-│   └── requirements*.txt
-├── frontend/
-│   ├── src/app/           # Next.js App Router
-│   ├── src/components/
-│   ├── src/hooks/
-│   ├── src/lib/
-│   ├── src/types/
-│   ├── src/proxy.ts       # Clerk/Next request boundary
-│   ├── Dockerfile
-│   └── package.json
-├── supabase/migrations/   # ordered database migrations
-├── docs/                  # architecture and operating documentation
-├── ops/                   # operational scripts
-├── docker-compose.yml
-└── .github/workflows/
+frontend/src/app + frontend/src/features
+                 │
+                 ▼
+        Clerk-authenticated API
+                 │
+                 ▼
+      tenant + permission boundary
+                 │
+                 ▼
+        HTTP adapters /api/v1
+                 │
+                 ▼
+          domain services
+          ┌──────┴──────┐
+          ▼             ▼
+     repositories   integration ports
+          │             │
+          ▼             ▼
+       PostgreSQL     provider adapters
+          │
+          └── tenant-scoped transaction context
+
+AI workforce follows:
+request → tenant/authz → agent policy → prompt/provider → deterministic validation →
+action/approved tool boundary → audit/observability → result or human escalation
 ```
 
-## Product boundary
+## Backend layout
 
-Hezqara automates administrative and front-office work. Clinical diagnosis, prescribing, emergency triage, and other high-risk clinical decisions are outside the default product boundary and require separate clinical, regulatory, and human-oversight controls.
+```text
+backend/app/
+├── core/             configuration, errors, lifecycle, logging
+├── security/         Clerk auth, tenant context, permissions, audit, webhooks
+├── api/              HTTP adapters and independently verified webhooks
+├── domains/          patients, scheduling, billing, insurance, engagement,
+│                     analytics, compliance, operations and authorization workflows
+├── workforce/        common agent runtime + specialized healthcare agents
+├── ai/                providers, orchestration, prompts, guardrails, evaluation, memory
+├── integrations/     external-provider adapters
+├── repositories/     shared persistence contracts
+├── infrastructure/   database and transport infrastructure
+└── tasks/             Celery application, queues and thin background jobs
+```
 
-## Core workforce
+## Multi-tenancy
 
-| Agent | Responsibility |
-|---|---|
-| Reception | Inbound patient communication, intent detection, routing |
-| Scheduling | Availability, booking, rescheduling and EHR write-back |
-| Intake | Demographics, insurance and pre-visit collection |
-| Insurance | Eligibility and benefits workflow support |
-| Prior Authorization | Preparation, submission and status tracking |
-| Refill | Medication-request intake and authorized routing |
-| Records | Identity verification and record-release workflows |
-| Referrals | Specialist referral creation and tracking |
-| Recall | Proactive patient outreach campaigns |
-| Email | Inbox triage, drafting and appointment communications |
+The server derives the tenant from a verified Clerk Organization context. Client-supplied clinic identifiers are not trusted for authorization. Domain repositories additionally scope queries to the organization context. PostgreSQL RLS is maintained as a defense-in-depth boundary for exposed Supabase objects.
 
-## Technology
+The intended security path is:
 
-- **API:** FastAPI / Python 3.12
-- **Web:** Next.js / React / TypeScript
-- **Data:** PostgreSQL / Supabase
-- **Auth:** Clerk
-- **Voice:** Retell adapter
-- **Messaging:** WhatsApp adapter
-- **Tasks:** Celery / Redis
-- **Memory:** Graphiti / FalkorDB adapter
-- **Deployment:** Docker / AWS
-- **CI:** GitHub Actions
+`Clerk user → organization → authenticated request → tenant context → permission → domain service → repository → tenant-scoped database transaction`
 
-## Security boundary
+## AI workforce
 
-Authentication and tenant context are enforced through Clerk at the API boundary; client API requests obtain and forward the active Clerk session token. Sensitive audit metadata is sanitized before structured logging. Secrets are environment-driven and production credentials have no code-level fallback.
+All agents share lifecycle and execution contracts covering tenant identity, permissions, idempotency, execution IDs, policy checks, provider abstraction, structured output, confidence, escalation, retries and audit events. Agents do not receive direct database access. External side effects must pass through approved services/tools and deterministic authorization.
 
-Healthcare workloads still require operational controls beyond source code: risk analysis, least privilege, vendor/BAA review, retention and deletion policy, access reviews, incident response, backups, monitoring, and appropriate regulatory/legal assessment.
+No AI agent is treated as the authority for tenant isolation, authorization, emergency clinical decisions, prescribing, or other high-risk decisions.
 
-## Engineering gates
+## Data and compliance boundary
 
-A release is not considered production-ready until clean-checkout backend startup, tests, database migrations, frontend type-check/build, Docker builds, tenant-isolation tests, secret scanning, AI safety/tool-authorization evaluations, and critical end-to-end workflows all pass.
+Patient and operational data is minimized at each boundary. Secrets are environment-only. Audit records are sanitized to avoid credentials, authorization headers and unnecessary sensitive payloads. Healthcare deployments still require organizational controls including risk analysis, vendor/BAA review, retention/deletion procedures, access reviews, incident response, backups and monitoring.
+
+## Local development
+
+Backend: FastAPI on `:8004`  
+Frontend: Next.js on `:3004`  
+Redis: `:6380`
+
+The Compose stack is for development. Production deployment must provide managed PostgreSQL/Supabase, secrets management, TLS, backups, monitoring and controlled network access.
+
+## Validation
+
+CI enforces repository structure, absence of generated artifacts, Python syntax/lint/tests, dependency checks, frontend lint/type-check/build and security-oriented tests. Database policy tests and full environment-backed end-to-end validation must be run against an available Supabase/PostgreSQL environment before a production release.
 
 ## License
 
