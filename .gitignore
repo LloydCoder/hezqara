@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Build / runtime
+*.log
+*.pid
+*.sqlite
+*.sqlite3
+
+# Local/generated data
+CACHEDIR.TAG
+nodeids
+lastfailed
+
+# Secrets / certificates
+*.pem
+*.key
+*.p12
+*.pfx
