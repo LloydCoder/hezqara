@@ -2,20 +2,22 @@ import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-500 rounded-xl mb-4">
-            <span className="text-white font-bold text-lg">C</span>
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500">
+            <span className="text-lg font-bold text-white">H</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Carenova AI</h1>
-          <p className="text-slate-500 text-sm mt-1">Sign in to your clinic dashboard</p>
+          <h1 className="text-2xl font-bold text-slate-900">Hezqara</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Sign in to your healthcare operations workspace
+          </p>
         </div>
         <SignIn
           appearance={{
             elements: {
               rootBox: "w-full",
-              card: "shadow-sm border border-slate-200 rounded-2xl",
+              card: "rounded-2xl border border-slate-200 shadow-sm",
               headerTitle: "hidden",
               headerSubtitle: "hidden",
             },
