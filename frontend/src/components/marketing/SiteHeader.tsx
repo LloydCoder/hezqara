@@ -1,42 +1,8 @@
+import type { Route } from "next";
 import Link from "next/link";
 
-const nav = [
-  ["Product", "/product"],
-  ["AI workforce", "/workforce"],
-  ["Solutions", "/solutions"],
-  ["How it works", "/how-it-works"],
-  ["Security", "/security"],
-] as const;
+const nav = [["Product", "/product"], ["AI workforce", "/workforce"], ["Solutions", "/solutions"], ["How it works", "/how-it-works"], ["Security", "/security"]] as const;
 
-export function SiteHeader() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-2" aria-label="HEZQARA home">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-sm font-black text-white">H</span>
-          <span className="text-base font-black tracking-tight text-slate-950">HEZQARA</span>
-        </Link>
-        <nav className="hidden items-center gap-6 lg:flex" aria-label="Primary navigation">
-          {nav.map(([label, href]) => <Link key={href} href={href} className="text-sm font-medium text-slate-600 transition hover:text-slate-950">{label}</Link>)}
-        </nav>
-        <div className="flex items-center gap-2">
-          <Link href="/sign-in" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex">Sign in</Link>
-          <Link href="/sign-up" className="inline-flex rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">See HEZQARA</Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+export function SiteHeader() {return <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur"><div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8"><Link href={"/" as Route} className="flex items-center gap-2" aria-label="HEZQARA home"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-sm font-black text-white">H</span><span className="text-base font-black tracking-tight text-slate-950">HEZQARA</span></Link><nav className="hidden items-center gap-6 lg:flex" aria-label="Primary navigation">{nav.map(([label, href])=><Link key={href} href={href as Route} className="text-sm font-medium text-slate-600 transition hover:text-slate-950">{label}</Link>)}</nav><div className="flex items-center gap-2"><Link href={"/sign-in" as Route} className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex">Sign in</Link><Link href={"/sign-up" as Route} className="inline-flex rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">See HEZQARA</Link></div></div></header>}
 
-export function SiteFooter() {
-  return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 md:grid-cols-4">
-        <div className="md:col-span-2"><div className="text-base font-black text-slate-950">HEZQARA</div><p className="mt-3 max-w-md text-sm leading-6 text-slate-500">AI workforce infrastructure for healthcare operations. Built around governed automation, human escalation, and accountable execution.</p></div>
-        <div><h2 className="text-sm font-semibold text-slate-950">Explore</h2><div className="mt-3 space-y-2 text-sm text-slate-500"><Link className="block hover:text-slate-900" href="/product">Product</Link><Link className="block hover:text-slate-900" href="/workforce">AI workforce</Link><Link className="block hover:text-slate-900" href="/solutions">Solutions</Link><Link className="block hover:text-slate-900" href="/pricing">Pricing</Link></div></div>
-        <div><h2 className="text-sm font-semibold text-slate-950">Trust</h2><div className="mt-3 space-y-2 text-sm text-slate-500"><Link className="block hover:text-slate-900" href="/security">Security</Link><Link className="block hover:text-slate-900" href="/compliance">Compliance</Link><Link className="block hover:text-slate-900" href="/enterprise">Enterprise</Link><Link className="block hover:text-slate-900" href="/contact">Contact</Link></div></div>
-      </div>
-      <div className="border-t border-slate-100 px-5 py-5 text-center text-xs text-slate-400">© {new Date().getFullYear()} HEZQARA. Administrative workflow automation for healthcare.</div>
-    </footer>
-  );
-}
+export function SiteFooter() {return <footer className="border-t border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 md:grid-cols-4"><div className="md:col-span-2"><div className="text-base font-black text-slate-950">HEZQARA</div><p className="mt-3 max-w-md text-sm leading-6 text-slate-500">AI workforce infrastructure for healthcare operations. Built around governed automation, human escalation, and accountable execution.</p></div><div><h2 className="text-sm font-semibold text-slate-950">Explore</h2><div className="mt-3 space-y-2 text-sm text-slate-500"><Link className="block hover:text-slate-900" href={"/product" as Route}>Product</Link><Link className="block hover:text-slate-900" href={"/workforce" as Route}>AI workforce</Link><Link className="block hover:text-slate-900" href={"/solutions" as Route}>Solutions</Link><Link className="block hover:text-slate-900" href={"/pricing" as Route}>Pricing</Link></div></div><div><h2 className="text-sm font-semibold text-slate-950">Trust</h2><div className="mt-3 space-y-2 text-sm text-slate-500"><Link className="block hover:text-slate-900" href={"/security" as Route}>Security</Link><Link className="block hover:text-slate-900" href={"/compliance" as Route}>Compliance</Link><Link className="block hover:text-slate-900" href={"/enterprise" as Route}>Enterprise</Link><Link className="block hover:text-slate-900" href={"/contact" as Route}>Contact</Link></div></div></div><div className="border-t border-slate-100 px-5 py-5 text-center text-xs text-slate-400">© {new Date().getFullYear()} HEZQARA. Administrative workflow automation for healthcare.</div></footer>}
