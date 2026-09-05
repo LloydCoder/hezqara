@@ -2,18 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --hz-bg: 248 250 252;
+  --hz-surface: 255 255 255;
+  --hz-surface-muted: 241 245 249;
+  --hz-foreground: 15 23 42;
+  --hz-foreground-muted: 71 85 105;
+  --hz-foreground-subtle: 100 116 139;
+  --hz-border: 226 232 240;
+  --hz-border-strong: 203 213 225;
+  --hz-primary: 15 23 42;
+  --hz-primary-foreground: 255 255 255;
+  --hz-success: 5 150 105;
+  --hz-warning: 180 83 9;
+  --hz-danger: 190 24 93;
+  --hz-info: 3 105 161;
+  --hz-focus: 30 64 175;
+}
+
 @layer base {
   * { box-sizing: border-box; }
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
-  body { @apply bg-white text-slate-900; }
-  ::selection { @apply bg-slate-900 text-white; }
-  :focus-visible { @apply outline-none ring-2 ring-slate-500 ring-offset-2; }
+  body { margin: 0; background: rgb(var(--hz-bg)); color: rgb(var(--hz-foreground)); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  ::selection { background: rgb(var(--hz-primary)); color: rgb(var(--hz-primary-foreground)); }
+  :focus-visible { outline: 2px solid rgb(var(--hz-focus)); outline-offset: 2px; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 @layer components {
-  .btn-primary { @apply inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2; }
-  .btn-secondary { @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2; }
-  .card { @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]; }
+  .hz-page { min-height: 100vh; background: rgb(var(--hz-bg)); }
+  .hz-card { border: 1px solid rgb(var(--hz-border)); background: rgb(var(--hz-surface)); border-radius: 0.75rem; }
+  .hz-label { font-size: 0.75rem; line-height: 1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(var(--hz-foreground-subtle)); }
+  .hz-muted { color: rgb(var(--hz-foreground-muted)); }
+  .hz-prose { max-width: 68ch; font-size: 0.9375rem; line-height: 1.65; color: rgb(var(--hz-foreground-muted)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

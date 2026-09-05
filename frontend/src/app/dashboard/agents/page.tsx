@@ -1,17 +1,17 @@
 "use client";
 import { useState } from "react";
 import { useAgents } from "@/hooks/useAgents";
-import { AGENT_DESCRIPTIONS, AGENT_LABELS, type AgentType, type AgentStatus, agentStatusColor } from "@/types/agent";
+import { AGENT_DESCRIPTIONS, AGENT_LABELS, type AgentReadiness, type AgentType } from "@/types/agent";
+import { AgentIdentity, AgentStatus } from "@/components/ui/ai";
+import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui/primitives";
+import { ContentContainer, PageHeader, PageSection } from "@/components/ui/layout";
 
-function normalizeStatus(value: string): AgentStatus {
-  const allowed: AgentStatus[] = ["active", "idle", "processing", "error", "disabled", "busy"];
-  return allowed.includes(value as AgentStatus) ? (value as AgentStatus) : "idle";
-}
+function readinessFromApi(value: string): AgentReadiness { if (value === "ready" || value === "available") return "ready"; if (value === "disabled") return "disabled"; if (value === "not_configured") return "not_configured"; return "unavailable"; }
 
-export default function AgentsPage(){
- const {agents,loading,error}=useAgents(); const [selected,setSelected]=useState<AgentType|string|null>(null);
- return <main className="min-h-screen bg-slate-950 p-6 text-white"><header className="mb-6"><h1 className="text-2xl font-bold">AI Workforce</h1><p className="mt-1 text-sm text-slate-400">Organization-scoped AI workforce inventory.</p></header>
- {error&&<div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
- <div className="grid gap-4 lg:grid-cols-[1fr_360px]"><section className="grid gap-3 sm:grid-cols-2">{loading?Array.from({length:10},(_,i)=><div key={i} className="h-32 animate-pulse rounded-2xl border border-white/5 bg-white/5"/>):agents.map(agent=>{const status=normalizeStatus(agent.status);const color=agentStatusColor(status);const id=agent.id as AgentType;return <article key={agent.id} className={`rounded-2xl border p-4 ${selected===agent.id?"border-white/20 bg-white/10":"border-white/5 bg-white/[0.03]"}`}><button className="w-full text-left" onClick={()=>setSelected(agent.id)}><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{background:color}}/><div><h2 className="font-semibold">{AGENT_LABELS[id] ?? agent.name}</h2><p className="text-xs capitalize text-slate-400">{status}</p></div></div></button><p className="mt-4 text-xs leading-5 text-slate-400">{AGENT_DESCRIPTIONS[id] ?? "Organization-scoped healthcare operations agent."}</p></article>})}</section>
- <aside className="rounded-2xl border border-white/5 bg-white/[0.03] p-5 lg:sticky lg:top-6 lg:self-start">{selected?<><h2 className="text-lg font-semibold">{AGENT_LABELS[selected as AgentType] ?? selected}</h2><p className="mt-2 text-sm leading-6 text-slate-400">{AGENT_DESCRIPTIONS[selected as AgentType] ?? "Agent execution is authorized and audited by the backend."}</p></>:<div className="py-12 text-center text-sm text-slate-500">Select an agent to inspect its operational role.</div>}</aside></div></main>;
+export default function AgentsPage() {
+  const { agents, loading, error, reload } = useAgents();
+  const [selected, setSelected] = useState<string | null>(null);
+  const selectedAgent = agents.find(agent => agent.id === selected);
+  return <main className="hz-page"><ContentContainer><PageSection><PageHeader eyebrow="Workforce" title="AI Workforce" description="Organization-scoped workforce inventory. Availability is intentionally separated from runtime execution." /><div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">{error ? <ErrorState description={error} onRetry={reload} /> : loading ? <div className="grid gap-3 sm:grid-cols-2">{Array.from({length: 10}, (_, i) => <Skeleton key={i} className="h-32" />)}</div> : agents.length === 0 ? <EmptyState title="No workforce data available" description="No organization-scoped agent records were returned." /> : <section aria-label="AI workforce agents" className="grid gap-3 sm:grid-cols-2">{agents.map(agent => { const id = agent.id as AgentType; const readiness = readinessFromApi(agent.status); return <button key={agent.id} type="button" onClick={() => setSelected(agent.id)} aria-pressed={selected === agent.id} className={`rounded-xl border p-5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700 ${selected === agent.id ? "border-slate-700 bg-slate-50" : "border-slate-200 bg-white hover:border-slate-300"}`}><div className="flex items-start justify-between gap-3"><AgentIdentity name={AGENT_LABELS[id] ?? agent.name} purpose={agent.description ?? AGENT_DESCRIPTIONS[id]} /><AgentStatus state={readiness} /></div></button>; })}</section>}
+          <aside className="rounded-xl border border-slate-200 bg-white p-5 lg:sticky lg:top-6 lg:self-start" aria-label="Agent details">{selectedAgent ? <><AgentIdentity name={AGENT_LABELS[selectedAgent.id as AgentType] ?? selectedAgent.name} purpose={selectedAgent.description ?? AGENT_DESCRIPTIONS[selectedAgent.id as AgentType]} /><div className="mt-5"><AgentStatus state={readinessFromApi(selectedAgent.status)} /></div><p className="mt-5 text-sm leading-6 text-slate-600">This inventory record does not establish that an agent is currently running. Execution state will be shown only from an execution record.</p></> : <p className="py-10 text-center text-sm leading-6 text-slate-500">Select an agent to inspect its role and readiness.</p>}</aside></div></PageSection></ContentContainer></main>;
 }
