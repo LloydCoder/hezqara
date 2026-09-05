@@ -43,3 +43,25 @@ jobs:
           ! grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules
           ! grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src
           ! grep -RniE 'sk_(live|test)_[A-Za-z0-9]+|whsec_[A-Za-z0-9]+|Bearer[[:space:]]+[A-Za-z0-9._-]{20,}' backend frontend --exclude-dir=node_modules
+  api-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - working-directory: backend
+        run: pip install -r requirements.txt ruff
+      - working-directory: backend
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py
+  ai-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - working-directory: backend
+        run: pip install -r requirements.txt
+      - working-directory: backend
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: pytest -q tests/test_phase6_security.py tests/test_ai_workforce.py tests/test_tool_registry.py
