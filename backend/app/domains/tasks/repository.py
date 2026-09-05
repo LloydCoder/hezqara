@@ -32,8 +32,8 @@ class TaskRepository:
         result = await self.session.execute(
             text(
                 """insert into tasks (clinic_id,title,description,priority,owner_id,patient_id,agent_type,source,due_at)
-          select c.id,:title,:description,:priority,:owner_id,:patient_id,cast(:agent_type as text),case when cast(:agent_type as text) is null then 'human' else 'agent' end,:due_at from clinics c
-          where c.clerk_org_id=current_setting('app.clerk_org_id',true) and (:patient_id is null or exists(select 1 from patients p where p.id=:patient_id and p.clinic_id=c.id))
+          select c.id,:title,:description,:priority,:owner_id,cast(:patient_id as text),cast(:agent_type as text),case when cast(:agent_type as text) is null then 'human' else 'agent' end,:due_at from clinics c
+          where c.clerk_org_id=current_setting('app.clerk_org_id',true) and (cast(:patient_id as text) is null or exists(select 1 from patients p where p.id=cast(:patient_id as text) and p.clinic_id=c.id))
           returning id,title,description,status,priority,owner_id,source,patient_id,agent_type,due_at,escalation_reason,created_at,updated_at"""
             ),
             values,
