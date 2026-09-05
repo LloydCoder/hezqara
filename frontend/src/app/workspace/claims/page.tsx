@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Claims" description="Explicit claim lifecycle and payer-response boundaries. Submission is never represented as successful without a provider result." states={['draft','ready','submitted','accepted','rejected','pending','paid','partially_paid','denied','appealed','closed']} metrics={['Ready to submit','Payer pending','Denied','Paid']}/>}

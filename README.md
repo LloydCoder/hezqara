@@ -2,60 +2,48 @@
 
 **AI Workforce for Healthcare Operations**
 
-HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and email workflows.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and revenue-cycle workflows.
 
-> **Engineering status:** architecture reconstruction and production hardening. Source-code controls do not constitute HIPAA/GDPR certification or legal compliance.
+> **Engineering status:** Phase 6 healthcare domain engine implemented on the Phase 5 foundation. Source-code controls do not constitute HIPAA/GDPR certification or legal compliance.
 
 ## Architecture
 
 ```text
-frontend/src/app + frontend/src/features
-                 │
-                 ▼
-        Clerk-authenticated API
-                 │
-                 ▼
-      tenant + permission boundary
-                 │
-                 ▼
-        HTTP adapters /api/v1
-                 │
-                 ▼
-          domain services
-          ┌──────┴──────┐
-          ▼             ▼
-     repositories   integration ports
-          │             │
-          ▼             ▼
-       PostgreSQL     provider adapters
-          │
-          └── tenant-scoped transaction context
+frontend
+   │
+   ▼
+Clerk-authenticated API
+   │
+   ▼
+tenant + permission boundary
+   │
+   ▼
+HTTP adapters /api/v1
+   │
+   ▼
+domain services
+   ├── patients / scheduling / engagement
+   ├── insurance / eligibility / authorization
+   ├── billing / claims / A/R / denials
+   └── referrals / records / operations / analytics
+   │
+   ├── repositories → PostgreSQL/RLS
+   └── integration ports → provider adapters
 
-AI workforce follows:
-request → tenant/authz → agent policy → prompt/provider → deterministic validation →
-action/approved tool boundary → audit/observability → result or human escalation
+AI workforce:
+request → tenant/authz → policy → provider → deterministic validation →
+approved tool/action → audit/observability → result or human escalation
 ```
 
-## Backend layout
+## Phase 6 domain engine
 
-```text
-backend/app/
-├── core/             configuration, errors, lifecycle, logging
-├── security/         Clerk auth, tenant context, permissions, audit, webhooks
-├── api/              HTTP adapters and independently verified webhooks
-├── domains/          patients, scheduling, billing, insurance, engagement,
-│                     analytics, compliance, operations and authorization workflows
-├── workforce/        common agent runtime + specialized healthcare agents
-├── ai/                providers, orchestration, prompts, guardrails, evaluation, memory
-├── integrations/     external-provider adapters
-├── repositories/     shared persistence contracts
-├── infrastructure/   database and transport infrastructure
-└── tasks/             Celery application, queues and thin background jobs
-```
+Phase 6 adds durable administrative primitives for coverage and eligibility, billing accounts/charges/payments, claims and adjudication foundations, A/R work queues, denial management, prior authorization, referrals and record metadata. State transitions are explicit and validated server-side.
+
+The interoperability boundary is `backend/app/integrations/fhir/adapter.py`. It validates FHIR-shaped resources without claiming certification or implementation-guide conformance. External payer/eligibility/clearinghouse/EHR/payment connectivity remains provider/configuration dependent.
 
 ## Multi-tenancy
 
-The server derives the tenant from a verified Clerk Organization context. Client-supplied clinic identifiers are not trusted for authorization. Domain repositories additionally scope queries to the organization context. PostgreSQL RLS is maintained as a defense-in-depth boundary for exposed Supabase objects.
+The server derives the tenant from a verified Clerk Organization context. Client-supplied clinic identifiers are not trusted for authorization. Domain repositories and SQL writes scope records to the organization context. PostgreSQL RLS with FORCE RLS is defense-in-depth for tenant-owned Phase 6 objects.
 
 The intended security path is:
 
@@ -63,13 +51,13 @@ The intended security path is:
 
 ## AI workforce
 
-All agents share lifecycle and execution contracts covering tenant identity, permissions, idempotency, execution IDs, policy checks, provider abstraction, structured output, confidence, escalation, retries and audit events. Agents do not receive direct database access. External side effects must pass through approved services/tools and deterministic authorization.
+All agents share lifecycle and execution contracts covering tenant identity, permissions, idempotency, execution IDs, policy checks, provider abstraction, structured output, confidence, escalation, retries and audit events. Phase 6 registers Revenue Cycle, Insurance Administrative and Referral/Records specializations using the existing governed runtime.
 
-No AI agent is treated as the authority for tenant isolation, authorization, emergency clinical decisions, prescribing, or other high-risk decisions.
+AI is not the authority for tenant isolation, authorization, clinical decisions or external side effects. Administrative recommendations remain subject to policy and human review where consequential.
 
 ## Data and compliance boundary
 
-Patient and operational data is minimized at each boundary. Secrets are environment-only. Audit records are sanitized to avoid credentials, authorization headers and unnecessary sensitive payloads. Healthcare deployments still require organizational controls including risk analysis, vendor/BAA review, retention/deletion procedures, access reviews, incident response, backups and monitoring.
+Patient and operational data is minimized at each boundary. Secrets are environment-only. Audit records avoid credentials, authorization headers and unnecessary sensitive payloads. Healthcare deployments still require organizational controls including risk analysis, vendor/BAA review, retention/deletion procedures, access reviews, incident response, backups and monitoring.
 
 ## Local development
 
@@ -77,11 +65,13 @@ Backend: FastAPI on `:8004`
 Frontend: Next.js on `:3004`  
 Redis: `:6380`
 
-The Compose stack is for development. Production deployment must provide managed PostgreSQL/Supabase, secrets management, TLS, backups, monitoring and controlled network access.
-
 ## Validation
 
-CI enforces repository structure, absence of generated artifacts, Python syntax/lint/tests, dependency checks, frontend lint/type-check/build and security-oriented tests. Database policy tests and full environment-backed end-to-end validation must be run against an available Supabase/PostgreSQL environment before a production release.
+CI enforces repository structure, source hygiene, Python syntax/lint/tests, database/RLS tests, frontend lint/type-check/build, browser E2E, Docker validation and security-oriented checks. Production provider connectivity must be configured and independently validated before a live healthcare deployment.
+
+## Documentation
+
+See `docs/architecture/phase-6-healthcare-domain-engine.md` for the Phase 6 domain, interoperability, AI and security boundaries.
 
 ## License
 

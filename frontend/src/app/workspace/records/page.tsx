@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Records" description="Administrative document metadata and workflow readiness without unrestricted document access or fabricated storage state." states={['expected','received','indexed','missing','restricted','archived']} metrics={['Missing documents','Received','Indexed','Restricted']}/>}

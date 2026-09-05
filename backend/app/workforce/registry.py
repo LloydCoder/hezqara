@@ -13,6 +13,9 @@ from app.workforce.records.agent import RecordsAgent
 from app.workforce.referrals.agent import ReferralsAgent
 from app.workforce.recall.agent import RecallAgent
 from app.workforce.email.agent import EmailAgent
+from app.workforce.revenue_cycle.runtime import RevenueCycleAgent
+from app.workforce.insurance_admin.agent import InsuranceAdministrativeAgent
+from app.workforce.referral_records.agent import ReferralRecordsAgent
 
 class AgentRegistry:
     def __init__(self,agents:list[BaseAgent],provider): self._agents={a.name:a for a in agents}; self._provider=provider
@@ -21,13 +24,12 @@ class AgentRegistry:
         return self._agents[name]
     def names(self)->list[str]: return sorted(self._agents)
     def descriptors(self)->list[dict[str,str]]:
-        provider_configured=self._provider is not None
-        status='configured' if provider_configured else 'configuration_required'
-        return [{"id":a.name,"name":a.name.replace('_',' ').title(),"status":status,"description":a.description} for a in sorted(self._agents.values(),key=lambda x:x.name)]
+        status='configured' if self._provider is not None else 'configuration_required'
+        return [{'id':a.name,'name':a.name.replace('_',' ').title(),'status':status,'description':a.description} for a in sorted(self._agents.values(),key=lambda x:x.name)]
 
 def build_registry()->AgentRegistry:
     provider=build_provider(); idempotency=IdempotencyStore(settings.redis_url) if settings.redis_url else None
     executor=AgentExecutor(provider,idempotency=idempotency)
-    return AgentRegistry([ReceptionAgent(executor),SchedulingAgent(executor),IntakeAgent(executor),InsuranceAgent(executor),PriorAuthorizationAgent(executor),RefillAgent(executor),RecordsAgent(executor),ReferralsAgent(executor),RecallAgent(executor),EmailAgent(executor)],provider)
-
+    agents=[ReceptionAgent(executor),SchedulingAgent(executor),IntakeAgent(executor),InsuranceAgent(executor),PriorAuthorizationAgent(executor),RefillAgent(executor),RecordsAgent(executor),ReferralsAgent(executor),RecallAgent(executor),EmailAgent(executor),RevenueCycleAgent(executor),InsuranceAdministrativeAgent(executor),ReferralRecordsAgent(executor)]
+    return AgentRegistry(agents,provider)
 registry=build_registry()
