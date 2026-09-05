@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.infrastructure.database import close_database
-from app.api.v1 import health,patients,scheduling,agents,analytics,calls,insurance,tasks,executions,operations
+from app.api.v1 import health,patients,scheduling,agents,analytics,calls,insurance,tasks,executions,operations,audit
 from app.api.webhooks import clerk_router,stripe_router,retell_router,whatsapp_router
 configure_logging(settings.log_level)
 @asynccontextmanager
@@ -20,5 +20,5 @@ async def request_id_middleware(request:Request,call_next):
     request_id=request.headers.get('X-Request-ID') or str(uuid.uuid4()); request.state.request_id=request_id
     response=await call_next(request); response.headers['X-Request-ID']=request_id; return response
 app.include_router(health.router)
-for router in (patients.router,scheduling.router,agents.router,analytics.router,calls.router,insurance.router,tasks.router,executions.router,operations.router): app.include_router(router,prefix='/api/v1')
+for router in (patients.router,scheduling.router,agents.router,analytics.router,calls.router,insurance.router,tasks.router,executions.router,operations.router,audit.router): app.include_router(router,prefix='/api/v1')
 app.include_router(clerk_router); app.include_router(stripe_router); app.include_router(retell_router); app.include_router(whatsapp_router)
