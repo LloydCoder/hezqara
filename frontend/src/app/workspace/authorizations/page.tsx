@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Prior Authorization" description="Governed authorization preparation, review and submission boundaries with human accountability for consequential actions." states={['draft','ready_for_review','approved_for_submission','submitted','pending','additional_information_required','approved','denied','expired','cancelled']} metrics={['Awaiting review','Pending payer','Additional information','Approved']}/>}
