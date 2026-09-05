@@ -3,13 +3,13 @@ from clerk_backend_api import AuthenticateRequestOptions,authenticate_request
 from fastapi import Depends,HTTPException,Request
 from app.core.config import settings
 from app.security.tenant import TenantContext
-_BASE={'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','analytics:read','audit:read','compliance:read','compliance:manage','workflow:read','workflow:create','workflow:activate','workflow:execute','workflow:cancel','workflow:approve','approvals:read','approvals:approve','communications:read','communications:write','communications:send','billing:read','billing:write','insurance:read','insurance:write','eligibility:read','eligibility:write','authorization:read','authorization:write','claims:read','claims:write','claims:submit','referrals:read','referrals:write','records:read'}
+_BASE={'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','analytics:read','audit:read','compliance:read','compliance:manage','workflow:read','workflow:create','workflow:activate','workflow:execute','workflow:cancel','workflow:approve','approvals:read','approvals:approve','communications:read','communications:write','communications:send','billing:read','billing:write','insurance:read','insurance:write','eligibility:read','eligibility:write','authorization:read','authorization:write','claims:read','claims:write','claims:submit','referrals:read','referrals:write','records:read','integrations:read','integrations:manage','integrations:test'}
 ROLE_PERMISSIONS={
  'org:owner':frozenset(_BASE),
  'org:admin':frozenset(_BASE),
- 'org:manager':frozenset(_BASE-{'compliance:manage','workflow:approve','approvals:approve','claims:submit'}),
- 'org:staff':frozenset(_BASE-{'compliance:manage','workflow:create','workflow:activate','workflow:cancel','workflow:approve','approvals:approve','claims:submit'}),
- 'org:viewer':frozenset({'patients:read','appointments:read','tasks:read','agents:read','executions:read','analytics:read','workflow:read','approvals:read','communications:read','billing:read','insurance:read','eligibility:read','authorization:read','claims:read','referrals:read','records:read'}),
+ 'org:manager':frozenset(_BASE-{'compliance:manage','workflow:approve','approvals:approve','claims:submit','integrations:manage'}),
+ 'org:staff':frozenset(_BASE-{'compliance:manage','workflow:create','workflow:activate','workflow:cancel','workflow:approve','approvals:approve','claims:submit','integrations:manage','integrations:test'}),
+ 'org:viewer':frozenset({'patients:read','appointments:read','tasks:read','agents:read','executions:read','analytics:read','workflow:read','approvals:read','communications:read','billing:read','insurance:read','eligibility:read','authorization:read','claims:read','referrals:read','records:read','integrations:read'}),
 }
 def _payload(state:Any)->dict[str,Any]: return state.get('payload',{}) if isinstance(state,dict) else (state.payload or {})
 def verify_request(request:Request)->Any:
