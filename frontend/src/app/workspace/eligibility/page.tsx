@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Eligibility" description="Eligibility requests are normalized through provider ports and remain explicitly unavailable when no production provider is configured." states={['queued','submitted','eligible','ineligible','additional_information_required','unavailable','provider_error','failed']} metrics={['Pending checks','Eligible','Additional information','Provider errors']}/>}
