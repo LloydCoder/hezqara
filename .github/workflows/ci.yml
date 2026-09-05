@@ -71,6 +71,34 @@ jobs:
       - name: Prove cross-tenant isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase3_rls.sql
+      - name: Install backend for API vertical slice
+        run: pip install -r backend/requirements.txt
+      - name: Seed synthetic API tenant
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "INSERT INTO clinics(id,name,clerk_org_id) VALUES ('test-clinic','CI Synthetic Clinic','test_org') ON CONFLICT (id) DO NOTHING;"
+      - name: Run backend API vertical slice
+        env:
+          APP_ENV: test
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci
+          PYTHONPATH: backend
+          REDIS_URL: ''
+          CLERK_SECRET_KEY: ''
+          CLERK_PUBLISHABLE_KEY: ''
+          CLERK_AUTHORIZED_PARTIES: ''
+        run: |
+          nohup uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8004 >/tmp/hezqara-api.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8004/health && break; sleep 1; done
+          patient=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"first_name":"Synthetic","last_name":"Patient","email":"synthetic@example.invalid"}' http://127.0.0.1:8004/api/v1/patients)
+          patient_id=$(echo "$patient" | jq -r .id)
+          test -n "$patient_id" && test "$patient_id" != null
+          curl -fsS -H 'x-test-auth: 1' "http://127.0.0.1:8004/api/v1/patients/$patient_id" | jq -e --arg id "$patient_id" '.id==$id' >/dev/null
+          appointment=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d "{\"patient_id\":\"$patient_id\",\"appointment_datetime\":\"2030-01-01T10:00:00Z\",\"duration_minutes\":20,\"reason\":\"CI test\"}" http://127.0.0.1:8004/api/v1/appointments)
+          echo "$appointment" | jq -e '.id and .patient_id' >/dev/null
+          task=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"title":"CI operational task","priority":"high"}' http://127.0.0.1:8004/api/v1/tasks)
+          task_id=$(echo "$task" | jq -r .id)
+          curl -fsS -X PATCH -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"status":"in_progress"}' "http://127.0.0.1:8004/api/v1/tasks/$task_id" | jq -e '.status=="in_progress"' >/dev/null
+          curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 3' >/dev/null
+          curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/operations/summary | jq -e '.patients >= 1 and .appointments_today >= 0 and .open_tasks >= 1' >/dev/null
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -98,4 +126,4 @@ jobs:
       - name: Backend image
         run: docker build -f backend/Dockerfile --target production backend
       - name: Frontend image
-        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jbGVyay5jb20k -f frontend/Dockerfile frontend
+        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jb20k -f frontend/Dockerfile frontend
