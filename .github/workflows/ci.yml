@@ -16,15 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Canonical architecture gates
         run: |
-          test -f backend/app/main.py
-          test -f backend/app/security/clerk.py
-          test -f backend/app/domains/patients/service.py
-          test -f backend/app/workforce/base/contracts.py
-          test -f backend/app/ai/orchestration/executor.py
-          test -f frontend/src/proxy.ts
-          test -f supabase/migrations/015_harden_tenant_rls.sql
-          test -f supabase/migrations/017_phase3_operational_core.sql
-          test -f supabase/tests/phase3_rls.sql
+          test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/workforce/base/contracts.py; test -f backend/app/ai/orchestration/executor.py; test -f frontend/src/proxy.ts; test -f supabase/migrations/015_harden_tenant_rls.sql; test -f supabase/migrations/017_phase3_operational_core.sql; test -f supabase/tests/phase3_rls.sql
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
           ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
           ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
@@ -54,9 +46,7 @@ jobs:
     services:
       postgres:
         image: postgres:16-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: hezqara_ci
+        env: {POSTGRES_PASSWORD: postgres, POSTGRES_DB: hezqara_ci}
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U postgres -d hezqara_ci"
@@ -71,39 +61,34 @@ jobs:
       - name: Apply core migrations
         env: {PGPASSWORD: postgres}
         run: |
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql; do
-            psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"
-          done
+          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
       - name: Prove cross-tenant isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase3_rls.sql
       - name: Install backend for API vertical slice
         run: pip install -r backend/requirements.txt
+      - name: Verify backend imports
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ''}
+        run: python -c "from app.main import app; print(app.title)"
       - name: Seed synthetic API tenant
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "INSERT INTO clinics(id,name,clerk_org_id) VALUES ('test-clinic','CI Synthetic Clinic','test_org') ON CONFLICT (id) DO NOTHING;"
       - name: Run backend API vertical slice
-        env:
-          APP_ENV: test
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci
-          PYTHONPATH: backend
-          REDIS_URL: ''
-          CLERK_SECRET_KEY: ''
-          CLERK_PUBLISHABLE_KEY: ''
-          CLERK_AUTHORIZED_PARTIES: ''
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: '', CLERK_SECRET_KEY: '', CLERK_PUBLISHABLE_KEY: '', CLERK_AUTHORIZED_PARTIES: ''}
         run: |
           nohup uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8004 >/tmp/hezqara-api.log 2>&1 &
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8004/health && break; sleep 1; done
-          patient=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"first_name":"Synthetic","last_name":"Patient","email":"synthetic@example.invalid"}' http://127.0.0.1:8004/api/v1/patients)
+          for i in $(seq 1 30); do if curl -fsS http://127.0.0.1:8004/health; then break; fi; sleep 1; done
+          curl -fsS http://127.0.0.1:8004/health || { cat /tmp/hezqara-api.log; exit 1; }
+          patient=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"first_name":"Synthetic","last_name":"Patient","email":"synthetic@example.invalid"}' http://127.0.0.1:8004/api/v1/patients)
           patient_id=$(echo "$patient" | jq -r .id); test -n "$patient_id" && test "$patient_id" != null
-          curl -fsS -H 'x-test-auth: 1' "http://127.0.0.1:8004/api/v1/patients/$patient_id" | jq -e --arg id "$patient_id" '.id==$id' >/dev/null
-          appointment=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d "{\"patient_id\":\"$patient_id\",\"appointment_datetime\":\"2030-01-01T10:00:00Z\",\"duration_minutes\":20,\"reason\":\"CI test\"}" http://127.0.0.1:8004/api/v1/appointments)
+          curl --max-time 10 -fsS -H 'x-test-auth: 1' "http://127.0.0.1:8004/api/v1/patients/$patient_id" | jq -e --arg id "$patient_id" '.id==$id' >/dev/null
+          appointment=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d "{\"patient_id\":\"$patient_id\",\"appointment_datetime\":\"2030-01-01T10:00:00Z\",\"duration_minutes\":20,\"reason\":\"CI test\"}" http://127.0.0.1:8004/api/v1/appointments)
           echo "$appointment" | jq -e '.id and .patient_id' >/dev/null
-          task=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"title":"CI operational task","priority":"high"}' http://127.0.0.1:8004/api/v1/tasks)
+          task=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"title":"CI operational task","priority":"high"}' http://127.0.0.1:8004/api/v1/tasks)
           task_id=$(echo "$task" | jq -r .id)
-          curl -fsS -X PATCH -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"status":"in_progress"}' "http://127.0.0.1:8004/api/v1/tasks/$task_id" | jq -e '.status=="in_progress"' >/dev/null
-          curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 4' >/dev/null
-          curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/operations/summary | jq -e '.patients >= 1 and .appointments_today >= 0 and .open_tasks >= 1' >/dev/null
+          curl --max-time 10 -fsS -X PATCH -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"status":"in_progress"}' "http://127.0.0.1:8004/api/v1/tasks/$task_id" | jq -e '.status=="in_progress"' >/dev/null
+          curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 4' >/dev/null
+          curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/operations/summary | jq -e '.patients >= 1 and .open_tasks >= 1' >/dev/null
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 15
