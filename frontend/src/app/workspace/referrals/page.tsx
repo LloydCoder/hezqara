@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Referrals" description="Administrative referral routing, documentation readiness and follow-up with explicit transmission state." states={['draft','pending_review','ready','sent','received','accepted','scheduled','completed','expired','cancelled']} metrics={['Pending review','Awaiting documents','Sent','Follow-up due']}/>}
