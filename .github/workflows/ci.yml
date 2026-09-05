@@ -6,7 +6,7 @@ on:
     branches: [main]
 permissions: {contents: read}
 concurrency:
-  group: hezqara-phase3-ci-${{ github.event.pull_request.number || github.ref }}
+  group: hezqara-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   structure:
@@ -86,6 +86,7 @@ jobs:
           echo "$appointment" | jq -e '.id and .patient_id' >/dev/null
           task=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"title":"CI operational task","priority":"high"}' http://127.0.0.1:8004/api/v1/tasks)
           task_id=$(echo "$task" | jq -r .id)
+          test -n "$task_id" && test "$task_id" != null
           curl --max-time 10 -fsS -X PATCH -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"status":"in_progress"}' "http://127.0.0.1:8004/api/v1/tasks/$task_id" | jq -e '.status=="in_progress"' >/dev/null
           curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 4' >/dev/null
           curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/operations/summary | jq -e '.patients >= 1 and .open_tasks >= 1' >/dev/null
