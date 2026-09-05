@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Badge, Button, Card, StatusBadge } from "@/components/ui/primitives";
 import { EXECUTION_LABELS, READINESS_LABELS, executionTone, readinessTone, type ExecutionState, type ReadinessState } from "@/types/ui";
 
