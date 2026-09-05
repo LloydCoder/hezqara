@@ -4,60 +4,53 @@
 
 HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and revenue-cycle workflows.
 
-> **Engineering status:** Phase 6 healthcare domain engine implemented on the Phase 5 foundation. Source-code controls do not constitute HIPAA/GDPR certification or legal compliance.
+> **Engineering status:** Phase 7 healthcare interoperability layer implemented on the Phase 6 administrative domain engine. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART or other certification/compliance claims.
 
 ## Architecture
 
 ```text
 frontend
-   │
-   ▼
+   ↓
 Clerk-authenticated API
-   │
-   ▼
-tenant + permission boundary
-   │
-   ▼
-HTTP adapters /api/v1
-   │
-   ▼
+   ↓
+tenant + permission + policy
+   ↓
 domain services
-   ├── patients / scheduling / engagement
-   ├── insurance / eligibility / authorization
-   ├── billing / claims / A/R / denials
-   └── referrals / records / operations / analytics
-   │
-   ├── repositories → PostgreSQL/RLS
-   └── integration ports → provider adapters
-
-AI workforce:
-request → tenant/authz → policy → provider → deterministic validation →
-approved tool/action → audit/observability → result or human escalation
+   ↓
+integration ports
+   ↓
+provider adapters
+   ↓
+external healthcare system
+   ↓
+validated / normalized result
+   ↓
+domain state → workflow → audit / analytics
 ```
 
-## Phase 6 domain engine
+AI never receives arbitrary external URLs, credentials, OAuth scopes or provider authority. External healthcare content is treated as untrusted data.
 
-Phase 6 adds durable administrative primitives for coverage and eligibility, billing accounts/charges/payments, claims and adjudication foundations, A/R work queues, denial management, prior authorization, referrals and record metadata. State transitions are explicit and validated server-side.
+## Phase 7 interoperability
 
-The interoperability boundary is `backend/app/integrations/fhir/adapter.py`. It validates FHIR-shaped resources without claiming certification or implementation-guide conformance. External payer/eligibility/clearinghouse/EHR/payment connectivity remains provider/configuration dependent.
+The integration subsystem provides provider contracts, capability metadata, health state, tenant-scoped integration records, credential metadata references, external-reference mappings, integration request state, webhook lifecycle state, synchronization records, failure records and rate-limit state.
 
-## Multi-tenancy
+FHIR is an explicit R4 boundary with deterministic resource validation for common administrative resources. SMART App Launch is the authorization architecture baseline. Da Vinci HRex, PDex, CRD, DTR and PAS inform the interoperability contracts. Actual production EHR, payer, clearinghouse, payment and messaging connectivity remains provider/configuration dependent.
 
-The server derives the tenant from a verified Clerk Organization context. Client-supplied clinic identifiers are not trusted for authorization. Domain repositories and SQL writes scope records to the organization context. PostgreSQL RLS with FORCE RLS is defense-in-depth for tenant-owned Phase 6 objects.
+Deterministic CI providers are isolated and named `test-*`; they are not production integrations.
 
-The intended security path is:
+## Security boundaries
 
-`Clerk user → organization → authenticated request → tenant context → permission → domain service → repository → tenant-scoped database transaction`
+- PostgreSQL RLS/FORCE RLS isolates every Phase 7 tenant-owned table.
+- Client-provided clinic IDs do not establish authorization.
+- Raw credentials are never stored by the integration subsystem; only opaque credential metadata references are persisted.
+- Outbound HTTP requires HTTPS and an explicit trusted host allowlist and rejects private/loopback/link-local destinations and redirects.
+- Webhook signatures, timestamps and event IDs provide authentication and replay protection.
+- Integration errors are normalized and retry classification is bounded.
+- External content is explicitly labeled as untrusted before AI processing.
 
-## AI workforce
+## Truthful provider states
 
-All agents share lifecycle and execution contracts covering tenant identity, permissions, idempotency, execution IDs, policy checks, provider abstraction, structured output, confidence, escalation, retries and audit events. Phase 6 registers Revenue Cycle, Insurance Administrative and Referral/Records specializations using the existing governed runtime.
-
-AI is not the authority for tenant isolation, authorization, clinical decisions or external side effects. Administrative recommendations remain subject to policy and human review where consequential.
-
-## Data and compliance boundary
-
-Patient and operational data is minimized at each boundary. Secrets are environment-only. Audit records avoid credentials, authorization headers and unnecessary sensitive payloads. Healthcare deployments still require organizational controls including risk analysis, vendor/BAA review, retention/deletion procedures, access reviews, incident response, backups and monitoring.
+`not_configured`, `configuration_required`, `healthy`, `degraded`, `unavailable`, `authentication_failed`, `rate_limited` and `provider_error` are distinct. A configured credential is not evidence of connectivity or health.
 
 ## Local development
 
@@ -67,11 +60,12 @@ Redis: `:6380`
 
 ## Validation
 
-CI enforces repository structure, source hygiene, Python syntax/lint/tests, database/RLS tests, frontend lint/type-check/build, browser E2E, Docker validation and security-oriented checks. Production provider connectivity must be configured and independently validated before a live healthcare deployment.
+CI validates repository structure, source hygiene, Python syntax/lint/tests, dedicated integration and AI security tests, database migrations/RLS, frontend lint/type-check/build, genuine Playwright browser tests, Docker and dependency/secret scanning.
 
 ## Documentation
 
-See `docs/architecture/phase-6-healthcare-domain-engine.md` for the Phase 6 domain, interoperability, AI and security boundaries.
+- `docs/architecture/phase-6-healthcare-domain-engine.md`
+- `docs/architecture/phase-7-healthcare-interoperability.md`
 
 ## License
 
