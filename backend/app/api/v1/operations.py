@@ -1,6 +1,9 @@
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-class OperationsRepository:
- def __init__(self,session:AsyncSession):self.session=session
- async def summary(self):
-  result=await self.session.execute(text("select (select count(*) from patients) patients,(select count(*) from appointments where appointment_datetime >= date_trunc('day',now()) and appointment_datetime < date_trunc('day',now())+interval '1 day') appointments_today,(select count(*) from tasks where status not in ('completed','cancelled')) open_tasks,(select count(*) from tasks where status='escalated') escalated_tasks,(select count(*) from agent_executions where status in ('queued','running','waiting_for_approval','escalated')) active_executions,(select count(*) from agent_executions where status='completed' and created_at>=now()-interval '24 hours') completed_executions_24h,(select count(*) from workflow_runs where status in ('queued','running','waiting_for_approval','escalated')) active_workflows,(select count(*) from workflow_approvals where status='pending') pending_approvals,(select count(*) from communications where status='queued') queued_communications,(select count(*) from communications where status='failed') failed_communications"));return dict(result.mappings().one())
+from fastapi import APIRouter,Depends
+from app.infrastructure.database import tenant_session_context
+from app.security.authorization import require_permission
+from app.security.tenant import TenantContext
+from app.domains.operations.repository import OperationsRepository
+router=APIRouter(prefix='/operations',tags=['operations'])
+@router.get('/summary')
+async def summary(tenant:TenantContext=Depends(require_permission('analytics:read'))):
+ async with tenant_session_context(tenant.organization_id) as session:return await OperationsRepository(session).summary()
