@@ -79,6 +79,7 @@ jobs:
       - name: Run backend API and workflow vertical slice
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: '', CLERK_SECRET_KEY: '', CLERK_PUBLISHABLE_KEY: '', CLERK_AUTHORIZED_PARTIES: ''}
         run: |
+          set -euxo pipefail
           nohup uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8004 >/tmp/hezqara-api.log 2>&1 &
           for i in $(seq 1 30); do if curl -fsS http://127.0.0.1:8004/health; then break; fi; sleep 1; done
           curl -fsS http://127.0.0.1:8004/health || { cat /tmp/hezqara-api.log; exit 1; }
@@ -116,7 +117,7 @@ jobs:
         run: npm run type-check
       - name: Production build
         working-directory: frontend
-        env: {NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5jb20k}
+        env: {NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jb20k}
         run: npm run build
   docker:
     runs-on: ubuntu-latest
@@ -129,4 +130,4 @@ jobs:
       - name: Backend image
         run: docker build -f backend/Dockerfile --target production backend
       - name: Frontend image
-        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jbGVyay5jb20k -f frontend/Dockerfile frontend
+        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jb20k -f frontend/Dockerfile frontend
