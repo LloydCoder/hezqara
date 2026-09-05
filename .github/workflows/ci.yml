@@ -89,7 +89,7 @@ jobs:
       - name: Apply migrations
         env: {PGPASSWORD: postgres}
         run: |
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
+          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 004_create_calls.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
       - name: Prove Phase 3 isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase3_rls.sql
