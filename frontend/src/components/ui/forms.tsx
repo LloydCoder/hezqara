@@ -1,17 +1,11 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
+import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 
-export function FormField({ label, htmlFor, required, hint, error, children }: { label: string; htmlFor: string; required?: boolean; hint?: string; error?: string; children: ReactNode }) {
-  const hintId = hint ? `${htmlFor}-hint` : undefined;
-  const errorId = error ? `${htmlFor}-error` : undefined;
-  return <div className="space-y-2"><label htmlFor={htmlFor} className="block text-sm font-semibold text-slate-800">{label}{required ? <span aria-hidden="true"> <span className="text-rose-700">*</span></span> : null}{required ? <span className="sr-only"> required</span> : null}</label>{children}{hint ? <p id={hintId} className="text-xs leading-5 text-slate-500">{hint}</p> : null}{error ? <p id={errorId} role="alert" className="text-sm text-rose-700">{error}</p> : null}</div>;
-}
-
-const field = "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-600 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-500";
-
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) { return <input className={cn(field, props.className)} {...props} />; }
-export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) { return <textarea className={cn(field, "min-h-28", props.className)} {...props} />; }
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) { return <select className={cn(field, props.className)} {...props} />; }
-export function SearchInput({ label = "Search", ...props }: InputHTMLAttributes<HTMLInputElement> & { label?: string }) { return <label className="relative block"><span className="sr-only">{label}</span><input type="search" aria-label={label} className={cn(field, "pl-10")} {...props} /><span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">⌕</span></label>; }
-export function FieldHint({ children }: { children: ReactNode }) { return <p className="text-xs leading-5 text-slate-500">{children}</p>; }
-export function FieldError({ children }: { children: ReactNode }) { return <p role="alert" className="text-sm text-rose-700">{children}</p>; }
+export function IconButton({ label, className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string }) { return <button type="button" aria-label={label} className={cn("inline-grid min-h-11 min-w-11 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700", className)} {...props} />; }
+export function ButtonGroup({ children }: { children: ReactNode }) { return <div className="flex flex-wrap items-center gap-2">{children}</div>; }
+export function Checkbox(props: InputHTMLAttributes<HTMLInputElement>) { return <input type="checkbox" className={cn("h-5 w-5 rounded border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-700", props.className)} {...props} />; }
+export function Radio(props: InputHTMLAttributes<HTMLInputElement>) { return <input type="radio" className={cn("h-5 w-5 border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-700", props.className)} {...props} />; }
+export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) { return <button type="button" role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)} className={cn("relative min-h-11 min-w-14 rounded-full border p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700", checked ? "border-slate-900 bg-slate-900" : "border-slate-300 bg-slate-100")}><span aria-hidden="true" className={cn("block h-7 w-7 rounded-full bg-white shadow transition-transform", checked ? "translate-x-5" : "translate-x-0")} /></button>; }
+export function DateInput(props: InputHTMLAttributes<HTMLInputElement>) { return <input type="date" className={cn("min-h-11 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200", props.className)} {...props} />; }
+export function Combobox({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: Array<{ value: string; label: string }> }) { return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-800">{label}</span><input list={`${label}-options`} value={value} onChange={(e)=>onChange(e.target.value)} aria-label={label} className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-slate-600 focus:ring-2 focus:ring-slate-200" /><datalist id={`${label}-options`}>{options.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</datalist></label>; }
