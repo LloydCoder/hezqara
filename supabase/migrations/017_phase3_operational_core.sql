@@ -1,4 +1,74 @@
--- Phase 3 audit contract hardening and role grants.
+-- Phase 3 operational core: persistent tasks, governed AI executions, idempotency and audit hardening.
+CREATE TABLE IF NOT EXISTS tasks (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  clinic_id TEXT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+  title TEXT NOT NULL CHECK (length(trim(title)) BETWEEN 1 AND 200),
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','waiting','completed','cancelled','escalated')),
+  priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low','normal','high','urgent')),
+  owner_id TEXT,
+  source TEXT NOT NULL DEFAULT 'human',
+  patient_id TEXT REFERENCES patients(id) ON DELETE SET NULL,
+  agent_type TEXT,
+  due_at TIMESTAMPTZ,
+  escalation_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_tasks_clinic_status_created ON tasks(clinic_id,status,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tasks_clinic_due ON tasks(clinic_id,due_at) WHERE due_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tasks_patient ON tasks(patient_id) WHERE patient_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS agent_executions (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  clinic_id TEXT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+  actor_id TEXT NOT NULL,
+  agent_type TEXT NOT NULL,
+  request_key TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','waiting_for_approval','completed','failed','escalated','cancelled')),
+  provider TEXT,
+  model TEXT,
+  confidence NUMERIC(5,4) CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+  escalation_required BOOLEAN NOT NULL DEFAULT FALSE,
+  input_summary TEXT,
+  result_summary TEXT,
+  error_class TEXT,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(clinic_id,agent_type,request_key)
+);
+CREATE INDEX IF NOT EXISTS idx_agent_executions_clinic_created ON agent_executions(clinic_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_executions_clinic_status ON agent_executions(clinic_id,status);
+
+CREATE TABLE IF NOT EXISTS mutation_idempotency (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  clinic_id TEXT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+  operation TEXT NOT NULL,
+  request_key TEXT NOT NULL,
+  response JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(clinic_id,operation,request_key)
+);
+
+DO $$ DECLARE t text; BEGIN
+  FOREACH t IN ARRAY ARRAY['tasks','agent_executions','mutation_idempotency'] LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
+    EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY',t);
+    EXECUTE format('DROP POLICY IF EXISTS hezqara_tenant_select ON public.%I',t);
+    EXECUTE format('DROP POLICY IF EXISTS hezqara_tenant_insert ON public.%I',t);
+    EXECUTE format('DROP POLICY IF EXISTS hezqara_tenant_update ON public.%I',t);
+    EXECUTE format('DROP POLICY IF EXISTS hezqara_tenant_delete ON public.%I',t);
+    EXECUTE format('CREATE POLICY hezqara_tenant_select ON public.%I FOR SELECT TO authenticated USING (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+    EXECUTE format('CREATE POLICY hezqara_tenant_insert ON public.%I FOR INSERT TO authenticated WITH CHECK (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+    EXECUTE format('CREATE POLICY hezqara_tenant_update ON public.%I FOR UPDATE TO authenticated USING (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+    EXECUTE format('CREATE POLICY hezqara_tenant_delete ON public.%I FOR DELETE TO authenticated USING (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+    EXECUTE format('REVOKE ALL ON public.%I FROM anon',t);
+    EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON public.%I TO authenticated',t);
+  END LOOP;
+END $$;
+
 ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS actor_id TEXT;
 ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS resource_type TEXT;
 ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS resource_id TEXT;
@@ -6,9 +76,8 @@ ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS request_id TEXT;
 ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS outcome TEXT;
 ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS source TEXT;
 CREATE INDEX IF NOT EXISTS idx_audit_request ON public.audit_log(request_id) WHERE request_id IS NOT NULL;
-GRANT USAGE, SELECT ON SEQUENCE public.audit_log_id_seq TO authenticated;
+GRANT USAGE,SELECT ON SEQUENCE public.audit_log_id_seq TO authenticated;
 
--- Remove legacy broad policies before the explicit authenticated policies are applied.
 DROP POLICY IF EXISTS clinics_isolation ON public.clinics;
 DROP POLICY IF EXISTS patients_clinic_isolation ON public.patients;
 DROP POLICY IF EXISTS appointments_clinic_isolation ON public.appointments;
@@ -16,16 +85,27 @@ DROP POLICY IF EXISTS hezqara_tenant_select ON public.clinics;
 DROP POLICY IF EXISTS hezqara_tenant_insert ON public.clinics;
 DROP POLICY IF EXISTS hezqara_tenant_update ON public.clinics;
 DROP POLICY IF EXISTS hezqara_tenant_delete ON public.clinics;
-
 CREATE POLICY hezqara_clinics_select ON public.clinics FOR SELECT TO authenticated USING (clerk_org_id=current_setting('app.clerk_org_id',true));
 CREATE POLICY hezqara_clinics_insert ON public.clinics FOR INSERT TO authenticated WITH CHECK (clerk_org_id=current_setting('app.clerk_org_id',true));
 CREATE POLICY hezqara_clinics_update ON public.clinics FOR UPDATE TO authenticated USING (clerk_org_id=current_setting('app.clerk_org_id',true)) WITH CHECK (clerk_org_id=current_setting('app.clerk_org_id',true));
 
+DROP POLICY IF EXISTS hezqara_tenant_select ON public.audit_log;
+DROP POLICY IF EXISTS hezqara_tenant_insert ON public.audit_log;
+DROP POLICY IF EXISTS hezqara_tenant_update ON public.audit_log;
+DROP POLICY IF EXISTS hezqara_tenant_delete ON public.audit_log;
+CREATE POLICY hezqara_tenant_select ON public.audit_log FOR SELECT TO authenticated USING (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
+CREATE POLICY hezqara_tenant_insert ON public.audit_log FOR INSERT TO authenticated WITH CHECK (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
+REVOKE ALL ON public.audit_log FROM anon;
+GRANT SELECT,INSERT ON public.audit_log TO authenticated;
+CREATE OR REPLACE FUNCTION public.reject_audit_mutation() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'audit_log is append-only'; END;$$;
+DROP TRIGGER IF EXISTS audit_log_immutable ON public.audit_log;
+CREATE TRIGGER audit_log_immutable BEFORE UPDATE OR DELETE ON public.audit_log FOR EACH ROW EXECUTE FUNCTION public.reject_audit_mutation();
+
 DO $$ DECLARE t text; BEGIN
   FOREACH t IN ARRAY ARRAY['patients','appointments','calls','insurance','prior_auth','refills','referrals','recalls','documents','walkin_visits','walkin_qr_codes','standalone_patients','standalone_appointments'] LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
-      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'patients_clinic_isolation', t);
-      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'appointments_clinic_isolation', t);
+      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I','patients_clinic_isolation',t);
+      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I','appointments_clinic_isolation',t);
     END IF;
   END LOOP;
 END $$;
