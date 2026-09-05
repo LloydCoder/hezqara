@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, Request, HTTPException
+from sqlalchemy import text
 from app.core.config import settings
 from app.domains.workflows.schemas import WorkflowCreate, WorkflowTrigger
 from app.domains.workflows.service import WorkflowService
@@ -22,7 +23,7 @@ async def get_workflow(workflow_id:str,tenant:TenantContext=Depends(require_perm
 async def list_workflow_runs(workflow_id:str,limit:int=Query(50,ge=1,le=100),offset:int=Query(0,ge=0),tenant:TenantContext=Depends(require_permission('workflow:read'))):
     async with tenant_session_context(tenant.organization_id) as session:
         service=WorkflowService(session); clinic=await service.clinic_id(tenant.organization_id); await service.get(workflow_id)
-        rows=(await session.execute(__import__('sqlalchemy').text("select id,workflow_version_id,status,trigger_type,actor_id,request_id,idempotency_key,failure_class,retry_count,created_at,started_at,completed_at from workflow_runs where workflow_id=:workflow and clinic_id=:clinic order by created_at desc,id desc limit :limit offset :offset"),{'workflow':workflow_id,'clinic':clinic,'limit':limit,'offset':offset})).mappings()
+        rows=(await session.execute(text("select id,workflow_version_id,status,trigger_type,actor_id,request_id,idempotency_key,failure_class,retry_count,created_at,started_at,completed_at from workflow_runs where workflow_id=:workflow and clinic_id=:clinic order by created_at desc,id desc limit :limit offset :offset"),{'workflow':workflow_id,'clinic':clinic,'limit':limit,'offset':offset})).mappings()
         return [dict(row) for row in rows]
 
 @router.post('',status_code=201)
