@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Insurance & Coverage" description="Coverage records, ordering and verification state without pretending unverified coverage is verified." states={['unknown','active','inactive','expired','pending_verification','verification_failed']} metrics={['Verification pending','Active coverage','Verification failures','Primary coverage']}/>}
