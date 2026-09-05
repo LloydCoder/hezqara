@@ -53,7 +53,29 @@ jobs:
         run: pip install -r requirements.txt ruff
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
-        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py
+        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py tests/test_phase7_security.py
+  integration-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - working-directory: backend
+        run: pip install -r requirements.txt
+      - working-directory: backend
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: pytest -q tests/test_phase7_integrations.py tests/test_phase7_security.py
+  fhir-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - working-directory: backend
+        run: pip install -r requirements.txt
+      - working-directory: backend
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: pytest -q tests/test_phase7_integrations.py -k fhir
   ai-security:
     runs-on: ubuntu-latest
     steps:
@@ -64,4 +86,4 @@ jobs:
         run: pip install -r requirements.txt
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
-        run: pytest -q tests/test_phase6_security.py tests/test_ai_workforce.py tests/test_tool_registry.py
+        run: pytest -q tests/test_phase6_security.py tests/test_ai_workforce.py tests/test_tool_registry.py tests/test_phase7_security.py
