@@ -17,10 +17,11 @@ jobs:
       - name: Canonical architecture gates
         run: |
           set -e
-          test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/domains/workflows/service.py; test -f backend/app/domains/patient_engagement/service.py; test -f backend/app/domains/claims/engine.py; test -f backend/app/integrations/fhir/adapter.py; test -f backend/app/integrations/core/contracts.py; test -f backend/app/integrations/core/http.py; test -f backend/app/integrations/core/webhooks.py; test -f backend/app/integrations/testing/providers.py; test -f backend/app/api/v1/integrations.py; test -f backend/app/ai/administrative.py; test -f frontend/src/proxy.ts; test -f frontend/src/app/workspace/integrations/page.tsx; test -f supabase/migrations/020_phase6_healthcare_domain_engine.sql; test -f supabase/migrations/021_phase7_healthcare_interoperability.sql; test -f supabase/tests/phase6_rls.sql; test -f supabase/tests/phase7_rls.sql
+          required=(backend/app/main.py backend/app/security/clerk.py backend/app/domains/patients/service.py backend/app/domains/workflows/service.py backend/app/domains/patient_engagement/service.py backend/app/domains/claims/engine.py backend/app/integrations/fhir/adapter.py backend/app/integrations/core/contracts.py backend/app/integrations/core/http.py backend/app/integrations/core/webhooks.py backend/app/integrations/testing/providers.py backend/app/api/v1/integrations.py backend/app/ai/administrative.py frontend/src/proxy.ts frontend/src/app/workspace/integrations/page.tsx supabase/migrations/020_phase6_healthcare_domain_engine.sql supabase/migrations/021_phase7_healthcare_interoperability.sql supabase/tests/phase6_rls.sql supabase/tests/phase7_rls.sql)
+          for path in "${required[@]}"; do test -f "$path" || { echo "missing required path: $path"; exit 1; }; done
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
-          ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
-          ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
+          if find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .; then echo 'generated Python bytecode found'; exit 1; fi
+          if find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .; then echo 'generated build/cache directory found'; exit 1; fi
           if grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules; then echo 'forbidden demo tenant identifier found'; exit 1; fi
           if grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src; then echo 'unfinished placeholder found'; exit 1; fi
   backend:
