@@ -16,12 +16,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Canonical architecture gates
         run: |
+          set -e
           test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/domains/workflows/service.py; test -f backend/app/domains/patient_engagement/service.py; test -f backend/app/domains/claims/engine.py; test -f backend/app/integrations/fhir/adapter.py; test -f backend/app/integrations/core/contracts.py; test -f backend/app/integrations/core/http.py; test -f backend/app/integrations/core/webhooks.py; test -f backend/app/integrations/testing/providers.py; test -f backend/app/api/v1/integrations.py; test -f backend/app/ai/administrative.py; test -f frontend/src/proxy.ts; test -f frontend/src/app/workspace/integrations/page.tsx; test -f supabase/migrations/020_phase6_healthcare_domain_engine.sql; test -f supabase/migrations/021_phase7_healthcare_interoperability.sql; test -f supabase/tests/phase6_rls.sql; test -f supabase/tests/phase7_rls.sql
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
           ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
           ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
-          ! grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules
-          ! grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src
+          if grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules; then echo 'forbidden demo tenant identifier found'; exit 1; fi
+          if grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src; then echo 'unfinished placeholder found'; exit 1; fi
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 15
