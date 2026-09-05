@@ -1,0 +1,2 @@
+import {DomainWorkspacePage} from '@/components/dashboard/DomainWorkspacePage';
+export default function Page(){return <DomainWorkspacePage title="Billing" description="Charges, accounts, balances and payment states with verified-provider boundaries." states={['open','submitted','paid','denied','voided','closed']} metrics={['Outstanding balance','Open charges','Patient responsibility','Payment exceptions']}/>}
