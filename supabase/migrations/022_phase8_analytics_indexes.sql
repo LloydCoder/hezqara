@@ -1,0 +1,22 @@
+-- Phase 8: analytical query support. No new source-of-truth domain data is introduced.
+-- Analytics remain derived from tenant-scoped operational tables.
+CREATE INDEX IF NOT EXISTS idx_calls_created_clinic ON calls(clinic_id,created_at);
+CREATE INDEX IF NOT EXISTS idx_appointments_created_clinic ON appointments(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_appointments_datetime_status_clinic ON appointments(clinic_id,appointment_datetime,status);
+CREATE INDEX IF NOT EXISTS idx_tasks_updated_clinic_status ON tasks(clinic_id,updated_at,status);
+CREATE INDEX IF NOT EXISTS idx_executions_created_clinic_status ON agent_executions(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_workflow_runs_completed_clinic_status ON workflow_runs(clinic_id,completed_at,status);
+CREATE INDEX IF NOT EXISTS idx_workflow_runs_updated_clinic_status ON workflow_runs(clinic_id,updated_at,status);
+CREATE INDEX IF NOT EXISTS idx_communications_created_clinic_status ON communications(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_billing_charges_created_clinic_status ON billing_charges(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_billing_payments_created_clinic_status ON billing_payments(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_claims_created_clinic_status ON claims(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_denials_created_clinic ON denials(clinic_id,created_at);
+CREATE INDEX IF NOT EXISTS idx_ar_created_clinic_status ON ar_work_items(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_eligibility_requested_clinic ON eligibility_requests(clinic_id,requested_at);
+CREATE INDEX IF NOT EXISTS idx_eligibility_responded_clinic_status ON eligibility_requests(clinic_id,responded_at,status);
+CREATE INDEX IF NOT EXISTS idx_authorizations_submitted_clinic ON authorizations(clinic_id,submitted_at);
+CREATE INDEX IF NOT EXISTS idx_authorizations_response_clinic_status ON authorizations(clinic_id,response_at,status);
+CREATE INDEX IF NOT EXISTS idx_referrals_created_clinic_status ON referrals_v2(clinic_id,created_at,status);
+CREATE INDEX IF NOT EXISTS idx_referrals_updated_clinic_status ON referrals_v2(clinic_id,updated_at,status);
+CREATE INDEX IF NOT EXISTS idx_audit_created_clinic ON audit_log(clinic_id,created_at);

@@ -53,7 +53,7 @@ jobs:
         run: pip install -r requirements.txt ruff
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
-        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py tests/test_phase7_security.py
+        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py tests/test_phase7_security.py tests/test_phase8_analytics.py
   integration-security:
     runs-on: ubuntu-latest
     steps:
