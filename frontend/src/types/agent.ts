@@ -1,4 +1,14 @@
-import type { AgentType } from "@/types/agent";
+export type AgentType =
+  | "reception"
+  | "scheduling"
+  | "intake"
+  | "insurance"
+  | "prior_auth"
+  | "refill"
+  | "records"
+  | "referrals"
+  | "recall"
+  | "email";
 
 export type AgentReadiness = "ready" | "unavailable" | "disabled" | "not_configured";
 
