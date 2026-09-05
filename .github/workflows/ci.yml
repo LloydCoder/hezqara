@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Canonical architecture gates
         run: |
-          test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/workforce/base/contracts.py; test -f backend/app/ai/orchestration/executor.py; test -f frontend/src/proxy.ts; test -f supabase/migrations/015_harden_tenant_rls.sql; test -f supabase/migrations/017_phase3_operational_core.sql; test -f supabase/tests/phase3_rls.sql
+          test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/domains/workflows/service.py; test -f backend/app/workforce/base/contracts.py; test -f backend/app/ai/orchestration/executor.py; test -f frontend/src/proxy.ts; test -f supabase/migrations/015_harden_tenant_rls.sql; test -f supabase/migrations/017_phase3_operational_core.sql; test -f supabase/migrations/018_phase4_workflow_runtime.sql; test -f supabase/tests/phase3_rls.sql
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
           ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
           ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
@@ -61,7 +61,7 @@ jobs:
       - name: Apply core migrations
         env: {PGPASSWORD: postgres}
         run: |
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
+          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
       - name: Prove cross-tenant isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase3_rls.sql
@@ -73,7 +73,7 @@ jobs:
       - name: Seed synthetic API tenant
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "INSERT INTO clinics(id,name,clerk_org_id) VALUES ('test-clinic','CI Synthetic Clinic','test_org') ON CONFLICT (id) DO NOTHING;"
-      - name: Run backend API vertical slice
+      - name: Run backend API and workflow vertical slice
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: '', CLERK_SECRET_KEY: '', CLERK_PUBLISHABLE_KEY: '', CLERK_AUTHORIZED_PARTIES: ''}
         run: |
           nohup uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8004 >/tmp/hezqara-api.log 2>&1 &
@@ -85,9 +85,17 @@ jobs:
           appointment=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d "{\"patient_id\":\"$patient_id\",\"appointment_datetime\":\"2030-01-01T10:00:00Z\",\"duration_minutes\":20,\"reason\":\"CI test\"}" http://127.0.0.1:8004/api/v1/appointments)
           echo "$appointment" | jq -e '.id and .patient_id' >/dev/null
           task=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"title":"CI operational task","priority":"high"}' http://127.0.0.1:8004/api/v1/tasks)
-          task_id=$(echo "$task" | jq -r .id)
-          test -n "$task_id" && test "$task_id" != null
+          task_id=$(echo "$task" | jq -r .id); test -n "$task_id" && test "$task_id" != null
           curl --max-time 10 -fsS -X PATCH -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"status":"in_progress"}' "http://127.0.0.1:8004/api/v1/tasks/$task_id" | jq -e '.status=="in_progress"' >/dev/null
+          workflow=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"key":"appointment_operations","name":"Appointment Operations","definition":{"steps":[{"key":"create_task","type":"create_task","input":{"title":"Workflow-created operational task","priority":"normal"}},{"key":"finish","type":"complete"}]}}' http://127.0.0.1:8004/api/v1/workflows)
+          workflow_id=$(echo "$workflow" | jq -r .id); test -n "$workflow_id" && test "$workflow_id" != null
+          curl --max-time 10 -fsS -X POST -H 'x-test-auth: 1' "http://127.0.0.1:8004/api/v1/workflows/$workflow_id/activate" | jq -e '.status=="active"' >/dev/null
+          run=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"idempotency_key":"ci-workflow-run-001","trigger_type":"manual","context":{}}' "http://127.0.0.1:8004/api/v1/workflows/$workflow_id/runs")
+          echo "$run" | jq -e '.status=="completed" and .id' >/dev/null
+          tasks=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/tasks)
+          echo "$tasks" | jq -e '[.[] | select(.title=="Workflow-created operational task")] | length == 1' >/dev/null
+          duplicate=$(curl --max-time 10 -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"idempotency_key":"ci-workflow-run-001","trigger_type":"manual","context":{}}' "http://127.0.0.1:8004/api/v1/workflows/$workflow_id/runs")
+          echo "$duplicate" | jq -e --arg id "$(echo "$run" | jq -r .id)" '.id==$id' >/dev/null
           curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 4' >/dev/null
           curl --max-time 10 -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/operations/summary | jq -e '.patients >= 1 and .open_tasks >= 1' >/dev/null
   frontend:
