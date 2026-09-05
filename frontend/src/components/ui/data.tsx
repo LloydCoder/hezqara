@@ -1,0 +1,11 @@
+import type { ReactNode, TableHTMLAttributes } from "react";
+import { cn } from "@/lib/cn";
+import { Card, EmptyState, LoadingState } from "@/components/ui/primitives";
+
+export function DataTable({ children, className, ...props }: TableHTMLAttributes<HTMLTableElement>) { return <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white"><table className={cn("w-full min-w-[640px] border-collapse text-left text-sm", className)} {...props}>{children}</table></div>; }
+export function TableToolbar({ children }: { children: ReactNode }) { return <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/70 p-3 sm:flex-row sm:items-center sm:justify-between">{children}</div>; }
+export function TableEmpty({ title, description }: { title: string; description: string }) { return <EmptyState title={title} description={description} />; }
+export function TableLoading({ label }: { label?: string }) { return <LoadingState label={label ?? "Loading table data"} />; }
+export function DefinitionList({ items }: { items: Array<{ label: string; value: ReactNode }> }) { return <dl className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">{items.map((item)=><div key={item.label} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(140px,0.35fr)_1fr] sm:gap-6"><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</dt><dd className="min-w-0 text-sm text-slate-800">{item.value}</dd></div>)}</dl>; }
+export function Timeline({ items }: { items: Array<{ id: string; title: string; detail?: string; time?: string; tone?: "normal" | "warning" }> }) { return <ol className="space-y-5">{items.map((item)=><li key={item.id} className="relative pl-7"><span aria-hidden="true" className={cn("absolute left-1 top-1.5 h-2.5 w-2.5 rounded-full", item.tone === "warning" ? "bg-amber-500" : "bg-slate-400")} /><p className="text-sm font-semibold text-slate-900">{item.title}</p>{item.detail ? <p className="mt-1 text-sm leading-6 text-slate-600">{item.detail}</p> : null}{item.time ? <time className="mt-1 block text-xs text-slate-500">{item.time}</time> : null}</li>)}</ol>; }
+export function ActivityList({ children }: { children: ReactNode }) { return <Card className="divide-y divide-slate-100 overflow-hidden">{children}</Card>; }
