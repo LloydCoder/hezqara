@@ -5,9 +5,13 @@ on:
   pull_request:
     branches: [main]
 permissions: {contents: read}
+concurrency:
+  group: hezqara-phase3-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   structure:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Canonical architecture gates
@@ -28,6 +32,7 @@ jobs:
           ! grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -45,6 +50,7 @@ jobs:
         run: pytest -q tests ../tests/security
   database-security:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16-alpine
@@ -89,18 +95,18 @@ jobs:
           nohup uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8004 >/tmp/hezqara-api.log 2>&1 &
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8004/health && break; sleep 1; done
           patient=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"first_name":"Synthetic","last_name":"Patient","email":"synthetic@example.invalid"}' http://127.0.0.1:8004/api/v1/patients)
-          patient_id=$(echo "$patient" | jq -r .id)
-          test -n "$patient_id" && test "$patient_id" != null
+          patient_id=$(echo "$patient" | jq -r .id); test -n "$patient_id" && test "$patient_id" != null
           curl -fsS -H 'x-test-auth: 1' "http://127.0.0.1:8004/api/v1/patients/$patient_id" | jq -e --arg id "$patient_id" '.id==$id' >/dev/null
           appointment=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d "{\"patient_id\":\"$patient_id\",\"appointment_datetime\":\"2030-01-01T10:00:00Z\",\"duration_minutes\":20,\"reason\":\"CI test\"}" http://127.0.0.1:8004/api/v1/appointments)
           echo "$appointment" | jq -e '.id and .patient_id' >/dev/null
           task=$(curl -fsS -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"title":"CI operational task","priority":"high"}' http://127.0.0.1:8004/api/v1/tasks)
           task_id=$(echo "$task" | jq -r .id)
           curl -fsS -X PATCH -H 'x-test-auth: 1' -H 'content-type: application/json' -d '{"status":"in_progress"}' "http://127.0.0.1:8004/api/v1/tasks/$task_id" | jq -e '.status=="in_progress"' >/dev/null
-          curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 3' >/dev/null
+          curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/audit | jq -e 'length >= 4' >/dev/null
           curl -fsS -H 'x-test-auth: 1' http://127.0.0.1:8004/api/v1/operations/summary | jq -e '.patients >= 1 and .appointments_today >= 0 and .open_tasks >= 1' >/dev/null
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -113,11 +119,11 @@ jobs:
         run: npm run type-check
       - name: Production build
         working-directory: frontend
-        env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5jb20k
+        env: {NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5jb20k}
         run: npm run build
   docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [structure, backend, database-security, frontend]
     steps:
       - uses: actions/checkout@v4
@@ -126,4 +132,4 @@ jobs:
       - name: Backend image
         run: docker build -f backend/Dockerfile --target production backend
       - name: Frontend image
-        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jb20k -f frontend/Dockerfile frontend
+        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jbGVyay5jb20k -f frontend/Dockerfile frontend
