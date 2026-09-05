@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
+from app.core.config import settings
 from app.domains.workflows.schemas import WorkflowCreate, WorkflowTrigger
 from app.domains.workflows.service import WorkflowService
+from app.domains.workflows.runtime import execute_run_sync
 from app.infrastructure.database import tenant_session_context
 from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
@@ -29,7 +31,16 @@ async def activate_workflow(workflow_id:str,request:Request,tenant:TenantContext
 @router.post('/{workflow_id}/runs',status_code=201)
 async def trigger_workflow(workflow_id:str,data:WorkflowTrigger,request:Request,tenant:TenantContext=Depends(require_permission('workflow:execute'))):
     async with tenant_session_context(tenant.organization_id) as session:
-        return await WorkflowService(session).trigger(tenant.organization_id,tenant.user_id,workflow_id,data.trigger_type,data.idempotency_key,data.context,getattr(request.state,'request_id',None))
+        run=await WorkflowService(session).trigger(tenant.organization_id,tenant.user_id,workflow_id,data.trigger_type,data.idempotency_key,data.context,getattr(request.state,'request_id',None))
+    if run['status']=='queued':
+        if settings.redis_url:
+            from app.tasks.workflows import execute_workflow_run
+            execute_workflow_run.delay(tenant.organization_id,run['id'])
+        elif settings.app_env in {'test','development'}:
+            run=execute_run_sync(tenant.organization_id,run['id'])
+        else:
+            raise HTTPException(status_code=503,detail='workflow worker is not configured')
+    return run
 
 @router.post('/runs/{run_id}/cancel')
 async def cancel_workflow(run_id:str,tenant:TenantContext=Depends(require_permission('workflow:cancel'))):
