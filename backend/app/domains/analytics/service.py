@@ -1,75 +1,34 @@
+import asyncio
 from datetime import datetime, timezone
-
-from app.domains.analytics.metrics import METRIC_BY_KEY
+from app.domains.analytics.metrics import METRIC_BY_KEY, METRICS
 from app.domains.analytics.repository import AnalyticsRepository
 
-
+def _rate(numerator:int|float,denominator:int|float)->float|None:return round(float(numerator)/float(denominator),4) if denominator else None
 class AnalyticsService:
-    def __init__(self, repository: AnalyticsRepository):
-        self.repository = repository
-
-    async def summary(self, start: datetime, end: datetime) -> dict:
-        raw = await self.repository.operational_summary(start, end)
-        metrics = []
-        for key in METRIC_BY_KEY:
-            definition = METRIC_BY_KEY[key]
-            metrics.append(
-                {
-                    "key": key,
-                    "label": definition.label,
-                    "value": raw.get(key),
-                    "unit": definition.unit,
-                    "definition": definition.definition,
-                    "source_tables": list(definition.source_tables),
-                }
-            )
-        return {"window": {"start": start, "end": end}, "metrics": metrics, "freshness": datetime.now(timezone.utc)}
-
-    async def daily(self, start: datetime, end: datetime) -> list[dict]:
-        return await self.repository.daily(start, end)
-
-    async def financial(self, start: datetime, end: datetime) -> dict:
-        raw = await self.repository.financial_summary(start, end)
-        return {
-            "window": {"start": start, "end": end},
-            **{key: float(raw[key] or 0) if key.endswith("amount") else int(raw[key] or 0) for key in raw},
-            "definitions": {
-                "charges_amount": "Sum of non-voided billing charges created in the window.",
-                "payments_amount": "Sum of billing payments with paid status created in the window.",
-                "claims_billed_amount": "Sum of non-closed claim billed amounts created in the window.",
-                "claims_paid_amount": "Sum of claim paid amounts for claims created in the window.",
-                "denial_amount": "Sum of denial amounts created in the window.",
-                "open_ar_amount": "Sum of currently open A/R work-item amounts visible at the end of the window.",
-            },
-            "source_tables": ["billing_charges", "billing_payments", "claims", "denials", "ar_work_items"],
-        }
-
-    async def insurance(self, start: datetime, end: datetime) -> dict:
-        raw = await self.repository.insurance_summary(start, end)
-        return {
-            "window": {"start": start, "end": end},
-            **{key: int(raw[key] or 0) for key in raw},
-            "definitions": {
-                "eligibility_verified": "Eligibility requests with an eligible response in the window.",
-                "eligibility_failed": "Eligibility responses classified as ineligible, unavailable, provider error, failed, or verification failed.",
-                "authorizations_submitted": "Authorizations with a submission timestamp in the window.",
-                "authorizations_approved": "Authorizations receiving approved status in the window.",
-                "authorizations_denied": "Authorizations receiving denied status in the window.",
-            },
-            "source_tables": ["eligibility_requests", "authorizations", "referrals_v2"],
-        }
-
-    async def compliance(self, start: datetime, end: datetime) -> dict:
-        raw = await self.repository.compliance_summary(start, end)
-        return {
-            "window": {"start": start, "end": end},
-            **{key: int(raw[key] or 0) for key in raw},
-            "definitions": {
-                "audit_events": "Audit-log events created in the reporting window.",
-                "privileged_events": "Audit events matching the platform's currently classified privileged actions.",
-                "ai_events": "Audit events carrying an AI/agent source or agent type.",
-                "integration_events": "Audit events associated with integration resources or integration actions.",
-                "failed_events": "Audit events explicitly classified as failed, error, denied, or rejected.",
-            },
-            "source_tables": ["audit_log"],
-        }
+    def __init__(self,repository:AnalyticsRepository):self.repository=repository
+    async def summary(self,start:datetime,end:datetime)->dict:
+        raw=await self.repository.operational_summary(start,end);metrics=[]
+        for definition in METRICS:metrics.append({"key":definition.key,"label":definition.label,"category":definition.category,"value":raw.get(definition.key),"unit":definition.unit,"definition":definition.definition,"formula":definition.formula,"source_tables":list(definition.source_tables),"time_field":definition.time_field,"denominator":definition.denominator,"null_behavior":definition.null_behavior,"permission":definition.permission,"pii":definition.pii,"drilldown":definition.drilldown})
+        return {"window":{"start":start,"end":end},"metrics":metrics,"freshness":datetime.now(timezone.utc)}
+    async def catalog(self)->dict:
+        now=datetime.now(timezone.utc);return {"metrics":[{"key":m.key,"label":m.label,"category":m.category,"value":None,"unit":m.unit,"definition":m.definition,"formula":m.formula,"source_tables":list(m.source_tables),"time_field":m.time_field,"denominator":m.denominator,"null_behavior":m.null_behavior,"permission":m.permission,"pii":m.pii,"drilldown":m.drilldown} for m in METRICS],"generated_at":now}
+    async def daily(self,start:datetime,end:datetime)->list[dict]:return await self.repository.daily(start,end)
+    async def financial(self,start:datetime,end:datetime)->dict:
+        raw=await self.repository.financial_summary(start,end);claims_billed=float(raw.get("claims_billed_amount") or 0);denied=int(raw.get("denied_claim_count") or 0);payments=float(raw.get("payments_amount") or 0);claim_count=int(raw.get("claim_count") or 0)
+        return {"window":{"start":start,"end":end},"charges_amount":float(raw.get("charges_amount") or 0),"patient_responsibility_amount":float(raw.get("patient_responsibility_amount") or 0),"payer_responsibility_amount":float(raw.get("payer_responsibility_amount") or 0),"payments_amount":payments,"claims_billed_amount":claims_billed,"claims_paid_amount":float(raw.get("claims_paid_amount") or 0),"denied_claim_count":denied,"denial_amount":float(raw.get("denial_amount") or 0),"open_ar_amount":float(raw.get("open_ar_amount") or 0),"collection_rate":_rate(payments,claims_billed),"denial_rate":_rate(denied,claim_count),"definitions":{"charges_amount":"Sum of non-voided billing charges created in the window.","payments_amount":"Sum of billing payments with paid status created in the window.","claims_billed_amount":"Sum of non-closed claim billed amounts created in the window.","claims_paid_amount":"Sum of claim paid amounts for claims created in the window.","denied_claim_count":"Claims with denied status created in the window.","denial_amount":"Sum of denial amounts created in the window.","open_ar_amount":"Currently open A/R work-item amount visible at the end of the window.","collection_rate":"Payments collected divided by claims billed; null when the denominator is zero.","denial_rate":"Denied claims divided by all claims created in the window; null when no claims exist."},"source_tables":["billing_charges","billing_payments","claims","denials","ar_work_items"]}
+    async def insurance(self,start:datetime,end:datetime)->dict:
+        raw=await self.repository.insurance_summary(start,end);requests=int(raw.get("eligibility_requests") or 0);submitted=int(raw.get("authorizations_submitted") or 0);return {"window":{"start":start,"end":end},**{key:int(raw[key] or 0) for key in raw},"eligibility_success_rate":_rate(int(raw.get("eligibility_verified") or 0),requests),"authorization_approval_rate":_rate(int(raw.get("authorizations_approved") or 0),submitted),"definitions":{"eligibility_requests":"Eligibility requests initiated in the window.","eligibility_verified":"Eligibility responses classified eligible in the window.","eligibility_failed":"Responses classified ineligible, unavailable, provider error, failed, or verification failed.","authorizations_submitted":"Authorizations with submitted_at in the window.","authorizations_approved":"Authorizations receiving approved status in the window.","authorizations_denied":"Authorizations receiving denied status in the window.","referrals_sent":"Referrals entering sent/received/accepted/scheduled/completed states in the window.","referrals_completed":"Referrals updated to completed in the window."},"source_tables":["eligibility_requests","authorizations","referrals_v2"]}
+    async def compliance(self,start:datetime,end:datetime)->dict:
+        raw=await self.repository.compliance_summary(start,end);events=int(raw.get("audit_events") or 0);return {"window":{"start":start,"end":end},**{key:int(raw[key] or 0) for key in raw},"failure_rate":_rate(int(raw.get("failed_events") or 0),events),"definitions":{"audit_events":"Audit-log events created in the reporting window.","privileged_events":"Audit events matching the platform's classified privileged actions.","ai_events":"Audit events carrying an AI/agent source or agent type.","integration_events":"Audit events associated with integration resources or integration actions.","failed_events":"Audit events explicitly classified as failed, error, denied, or rejected.","failure_rate":"Failed audit events divided by audit events; null when there are no events."},"source_tables":["audit_log"]}
+    async def trace(self,key:str,start:datetime,end:datetime)->dict:
+        definition=METRIC_BY_KEY[key];rows=await self.repository.metric_trace(key,start,end);metric={"key":definition.key,"label":definition.label,"category":definition.category,"value":None,"unit":definition.unit,"definition":definition.definition,"formula":definition.formula,"source_tables":list(definition.source_tables),"time_field":definition.time_field,"denominator":definition.denominator,"null_behavior":definition.null_behavior,"permission":definition.permission,"pii":definition.pii,"drilldown":definition.drilldown};return {"metric":metric,"window":{"start":start,"end":end},"rows":rows,"total_rows":len(rows)}
+    async def evidence(self,start:datetime,end:datetime,limit:int,offset:int,action:str|None,outcome:str|None)->dict:
+        rows,total=await self.repository.compliance_evidence(start,end,limit,offset,action,outcome);return {"window":{"start":start,"end":end},"events":rows,"total":total,"limit":limit,"offset":offset}
+    async def executive(self,start:datetime,end:datetime)->dict:
+        operational,financial,insurance,compliance=await asyncio.gather(self.summary(start,end),self.financial(start,end),self.insurance(start,end),self.compliance(start,end));metric_map={m["key"]:m["value"] for m in operational["metrics"]};risks=[]
+        ai_rate=_rate(metric_map.get("ai_escalations") or 0,metric_map.get("ai_executions") or 0)
+        if ai_rate is not None and ai_rate>0.2:risks.append({"key":"ai_escalation_rate","severity":"high","title":"AI escalation rate is elevated","explanation":"More than 20% of AI executions in the selected window required escalation.","source_metrics":["ai_executions","ai_escalations"]})
+        if financial["denial_rate"] is not None and financial["denial_rate"]>0.1:risks.append({"key":"claim_denial_rate","severity":"high","title":"Claim denials are elevated","explanation":"The observed denied-claim ratio exceeds 10% for the selected window.","source_metrics":["denied_claim_count","claims_billed_amount"]})
+        if insurance["eligibility_success_rate"] is not None and insurance["eligibility_success_rate"]<0.85:risks.append({"key":"eligibility_success_rate","severity":"medium","title":"Eligibility verification success is low","explanation":"Fewer than 85% of initiated eligibility requests returned an eligible response in the selected window.","source_metrics":["eligibility_requests","eligibility_verified"]})
+        if compliance["failure_rate"] is not None and compliance["failure_rate"]>0.02:risks.append({"key":"audit_failure_rate","severity":"medium","title":"Audit failure rate is elevated","explanation":"More than 2% of recorded audit events are explicitly classified as failed, denied, rejected, or error.","source_metrics":["audit_events","failed_events"]})
+        headline="No high-priority analytics risks detected in the selected window." if not risks else f"{len(risks)} governed analytics risk signal{'s' if len(risks)!=1 else ''} require attention.";return {"window":{"start":start,"end":end},"headline":headline,"operational":operational,"financial":financial,"insurance":insurance,"compliance":compliance,"risks":risks,"freshness":datetime.now(timezone.utc)}
