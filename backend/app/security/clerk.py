@@ -1,17 +1,16 @@
 from typing import Any
-from clerk_backend_api import AuthenticateRequestOptions, authenticate_request
-from fastapi import Depends, HTTPException, Request
+from clerk_backend_api import AuthenticateRequestOptions,authenticate_request
+from fastapi import Depends,HTTPException,Request
 from app.core.config import settings
 from app.security.tenant import TenantContext
-
+_BASE={'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','analytics:read','audit:read','compliance:read','compliance:manage','workflow:read','workflow:create','workflow:activate','workflow:execute','workflow:cancel','workflow:approve','approvals:read','approvals:approve','communications:read','communications:write','communications:send'}
 ROLE_PERMISSIONS={
-  'org:owner':frozenset({'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','analytics:read','audit:read','compliance:read','compliance:manage','workflow:read','workflow:create','workflow:activate','workflow:execute','workflow:cancel','workflow:approve','approvals:read','approvals:approve'}),
-  'org:admin':frozenset({'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','analytics:read','audit:read','compliance:read','compliance:manage','workflow:read','workflow:create','workflow:activate','workflow:execute','workflow:cancel','workflow:approve','approvals:read','approvals:approve'}),
-  'org:manager':frozenset({'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','analytics:read','audit:read','compliance:read','workflow:read','workflow:create','workflow:activate','workflow:execute','workflow:cancel','approvals:read'}),
-  'org:staff':frozenset({'patients:read','patients:write','appointments:read','appointments:write','tasks:read','tasks:write','agents:read','agents:execute','executions:read','workflow:read','workflow:execute','approvals:read'}),
-  'org:viewer':frozenset({'patients:read','appointments:read','tasks:read','agents:read','executions:read','analytics:read','workflow:read','approvals:read'}),
+ 'org:owner':frozenset(_BASE),
+ 'org:admin':frozenset(_BASE),
+ 'org:manager':frozenset(_BASE-{'compliance:manage','workflow:approve','approvals:approve'}),
+ 'org:staff':frozenset(_BASE-{'compliance:manage','workflow:create','workflow:activate','workflow:cancel','workflow:approve','approvals:approve'}),
+ 'org:viewer':frozenset({'patients:read','appointments:read','tasks:read','agents:read','executions:read','analytics:read','workflow:read','approvals:read','communications:read'}),
 }
-
 def _payload(state:Any)->dict[str,Any]: return state.get('payload',{}) if isinstance(state,dict) else (state.payload or {})
 def verify_request(request:Request)->Any:
     if settings.app_env in {'test','development'} and request.headers.get('x-test-auth')=='1': return {'payload':{'sub':'test_user','org_id':'test_org','org_role':'org:admin'}}

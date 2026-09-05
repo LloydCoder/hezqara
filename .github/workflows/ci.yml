@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Canonical architecture gates
         run: |
-          test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/domains/workflows/service.py; test -f backend/app/workforce/base/contracts.py; test -f backend/app/ai/orchestration/executor.py; test -f frontend/src/proxy.ts; test -f supabase/migrations/015_harden_tenant_rls.sql; test -f supabase/migrations/017_phase3_operational_core.sql; test -f supabase/migrations/018_phase4_workflow_runtime.sql; test -f supabase/tests/phase3_rls.sql; test -f supabase/tests/phase4_workflow_rls.sql
+          test -f backend/app/main.py; test -f backend/app/security/clerk.py; test -f backend/app/domains/patients/service.py; test -f backend/app/domains/workflows/service.py; test -f backend/app/domains/patient_engagement/service.py; test -f backend/app/workforce/base/contracts.py; test -f backend/app/ai/orchestration/executor.py; test -f frontend/src/proxy.ts; test -f supabase/migrations/015_harden_tenant_rls.sql; test -f supabase/migrations/017_phase3_operational_core.sql; test -f supabase/migrations/018_phase4_workflow_runtime.sql; test -f supabase/migrations/019_phase5_operations.sql; test -f supabase/tests/phase3_rls.sql; test -f supabase/tests/phase4_workflow_rls.sql; test -f supabase/tests/phase5_rls.sql
           test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
           ! find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .
           ! find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .
@@ -61,14 +61,17 @@ jobs:
       - name: Apply core migrations
         env: {PGPASSWORD: postgres}
         run: |
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
+          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
       - name: Prove Phase 3 cross-tenant isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase3_rls.sql
       - name: Prove Phase 4 workflow isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase4_workflow_rls.sql
-      - name: Install backend for API vertical slice
+      - name: Prove Phase 5 isolation
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase5_rls.sql
+      - name: Install backend for API vertical slices
         run: pip install -r backend/requirements.txt
       - name: Verify backend imports
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ''}
@@ -79,6 +82,9 @@ jobs:
       - name: Run backend API and workflow vertical slice
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: '', CLERK_SECRET_KEY: '', CLERK_PUBLISHABLE_KEY: '', CLERK_AUTHORIZED_PARTIES: ''}
         run: python backend/tests/ci_workflow_vertical_slice.py
+      - name: Run Phase 5 vertical slice
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: '', CLERK_SECRET_KEY: '', CLERK_PUBLISHABLE_KEY: '', CLERK_AUTHORIZED_PARTIES: ''}
+        run: python backend/tests/ci_phase5_vertical_slice.py
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 15
