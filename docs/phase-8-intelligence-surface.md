@@ -17,25 +17,15 @@ Phase 8 derives decision-support intelligence from tenant-scoped operational dat
 
 ## Data contract
 
-The architecture remains:
-
 `source tables -> canonical metric definition -> authorized repository query -> service calculation -> typed API -> design-system UI`
 
-Financial and rate calculations are deterministic. A rate is `null` when its denominator is zero or otherwise undefined; the UI renders this as `—` rather than fabricating a zero.
-
-Reporting windows use an inclusive start / exclusive end (`start <= timestamp < end`) and are UTC-normalized. Maximum reporting window is 366 days.
+Financial and rate calculations are deterministic. A rate is `null` when its denominator is zero or otherwise undefined; the UI renders this as `—` rather than fabricating a zero. Reporting windows use an inclusive start / exclusive end (`start <= timestamp < end`) and are UTC-normalized. Maximum reporting window is 366 days.
 
 ## Security model
 
 All analytics requests require authenticated tenant context. Database work is performed through `tenant_session_context`, which sets the organization transaction context and uses the `authenticated` database role so existing RLS policies remain authoritative.
 
-Export is intentionally stronger than read access:
-
-- owner/admin/manager roles receive `analytics:export` by default;
-- staff/viewer roles do not receive the export permission by default;
-- explicit Clerk `org_permissions` claims remain authoritative when present;
-- export requests are recorded with actor, tenant, request id, time window, fields and row count;
-- the export field set contains aggregate operational/revenue/insurance values only and excludes patient identifiers and free-form clinical content.
+Export is intentionally stronger than read access: owner/admin/manager roles receive `analytics:export` by default; staff/viewer roles do not receive it by default; explicit Clerk `org_permissions` claims remain authoritative; and export requests are recorded with actor, tenant, request id, time window, fields and row count. The export field set contains aggregate operational/revenue/insurance values only and excludes patient identifiers and free-form clinical content.
 
 Compliance evidence is read with `compliance:read`. Compliance metric tracing additionally requires `compliance:read` even when the caller already has `analytics:read`.
 
