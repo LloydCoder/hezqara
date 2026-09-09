@@ -13,9 +13,6 @@ END $$;
 
 ALTER TABLE ai_evaluation_cases ADD CONSTRAINT ai_eval_cases_tenant_suite_fk FOREIGN KEY (clinic_id,suite_id) REFERENCES ai_evaluation_suites(clinic_id,id) ON DELETE CASCADE;
 ALTER TABLE ai_evaluation_runs ADD CONSTRAINT ai_eval_runs_tenant_suite_fk FOREIGN KEY (clinic_id,suite_id) REFERENCES ai_evaluation_suites(clinic_id,id) ON DELETE CASCADE;
-ALTER TABLE ai_evaluation_runs ADD CONSTRAINT ai_eval_runs_tenant_capability_version_fk FOREIGN KEY (clinic_id,capability_version_id) REFERENCES ai_capability_versions(clinic_id,id) ON DELETE SET NULL;
+ALTER TABLE ai_evaluation_runs ADD CONSTRAINT ai_eval_runs_tenant_capability_version_fk FOREIGN KEY (clinic_id,capability_version_id) REFERENCES ai_capability_versions(clinic_id,id) ON DELETE RESTRICT;
 ALTER TABLE ai_evaluation_results ADD CONSTRAINT ai_eval_results_tenant_run_fk FOREIGN KEY (clinic_id,run_id) REFERENCES ai_evaluation_runs(clinic_id,id) ON DELETE CASCADE;
 ALTER TABLE ai_evaluation_results ADD CONSTRAINT ai_eval_results_tenant_case_fk FOREIGN KEY (clinic_id,case_id) REFERENCES ai_evaluation_cases(clinic_id,id) ON DELETE CASCADE;
-
--- Correctness constraints for commercial/scale primitives.
-ALTER TABLE platform_jobs DROP CONSTRAINT IF EXISTS platform_jobs_idempotency_key_key;
