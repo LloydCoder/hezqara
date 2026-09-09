@@ -44,4 +44,3 @@ end $$;
 create policy tenant_limits_tenant on tenant_limits using (clinic_id=current_setting('app.clerk_org_id',true)) with check (clinic_id=current_setting('app.clerk_org_id',true));
 create policy platform_usage_daily_tenant on platform_usage_daily using (clinic_id=current_setting('app.clerk_org_id',true)) with check (clinic_id=current_setting('app.clerk_org_id',true));
 create policy platform_jobs_tenant on platform_jobs using (clinic_id=current_setting('app.clerk_org_id',true)) with check (clinic_id=current_setting('app.clerk_org_id',true));
-grant usage,select on sequence platform_jobs_id_seq to authenticated;
