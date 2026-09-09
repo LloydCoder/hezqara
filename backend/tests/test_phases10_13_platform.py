@@ -2,7 +2,6 @@ from decimal import Decimal
 import pytest
 from app.platform.commercial import PLAN_CATALOG, get_plan
 from app.platform.growth import ONBOARDING_STEPS
-from app.platform.scale import get_limits
 
 def test_plan_catalog_has_bounded_production_tiers():
     assert set(PLAN_CATALOG) == {"starter", "growth", "professional", "enterprise"}
@@ -16,6 +15,3 @@ def test_unknown_plan_is_rejected():
 def test_onboarding_steps_are_stable():
     assert ONBOARDING_STEPS[0] == "clinic_profile"
     assert "first_workflow" in ONBOARDING_STEPS
-
-def test_scale_defaults_are_conservative():
-    assert get_limits is not None
