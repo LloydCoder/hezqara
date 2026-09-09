@@ -28,9 +28,6 @@ jobs:
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
         run: pytest -q tests ../tests/security
-      - name: Preserve existing vertical-slice gates
-        env: {APP_ENV: test, PYTHONPATH: .}
-        run: python backend/tests/ci_workflow_vertical_slice.py && python backend/tests/ci_phase5_vertical_slice.py
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -44,6 +41,8 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Prepare roles
@@ -65,6 +64,9 @@ jobs:
           for test in phase3_rls.sql phase4_workflow_rls.sql phase5_rls.sql phase6_rls.sql phase7_rls.sql; do
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/tests/$test"
           done
+      - name: Run existing database-backed vertical slices
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: . , REDIS_URL: ""}
+        run: python backend/tests/ci_workflow_vertical_slice.py && python backend/tests/ci_phase5_vertical_slice.py
       - name: Backend import with production-like database
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ""}
         run: python -c "from app.main import app; print(app.title, app.version)"
