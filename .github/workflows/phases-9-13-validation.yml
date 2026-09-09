@@ -65,7 +65,7 @@ jobs:
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/tests/$test"
           done
       - name: Run existing database-backed vertical slices
-        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: . , REDIS_URL: ""}
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ""}
         run: python backend/tests/ci_workflow_vertical_slice.py && python backend/tests/ci_phase5_vertical_slice.py
       - name: Backend import with production-like database
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ""}
