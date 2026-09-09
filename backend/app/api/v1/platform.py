@@ -30,7 +30,8 @@ class LeadRequest(BaseModel):
 @router.get("/readiness")
 async def platform_readiness(tenant: TenantContext = Depends(require_permission("platform:read"))):
     async with tenant_session_context(tenant.organization_id) as session:
-        return readiness(await session) if False else await readiness(session)
+        result = await readiness(session)
+        return {"status": result.status, "checks": result.checks}
 
 @router.get("/security-posture")
 async def platform_security(tenant: TenantContext = Depends(require_permission("platform:read"))):
