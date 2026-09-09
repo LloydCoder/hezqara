@@ -16,8 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+        with: {python-version: "3.12"}
       - working-directory: backend
         run: pip install -r requirements.txt ruff
       - working-directory: backend
@@ -27,19 +26,18 @@ jobs:
       - working-directory: backend
         run: ruff check app tests ../tests/security
       - working-directory: backend
-        env:
-          APP_ENV: test
-          PYTHONPATH: .
+        env: {APP_ENV: test, PYTHONPATH: .}
         run: pytest -q tests ../tests/security
+      - name: Preserve existing vertical-slice gates
+        env: {APP_ENV: test, PYTHONPATH: .}
+        run: python backend/tests/ci_workflow_vertical_slice.py && python backend/tests/ci_phase5_vertical_slice.py
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: hezqara_ci
+        env: {POSTGRES_PASSWORD: postgres, POSTGRES_DB: hezqara_ci}
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres -d hezqara_ci"
@@ -51,22 +49,24 @@ jobs:
       - name: Prepare roles
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END \$\$;"
-      - name: Apply migrations
+      - name: Apply all production migrations
         env: {PGPASSWORD: postgres}
         run: |
           set -e
           for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 004_create_calls.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql 023_phase8_intelligence_surface.sql 024_phase9_ai_governance.sql 025_phase10_enterprise_hardening.sql 026_phase11_scale_platform.sql 027_phase12_commercial.sql 028_phase13_launch_growth.sql 029_phase9_tenant_integrity_and_controls.sql; do
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"
           done
-      - name: Prove legacy and phase 9-13 isolation
+      - name: Prove tenant isolation for new surfaces
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phases9_13_rls.sql
+      - name: Prove legacy RLS surfaces
+        env: {PGPASSWORD: postgres}
+        run: |
+          for test in phase3_rls.sql phase4_workflow_rls.sql phase5_rls.sql phase6_rls.sql phase7_rls.sql; do
+            psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/tests/$test"
+          done
       - name: Backend import with production-like database
-        env:
-          APP_ENV: test
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci
-          PYTHONPATH: backend
-          REDIS_URL: ""
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ""}
         run: python -c "from app.main import app; print(app.title, app.version)"
   frontend:
     runs-on: ubuntu-latest
