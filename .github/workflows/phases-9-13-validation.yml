@@ -52,7 +52,7 @@ jobs:
         env: {PGPASSWORD: postgres}
         run: |
           set -e
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 004_create_calls.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql 023_phase8_intelligence_surface.sql 024_phase9_ai_governance.sql 025_phase10_enterprise_hardening.sql 026_phase11_scale_platform.sql 027_phase12_commercial.sql 028_phase13_launch_growth.sql 029_phase9_tenant_integrity_and_controls.sql 030_workflow_tenant_integrity.sql; do
+          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 004_create_calls.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql 023_phase8_intelligence_surface.sql 024_phase9_ai_governance.sql 025_phase10_enterprise_hardening.sql 026_phase11_scale_platform.sql 027_phase12_commercial.sql 028_phase13_launch_growth.sql 029_phase9_tenant_integrity_and_controls.sql 030_workflow_tenant_integrity.sql 031_ai_approval_lifecycle.sql; do
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"
           done
       - name: Prove tenant isolation for new surfaces
