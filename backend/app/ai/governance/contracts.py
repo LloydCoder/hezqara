@@ -51,6 +51,8 @@ class GovernanceDecision:
     approval_required:bool=False
     escalation_required:bool=False
     failure_category:str|None=None
+    policy_version:str|None=None
+    prompt_version:str|None=None
 
 @dataclass(frozen=True)
 class EvaluationScore:
