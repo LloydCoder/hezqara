@@ -4,7 +4,7 @@
 
 HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and revenue-cycle workflows.
 
-> **Engineering status:** Phase 9 AI reliability, evaluation and governance layer implemented on the Phase 1–8 platform. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
+> **Engineering status:** Phases 9–13 implementation foundation is present on the Phase 1–8 platform. Final closure remains gated by green CI, Codespace validation, adversarial security checks and production smoke testing. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
 
 ## Canonical architecture
 
@@ -38,7 +38,15 @@ AI is not an authorization boundary. External healthcare content is untrusted da
 
 The AI governance subsystem provides tenant-scoped capability/version records, evaluation suites/cases/runs/results, policy decisions, minimized execution telemetry, failure taxonomy, approval records, provider health and server-authoritative emergency controls. Governance APIs require explicit AI governance permissions and use the existing Clerk tenant/RLS architecture.
 
+Server-side input guardrails detect common prompt-injection and cross-tenant PHI-boundary signals before model execution. These deterministic detectors are defense-in-depth, not a claim of complete prompt-injection detection.
+
 Evaluation fixtures are synthetic-only. No production accuracy, provider connectivity or healthcare outcome is fabricated.
+
+## Phases 10–13 foundation
+
+The implementation branch adds enterprise readiness/security-posture primitives, tenant limits and usage accounting, platform job/subscription primitives, onboarding/referral/growth models, approval lifecycle hardening, workflow tenant referential integrity and tenant-policy hardening across the Phase 9–13 database surfaces.
+
+These are implementation foundations; final production closure requires successful database, backend, frontend, security and runtime validation.
 
 ## Phase 7 interoperability
 
@@ -66,7 +74,7 @@ Redis: `:6380`
 
 ## Validation
 
-CI validates repository structure, source hygiene, Python syntax/lint/tests, integration and AI security tests, database migrations/RLS, frontend lint/type-check/build, Playwright, Docker and dependency/secret scanning.
+CI validates repository structure, source hygiene, Python syntax/lint/tests, integration and AI security tests, database migrations/RLS, frontend lint/type-check/build, Playwright, Docker and dependency/secret scanning. A green CI result is required before the implementation branch is merged.
 
 ## Documentation
 
@@ -79,7 +87,7 @@ CI validates repository structure, source hygiene, Python syntax/lint/tests, int
 
 ## Roadmap
 
-Phases 1–9 are the implemented foundation. Remaining work is Phase 10 production/enterprise hardening, Phase 11 scale/platform infrastructure, Phase 12 commercial productization and Phase 13 launch/growth.
+Phases 1–13 have implementation foundations on this branch. Remaining closure work is validation and hardening: green CI, Codespace execution of the complete validation suite, adversarial tenant/governance tests, governed tool execution, deterministic fallback verification, approval end-to-end verification, production smoke testing and final documentation reconciliation.
 
 ## License
 
