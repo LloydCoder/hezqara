@@ -16,6 +16,9 @@ INSERT INTO platform_settings(clinic_id) VALUES ('ci-tenant-a') ON CONFLICT DO N
 INSERT INTO tenant_limits(clinic_id) VALUES ('ci-tenant-a') ON CONFLICT DO NOTHING;
 INSERT INTO subscriptions(clinic_id,plan_code,status) VALUES ('ci-tenant-a','starter','active') ON CONFLICT DO NOTHING;
 INSERT INTO onboarding_checklist(clinic_id,step,status) VALUES ('ci-tenant-a','clinic_profile','completed') ON CONFLICT DO NOTHING;
+INSERT INTO growth_leads(clinic_id,email,clinic_name) VALUES ('ci-tenant-a','ci-a@example.test','CI A') ON CONFLICT DO NOTHING;
+INSERT INTO growth_campaign_events(clinic_id,lead_id,event_type)
+SELECT 'ci-tenant-a',id,'created' FROM growth_leads WHERE clinic_id='ci-tenant-a' AND email='ci-a@example.test';
 
 SELECT set_config('app.clerk_org_id','ci_org_b',false);
 DO $$ BEGIN
@@ -24,6 +27,8 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM tenant_limits WHERE clinic_id='ci-tenant-a') THEN RAISE EXCEPTION 'cross-tenant limits read'; END IF;
   IF EXISTS (SELECT 1 FROM subscriptions WHERE clinic_id='ci-tenant-a') THEN RAISE EXCEPTION 'cross-tenant subscription read'; END IF;
   IF EXISTS (SELECT 1 FROM onboarding_checklist WHERE clinic_id='ci-tenant-a') THEN RAISE EXCEPTION 'cross-tenant onboarding read'; END IF;
+  IF EXISTS (SELECT 1 FROM growth_leads WHERE clinic_id='ci-tenant-a') THEN RAISE EXCEPTION 'cross-tenant growth lead read'; END IF;
+  IF EXISTS (SELECT 1 FROM growth_campaign_events WHERE clinic_id='ci-tenant-a') THEN RAISE EXCEPTION 'cross-tenant growth event read'; END IF;
 END $$;
 
 DO $$ BEGIN
@@ -32,6 +37,15 @@ DO $$ BEGIN
     RAISE EXCEPTION 'cross-tenant forged insert unexpectedly succeeded';
   EXCEPTION WHEN others THEN
     IF SQLERRM LIKE 'cross-tenant forged insert unexpectedly succeeded' THEN RAISE; END IF;
+  END;
+END $$;
+
+DO $$ BEGIN
+  BEGIN
+    INSERT INTO growth_leads(clinic_id,email,clinic_name) VALUES ('ci-tenant-a','ci-forged@example.test','forged');
+    RAISE EXCEPTION 'cross-tenant growth lead insert unexpectedly succeeded';
+  EXCEPTION WHEN others THEN
+    IF SQLERRM LIKE 'cross-tenant growth lead insert unexpectedly succeeded' THEN RAISE; END IF;
   END;
 END $$;
 
