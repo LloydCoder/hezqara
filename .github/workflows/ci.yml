@@ -141,7 +141,7 @@ jobs:
         run: npm run type-check
       - name: Production build
         working-directory: frontend
-        env: {NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jb20k}
+        env: {NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5hY2NvdW50cy5kZXYk}
         run: npm run build
   e2e:
     runs-on: ubuntu-latest
@@ -168,4 +168,4 @@ jobs:
       - name: Backend image
         run: docker build -f backend/Dockerfile --target production backend
       - name: Frontend image
-        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jb20k -f frontend/Dockerfile frontend
+        run: docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5hY2NvdW50cy5kZXYk -f frontend/Dockerfile frontend
