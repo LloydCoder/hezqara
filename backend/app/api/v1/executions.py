@@ -17,8 +17,10 @@ router = APIRouter(prefix='/executions', tags=['executions'])
 class ExecutionRequest(BaseModel):
     agent_type: str = Field(min_length=1, max_length=100)
     task: str = Field(min_length=1, max_length=500)
-    input: dict = {}
+    input: dict = Field(default_factory=dict)
     idempotency_key: str = Field(min_length=8, max_length=200)
+    data_classes: list[str] = Field(default_factory=list, max_length=20)
+    tools: list[str] = Field(default_factory=list, max_length=50)
 
 @router.get('')
 async def list_executions(limit: int = 50, offset: int = 0, tenant: TenantContext = Depends(require_permission('executions:read'))):
@@ -49,7 +51,7 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
             raise HTTPException(status_code=409, detail='execution already in progress')
 
         governance = AIGovernanceService(session, tenant.organization_id)
-        initial = await governance.resolve_execution_policy(payload.agent_type, None, None)
+        initial = await governance.resolve_execution_policy(payload.agent_type, None, None, data_classes=payload.data_classes, tools=payload.tools)
         if initial.decision == 'deny':
             raise HTTPException(status_code=503, detail=initial.reason)
 
@@ -90,7 +92,7 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
             valid, failure = validate_output(normalized)
             action = normalized['action']
             provider = response.provider
-            decision = await governance.resolve_execution_policy(payload.agent_type, action, provider, response.confidence)
+            decision = await governance.resolve_execution_policy(payload.agent_type, action, provider, response.confidence, data_classes=payload.data_classes, tools=payload.tools)
 
             if decision.decision == 'deny':
                 response = response.__class__('escalated', {'reason': decision.reason}, response.confidence, True, response.execution_id, provider, response.model)
