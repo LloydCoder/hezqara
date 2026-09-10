@@ -99,17 +99,6 @@ ALTER TABLE public.workflow_events
   REFERENCES public.workflow_runs (clinic_id, id)
   ON DELETE CASCADE;
 
--- Communications also carries both tenant and workflow identifiers; bind that
--- relationship to the same tenant boundary to prevent cross-tenant references.
-ALTER TABLE public.communications
-  DROP CONSTRAINT IF EXISTS communications_workflow_run_id_fkey;
-
-ALTER TABLE public.communications
-  ADD CONSTRAINT communications_clinic_workflow_run_fk
-  FOREIGN KEY (clinic_id, workflow_run_id)
-  REFERENCES public.workflow_runs (clinic_id, id)
-  ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_workflow_versions_clinic_id
   ON public.workflow_versions (clinic_id, id);
 CREATE INDEX IF NOT EXISTS idx_workflow_step_runs_clinic_id
