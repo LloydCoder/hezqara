@@ -53,6 +53,10 @@ class GovernanceDecision:
     failure_category:str|None=None
     policy_version:str|None=None
     prompt_version:str|None=None
+    max_output_tokens:int=2048
+    max_tool_calls:int=0
+    max_retries:int=1
+    safety_threshold:float=1.0
 
 @dataclass(frozen=True)
 class EvaluationScore:
