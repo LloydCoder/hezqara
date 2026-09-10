@@ -39,7 +39,8 @@ async def _decide_workflow(approval_id: str, tenant: TenantContext, status: str)
         row = (await session.execute(text(
             """select id,status,expires_at,workflow_run_id,workflow_step_run_id
             from workflow_approvals
-            where id=:id and clinic_id=current_setting('app.clerk_org_id',true)
+            where id=:id
+              and clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true))
             for update"""
         ), {'id': approval_id})).mappings().first()
         if not row:
@@ -67,7 +68,8 @@ async def _decide_workflow(approval_id: str, tenant: TenantContext, status: str)
             await session.execute(text(
                 """update workflow_step_runs
                 set status='queued'
-                where id=:step and clinic_id=current_setting('app.clerk_org_id',true)
+                where id=:step
+                  and clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true))
                   and status='waiting_for_approval'"""
             ), {'step': updated['workflow_step_run_id']})
         await append_event(
@@ -94,7 +96,8 @@ async def _decide_ai(approval_id: str, tenant: TenantContext, status: str, reaso
             policy_version,decision,rejection_reason,decided_by,decision_reason,
             expires_at,decided_at,created_at
             from ai_approvals
-            where id=:id and clinic_id=current_setting('app.clerk_org_id',true)
+            where id=:id
+              and clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true))
             for update"""
         ), {'id': approval_id})).mappings().first()
         if not row:
