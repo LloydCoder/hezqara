@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException,Request
 from pydantic import BaseModel,Field
 from sqlalchemy import text
-import uuid
+import json,uuid
 from app.infrastructure.database import tenant_session_context
 from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
@@ -13,67 +13,51 @@ from app.ai.governance.contracts import validate_output
 from app.ai.governance.service import AIGovernanceService
 
 router=APIRouter(prefix='/executions',tags=['executions'])
-
 class ExecutionRequest(BaseModel):
-    agent_type:str=Field(min_length=1,max_length=100)
-    task:str=Field(min_length=1,max_length=500)
-    input:dict={}
-    idempotency_key:str=Field(min_length=8,max_length=200)
+    agent_type:str=Field(min_length=1,max_length=100);task:str=Field(min_length=1,max_length=500);input:dict={};idempotency_key:str=Field(min_length=8,max_length=200)
 
 @router.get('')
 async def list_executions(limit:int=50,offset:int=0,tenant:TenantContext=Depends(require_permission('executions:read'))):
     if limit<1 or limit>100 or offset<0:raise HTTPException(status_code=400,detail='invalid pagination')
     async with tenant_session_context(tenant.organization_id) as session:
-        result=await session.execute(text("select id,actor_id,agent_type,status,provider,model,confidence,escalation_required,result_summary,error_class,started_at,completed_at,created_at,updated_at from agent_executions order by created_at desc,id desc limit :limit offset :offset"),{'limit':limit,'offset':offset})
-        return [dict(r._mapping) for r in result]
+        result=await session.execute(text("select id,actor_id,agent_type,status,provider,model,confidence,escalation_required,result_summary,error_class,started_at,completed_at,created_at,updated_at from agent_executions order by created_at desc,id desc limit :limit offset :offset"),{'limit':limit,'offset':offset});return [dict(r._mapping) for r in result]
 
 @router.post('',status_code=202)
 async def execute(payload:ExecutionRequest,http_request:Request,tenant:TenantContext=Depends(require_permission('agents:execute'))):
     try:agent=registry.get(payload.agent_type)
     except KeyError as exc:raise HTTPException(status_code=404,detail='agent not found') from exc
     async with tenant_session_context(tenant.organization_id) as session:
-        repo=ExecutionRepository(session)
-        existing=await repo.get_by_key(payload.agent_type,payload.idempotency_key)
+        repo=ExecutionRepository(session);existing=await repo.get_by_key(payload.agent_type,payload.idempotency_key)
         if existing:
             if existing['status'] in {'completed','failed','escalated','cancelled'}:return existing
             raise HTTPException(status_code=409,detail='execution already in progress')
-
         governance=AIGovernanceService(session,tenant.organization_id)
         initial=await governance.resolve_execution_policy(payload.agent_type,None,None)
-        if initial.decision=='deny':
-            raise HTTPException(status_code=503,detail=initial.reason)
-
-        execution=await repo.create(payload.agent_type,tenant.user_id,payload.idempotency_key,payload.task)
-        await repo.mark_running(execution['id'])
+        if initial.decision=='deny':raise HTTPException(status_code=503,detail=initial.reason)
+        execution=await repo.create(payload.agent_type,tenant.user_id,payload.idempotency_key,payload.task);await repo.mark_running(execution['id'])
         request_id=getattr(http_request.state,'request_id',None)
-        await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action='ai.execution.created',resource_type='agent_execution',resource_id=execution['id'],outcome='started',request_id=request_id,metadata={'capability_version':initial.capability_version,'policy_version_id':initial.policy_version_id})
+        await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action='ai.execution.created',resource_type='agent_execution',resource_id=execution['id'],outcome='started',request_id=request_id,metadata={'capability_version':initial.capability_version,'policy_version':initial.policy_version})
         context=AgentContext(tenant_id=tenant.organization_id,user_id=tenant.user_id,permissions=tenant.permissions,execution_id=execution['id'],request_id=request_id)
         try:
             response=await agent.execute(context,AgentRequest(task=payload.task,input=payload.input,idempotency_key=payload.idempotency_key))
             raw=response.output if isinstance(response.output,dict) else {}
             normalized={'action':raw.get('action',''),'response':raw.get('response',''),'confidence':response.confidence if response.confidence is not None else 0,'escalate':response.escalation_required}
-            valid,failure=validate_output(normalized)
-            action=normalized['action']
-            provider=response.provider
+            valid,failure=validate_output(normalized);action=normalized['action'];provider=response.provider
             decision=await governance.resolve_execution_policy(payload.agent_type,action,provider,response.confidence)
-
-            if decision.decision=='deny':
-                response=response.__class__('escalated',{'reason':decision.reason},response.confidence,True,response.execution_id,provider,response.model)
+            if decision.decision=='deny':response=response.__class__('escalated',{'reason':decision.reason},response.confidence,True,response.execution_id,provider,response.model)
             elif decision.decision=='approval_required':
                 approval_id=str(uuid.uuid4())
-                await session.execute(text("insert into ai_approvals(id,clinic_id,execution_id,proposed_action,evidence,risk_tier,policy_version,decision,actor_id) values(:id,:tenant,:execution,cast(:action as jsonb),'[]',:risk,:policy,'pending',:actor)"),{'id':approval_id,'tenant':tenant.organization_id,'execution':execution['id'],'action':__import__('json').dumps({'action':action,'response':raw.get('response','')}),'risk':int(decision.risk_tier),'policy':decision.capability_version or 'unknown','actor':tenant.user_id})
+                await session.execute(text("insert into ai_approvals(id,clinic_id,execution_id,proposed_action,evidence,risk_tier,policy_version,decision,actor_id) values(:id,:tenant,:execution,cast(:action as jsonb),'[]',:risk,:policy,'pending',:actor)"),{'id':approval_id,'tenant':tenant.organization_id,'execution':execution['id'],'action':json.dumps({'action':action,'response':raw.get('response','')}),'risk':int(decision.risk_tier),'policy':decision.policy_version or 'unknown','actor':tenant.user_id})
                 response=response.__class__('escalated',{'reason':'Human approval required','approval_id':approval_id},response.confidence,True,response.execution_id,provider,response.model)
-            elif decision.decision=='escalate':
-                response=response.__class__('escalated',{'reason':decision.reason},response.confidence,True,response.execution_id,provider,response.model)
-
+            elif decision.decision=='escalate':response=response.__class__('escalated',{'reason':decision.reason},response.confidence,True,response.execution_id,provider,response.model)
             status=response.status if response.status in {'completed','failed','escalated'} else 'failed'
-            await repo.complete(execution['id'],status,response.provider,response.model,response.confidence,response.escalation_required,str(response.output.get('response','')) if isinstance(response.output,dict) else None,None if valid else (failure or decision.failure_category))
+            failure_category=failure or decision.failure_category
+            await repo.complete(execution['id'],status,response.provider,response.model,response.confidence,response.escalation_required,str(response.output.get('response','')) if isinstance(response.output,dict) else None,failure_category)
             await session.execute(text("insert into ai_policy_decisions(id,clinic_id,execution_id,policy_version_id,risk_tier,decision,reason) values(:id,:tenant,:execution,:policy,:risk,:decision,:reason)"),{'id':str(uuid.uuid4()),'tenant':tenant.organization_id,'execution':execution['id'],'policy':decision.policy_version_id,'risk':int(decision.risk_tier),'decision':decision.decision,'reason':decision.reason})
-            await session.execute(text("insert into ai_execution_telemetry(clinic_id,execution_id,capability_id,capability_version,request_id,provider,model,prompt_version,validation_result,confidence,escalation,approval_required,outcome,failure_category,safety_violation) values(:tenant,:execution,:capability,:version,:request,:provider,:model,:prompt,:validation,:confidence,:escalation,:approval,:outcome,:failure,false)"),{'tenant':tenant.organization_id,'execution':execution['id'],'capability':decision.capability_id,'version':decision.capability_version or 'unknown','request':request_id,'provider':response.provider,'model':response.model,'prompt':'unknown','validation':'valid' if valid else 'invalid','confidence':response.confidence,'escalation':response.escalation_required,'approval':decision.approval_required,'outcome':status,'failure':failure or decision.failure_category})
-            await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action=f'ai.execution.{status}',resource_type='agent_execution',resource_id=execution['id'],outcome=status,request_id=request_id,metadata={'capability_version':decision.capability_version,'policy_version_id':decision.policy_version_id,'policy_decision':decision.decision,'risk_tier':int(decision.risk_tier),'failure_category':failure or decision.failure_category})
+            await session.execute(text("insert into ai_execution_telemetry(clinic_id,execution_id,capability_id,capability_version,request_id,provider,model,prompt_version,validation_result,confidence,escalation,approval_required,outcome,failure_category,safety_violation) values(:tenant,:execution,:capability,:version,:request,:provider,:model,:prompt,:validation,:confidence,:escalation,:approval,:outcome,:failure,false)"),{'tenant':tenant.organization_id,'execution':execution['id'],'capability':decision.capability_id,'version':decision.capability_version or 'unknown','request':request_id,'provider':response.provider,'model':response.model,'prompt':decision.prompt_version or 'unknown','validation':'valid' if valid else 'invalid','confidence':response.confidence,'escalation':response.escalation_required,'approval':decision.approval_required,'outcome':status,'failure':failure_category})
+            await append_event(session,organization_id=tenant.organizationization_id if False else tenant.organization_id,actor=tenant.user_id,action=f'ai.execution.{status}',resource_type='agent_execution',resource_id=execution['id'],outcome=status,request_id=request_id,metadata={'capability_version':decision.capability_version,'policy_version':decision.policy_version,'policy_version_id':decision.policy_version_id,'policy_decision':decision.decision,'risk_tier':int(decision.risk_tier),'failure_category':failure_category})
             return {**response.__dict__}
         except Exception as exc:
             await repo.complete(execution['id'],'failed',None,None,None,True,None,type(exc).__name__)
             await session.execute(text("insert into ai_failure_events(clinic_id,execution_id,category,severity,detail) values(:tenant,:execution,:category,'high','AI execution failed')"),{'tenant':tenant.organization_id,'execution':execution['id'],'category':'UNKNOWN'})
-            await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action='ai.execution.failed',resource_type='agent_execution',resource_id=execution['id'],outcome='failed',request_id=request_id,metadata={'error_class':type(exc).__name__})
-            raise HTTPException(status_code=500,detail='AI execution failed') from exc
+            await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action='ai.execution.failed',resource_type='agent_execution',resource_id=execution['id'],outcome='failed',request_id=request_id,metadata={'error_class':type(exc).__name__});raise HTTPException(status_code=500,detail='AI execution failed') from exc
