@@ -150,7 +150,7 @@ async def approve(approval_id: str, tenant: TenantContext = Depends(require_perm
     return await _decide_workflow(approval_id, tenant, 'approved')
 
 @router.post('/{approval_id}/reject')
-async def reject(approval_id: str, body: DecisionRequest | None = None, tenant: TenantContext = Depends(require_permission('approvals:approve'))):
+async def reject(approval_id: str, tenant: TenantContext = Depends(require_permission('approvals:approve'))):
     return await _decide_workflow(approval_id, tenant, 'rejected')
 
 @router.post('/ai/{approval_id}/approve')
