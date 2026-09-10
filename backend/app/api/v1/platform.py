@@ -86,4 +86,4 @@ async def onboarding_complete(payload: OnboardingRequest, tenant: TenantContext 
 @router.post("/leads", status_code=201)
 async def lead(payload: LeadRequest, tenant: TenantContext = Depends(require_permission("platform:write"))):
     async with tenant_session_context(tenant.organization_id) as session:
-        return await create_lead(session, payload.email, payload.clinic_name, payload.source, payload.campaign)
+        return await create_lead(session, tenant.organization_id, payload.email, payload.clinic_name, payload.source, payload.campaign)
