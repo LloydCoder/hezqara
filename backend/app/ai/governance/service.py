@@ -34,7 +34,7 @@ class AIGovernanceService:
     async def set_controls(self,payload,actor):
         await self.controls();v={k:payload[k] for k in {'ai_enabled','force_human_approval','force_deterministic_fallback','disabled_capabilities','disabled_providers','tool_access_enabled'} if k in payload};v.update({'tenant':self.tenant_id,'actor':actor,'disabled_capabilities':json.dumps(v['disabled_capabilities']) if 'disabled_capabilities' in v else None,'disabled_providers':json.dumps(v['disabled_providers']) if 'disabled_providers' in v else None})
         await self.session.execute(text("update ai_control_state set ai_enabled=coalesce(:ai_enabled,ai_enabled),force_human_approval=coalesce(:force_human_approval,force_human_approval),force_deterministic_fallback=coalesce(:force_deterministic_fallback,force_deterministic_fallback),disabled_capabilities=coalesce(cast(:disabled_capabilities as jsonb),disabled_capabilities),disabled_providers=coalesce(cast(:disabled_providers as jsonb),disabled_providers),tool_access_enabled=coalesce(:tool_access_enabled,tool_access_enabled),updated_by=:actor,updated_at=now() where clinic_id=:tenant"),v);return await self.controls()
-    async def resolve_execution_policy(self,capability_id:str,action:str|None,provider:str|None,confidence:float|None=None)->GovernanceDecision:
+    async def resolve_execution_policy(self,capability_id:str,action:str|None,provider:str|None,confidence:float|None=None,data_classes=(),tools=(),prompt_injection_detected=False,phi_boundary_violation=False)->GovernanceDecision:
         controls=await self.controls();disabled_caps=controls.get('disabled_capabilities') or [];disabled_providers=controls.get('disabled_providers') or []
         if isinstance(disabled_caps,str):disabled_caps=json.loads(disabled_caps)
         if isinstance(disabled_providers,str):disabled_providers=json.loads(disabled_providers)
@@ -47,11 +47,27 @@ class AIGovernanceService:
         if not version:return GovernanceDecision(decision='deny',risk_tier=int(cap['risk_tier']),capability_id=capability_id,capability_version=None,policy_version_id=None,reason='No active capability version is configured',failure_category='POLICY_DENIED')
         policy=(await self.session.execute(text("select * from ai_policy_versions where clinic_id=:tenant and status='active' order by created_at desc,id desc limit 1"),{'tenant':self.tenant_id})).mappings().first()
         if not policy:return GovernanceDecision(decision='deny',risk_tier=int(cap['risk_tier']),capability_id=capability_id,capability_version=version['version'],policy_version_id=None,reason='No active AI policy is configured',prompt_version=version['prompt_version'],failure_category='POLICY_DENIED')
+        rules=policy.get('rules') or {}
+        if not isinstance(rules,dict):rules={}
         allowed_actions=tuple(cap.get('allowed_actions') or []);prohibited_actions=tuple(cap.get('prohibited_actions') or []);allowed_data=tuple(cap.get('allowed_data_classes') or []);allowed_tools=tuple(version.get('allowed_tools') or [])
+        policy_data=tuple(rules.get('allowed_data_classes') or []);policy_tools=tuple(rules.get('allowed_tools') or []);policy_prohibited=tuple(rules.get('prohibited_actions') or [])
+        if policy_data: allowed_data=tuple(x for x in allowed_data if x in policy_data) if allowed_data else policy_data
+        if policy_tools: allowed_tools=tuple(x for x in allowed_tools if x in policy_tools) if allowed_tools else policy_tools
         common=dict(risk_tier=int(cap['risk_tier']),capability_id=capability_id,capability_version=version['version'],policy_version_id=policy['id'],allowed_actions=allowed_actions,allowed_data_classes=allowed_data,allowed_tools=allowed_tools,policy_version=policy['version'],prompt_version=version['prompt_version'])
-        if action and action in prohibited_actions:return GovernanceDecision(decision='deny',reason='Action is prohibited by capability policy',failure_category='POLICY_DENIED',**common)
+        requested_data=set(data_classes);requested_tools=set(tools)
+        if prompt_injection_detected:return GovernanceDecision(decision='deny',reason='Prompt injection detected in execution input',failure_category='PROMPT_INJECTION_DETECTED',**common)
+        if phi_boundary_violation:return GovernanceDecision(decision='deny',reason='PHI boundary policy violation detected',failure_category='PHI_BOUNDARY_VIOLATION',**common)
+        if not controls.get('tool_access_enabled',True) and requested_tools:return GovernanceDecision(decision='deny',reason='Tool access is disabled by governance control',failure_category='TOOL_DENIED',**common)
+        if requested_tools and not requested_tools.issubset(set(allowed_tools)):return GovernanceDecision(decision='deny',reason='Requested tool is outside the governance allowlist',failure_category='TOOL_DENIED',**common)
+        if requested_data and not requested_data.issubset(set(allowed_data)):return GovernanceDecision(decision='deny',reason='Requested data class is outside the governance allowlist',failure_category='PHI_BOUNDARY_VIOLATION' if 'phi' in requested_data or 'PHI' in requested_data else 'POLICY_DENIED',**common)
+        if action and (action in prohibited_actions or action in policy_prohibited):return GovernanceDecision(decision='deny',reason='Action is prohibited by capability policy',failure_category='POLICY_DENIED',**common)
         if allowed_actions and action and action not in allowed_actions:return GovernanceDecision(decision='deny',reason='Action is outside the capability allowlist',failure_category='POLICY_DENIED',**common)
-        decision=classify_risk(int(cap['risk_tier']),action,bool(cap['approval_required']) or bool(controls.get('force_human_approval')))
+        if provider:
+            health=(await self.session.execute(text("select status from ai_provider_health where clinic_id=:tenant and provider=:provider order by checked_at desc limit 1"),{'tenant':self.tenant_id,'provider':provider})).scalar()
+            if health == 'unavailable':return GovernanceDecision(decision='deny',reason='AI provider is unavailable',failure_category='MODEL_UNAVAILABLE',**common)
+            if health == 'rate_limited':return GovernanceDecision(decision='escalate',reason='AI provider is rate limited',escalation_required=True,failure_category='RATE_LIMITED',**common)
+            if health == 'degraded':return GovernanceDecision(decision='escalate',reason='AI provider is degraded',escalation_required=True,failure_category='MODEL_UNAVAILABLE',**common)
+        decision=classify_risk(int(cap['risk_tier']),action,bool(cap['approval_required']) or bool(controls.get('force_human_approval')) or bool(rules.get('approval_required')))
         if confidence is not None and confidence < float(version['quality_threshold']):return GovernanceDecision(decision='escalate',reason='Confidence is below the configured quality threshold',escalation_required=True,failure_category='CONFIDENCE_TOO_LOW',**common)
         return GovernanceDecision(decision=decision.decision,reason=decision.reason,approval_required=decision.decision=='approval_required',escalation_required=bool(cap['escalation_required']),**common)
     async def record_policy(self,execution_id,policy,action):
