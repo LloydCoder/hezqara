@@ -11,6 +11,7 @@ from app.workforce.registry import registry
 from app.domains.executions.repository import ExecutionRepository
 from app.ai.governance.contracts import validate_output
 from app.ai.governance.service import AIGovernanceService
+from app.ai.guardrails.policy import classify_input_data_classes, detect_phi_boundary_violation, detect_prompt_injection
 
 router = APIRouter(prefix='/executions', tags=['executions'])
 
@@ -42,6 +43,16 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
     except KeyError as exc:
         raise HTTPException(status_code=404, detail='agent not found') from exc
 
+    request = AgentRequest(
+        task=payload.task,
+        input=payload.input,
+        idempotency_key=payload.idempotency_key,
+        metadata={'data_classes': ','.join(payload.data_classes)},
+    )
+    prompt_injection_detected = detect_prompt_injection(request)
+    phi_boundary_violation = detect_phi_boundary_violation(request)
+    effective_data_classes = tuple(sorted(set(payload.data_classes) | set(classify_input_data_classes(request))))
+
     async with tenant_session_context(tenant.organization_id) as session:
         repo = ExecutionRepository(session)
         existing = await repo.get_by_key(payload.agent_type, payload.idempotency_key)
@@ -51,9 +62,17 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
             raise HTTPException(status_code=409, detail='execution already in progress')
 
         governance = AIGovernanceService(session, tenant.organization_id)
-        initial = await governance.resolve_execution_policy(payload.agent_type, None, None, data_classes=payload.data_classes, tools=payload.tools)
+        initial = await governance.resolve_execution_policy(
+            payload.agent_type,
+            None,
+            None,
+            data_classes=effective_data_classes,
+            tools=payload.tools,
+            prompt_injection_detected=prompt_injection_detected,
+            phi_boundary_violation=phi_boundary_violation,
+        )
         if initial.decision == 'deny':
-            raise HTTPException(status_code=503, detail=initial.reason)
+            raise HTTPException(status_code=403, detail=initial.reason)
 
         execution = await repo.create(payload.agent_type, tenant.user_id, payload.idempotency_key, payload.task)
         await repo.mark_running(execution['id'])
@@ -78,10 +97,7 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
             request_id=request_id,
         )
         try:
-            response = await agent.execute(
-                context,
-                AgentRequest(task=payload.task, input=payload.input, idempotency_key=payload.idempotency_key),
-            )
+            response = await agent.execute(context, request)
             raw = response.output if isinstance(response.output, dict) else {}
             normalized = {
                 'action': raw.get('action', ''),
@@ -92,7 +108,16 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
             valid, failure = validate_output(normalized)
             action = normalized['action']
             provider = response.provider
-            decision = await governance.resolve_execution_policy(payload.agent_type, action, provider, response.confidence, data_classes=payload.data_classes, tools=payload.tools)
+            decision = await governance.resolve_execution_policy(
+                payload.agent_type,
+                action,
+                provider,
+                response.confidence,
+                data_classes=effective_data_classes,
+                tools=payload.tools,
+                prompt_injection_detected=prompt_injection_detected,
+                phi_boundary_violation=phi_boundary_violation,
+            )
 
             if decision.decision == 'deny':
                 response = response.__class__('escalated', {'reason': decision.reason}, response.confidence, True, response.execution_id, provider, response.model)
@@ -144,7 +169,7 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
                 provider,model,prompt_version,validation_result,confidence,escalation,
                 approval_required,outcome,failure_category,safety_violation)
                 values(:tenant,:execution,:capability,:version,:request,:provider,:model,
-                :prompt,:validation,:confidence,:escalation,:approval,:outcome,:failure,false)"""
+                :prompt,:validation,:confidence,:escalation,:approval,:outcome,:failure,:safety)"""
             ), {
                 'tenant': tenant.organization_id,
                 'execution': execution['id'],
@@ -160,6 +185,7 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
                 'approval': decision.approval_required,
                 'outcome': status,
                 'failure': failure_category,
+                'safety': bool(prompt_injection_detected or phi_boundary_violation),
             })
             await append_event(
                 session,
@@ -177,6 +203,9 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
                     'policy_decision': decision.decision,
                     'risk_tier': int(decision.risk_tier),
                     'failure_category': failure_category,
+                    'prompt_injection_detected': prompt_injection_detected,
+                    'phi_boundary_violation': phi_boundary_violation,
+                    'effective_data_classes': list(effective_data_classes),
                 },
             )
             return {**response.__dict__}
