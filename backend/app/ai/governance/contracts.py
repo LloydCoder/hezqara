@@ -38,6 +38,21 @@ class PolicyDecision:
     reason:str
 
 @dataclass(frozen=True)
+class GovernanceDecision:
+    decision:str
+    risk_tier:RiskTier
+    capability_id:str
+    capability_version:str|None
+    policy_version_id:int|None
+    reason:str
+    allowed_actions:tuple[str,...]=()
+    allowed_data_classes:tuple[str,...]=()
+    allowed_tools:tuple[str,...]=()
+    approval_required:bool=False
+    escalation_required:bool=False
+    failure_category:str|None=None
+
+@dataclass(frozen=True)
 class EvaluationScore:
     passed:bool
     safety_passed:bool
