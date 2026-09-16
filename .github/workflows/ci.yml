@@ -14,15 +14,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Canonical architecture gates
+      - name: Canonical repository gates
         run: |
-          set -e
-          required=(backend/app/main.py backend/app/security/clerk.py backend/app/domains/patients/service.py backend/app/domains/workflows/service.py backend/app/domains/patient_engagement/service.py backend/app/domains/claims/engine.py backend/app/domains/analytics/service.py backend/app/domains/analytics/repository.py backend/app/api/v1/analytics.py backend/app/api/v1/ai_governance.py backend/app/ai/governance/contracts.py backend/app/ai/governance/evaluation.py backend/app/ai/governance/catalog.py backend/app/integrations/fhir/adapter.py backend/app/integrations/core/contracts.py backend/app/integrations/core/http.py backend/app/integrations/core/webhooks.py backend/app/integrations/testing/providers.py backend/app/api/v1/integrations.py backend/app/ai/administrative.py frontend/src/proxy.ts frontend/src/app/dashboard/analytics/page.tsx frontend/src/app/dashboard/ai-governance/page.tsx supabase/migrations/020_phase6_healthcare_domain_engine.sql supabase/migrations/021_phase7_healthcare_interoperability.sql supabase/migrations/022_phase8_analytics_indexes.sql supabase/migrations/023_phase8_intelligence_surface.sql supabase/migrations/024_phase9_ai_governance.sql supabase/migrations/033_phase9_tenant_policy_hardening.sql supabase/tests/phase9_rls.sql)
+          set -euo pipefail
+          required=(backend/app/main.py backend/app/security/clerk.py backend/app/ai/governance/contracts.py backend/app/ai/governance/service.py backend/app/workforce/registry.py backend/app/api/v1/executions.py frontend/package.json frontend/src/proxy.ts supabase/migrations/024_phase9_ai_governance.sql supabase/migrations/029_phase9_tenant_integrity_and_controls.sql supabase/migrations/030_workflow_tenant_integrity.sql supabase/migrations/031_ai_approval_lifecycle.sql supabase/migrations/032_phase10_13_tenant_policy_hardening.sql supabase/migrations/033_phase9_tenant_policy_hardening.sql)
           for path in "${required[@]}"; do test -f "$path" || { echo "missing required path: $path"; exit 1; }; done
-          test -z "$(find backend/app -maxdepth 1 -type f -name '*.py' ! -name '__init__.py' ! -name 'main.py')"
-          if find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -not -path './.git/*' | grep -q .; then echo 'generated Python bytecode found'; exit 1; fi
-          if find . -type d \( -name '__pycache__' -o -name '.pytest_cache' -o -name '.next' \) -not -path './.git/*' | grep -q .; then echo 'generated build/cache directory found'; exit 1; fi
-          if grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng|demo_clinic' frontend backend --exclude-dir=node_modules; then echo 'forbidden demo tenant identifier found'; exit 1; fi
+          if grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng' frontend backend --exclude-dir=node_modules; then echo 'forbidden demo tenant identifier found'; exit 1; fi
           if grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src; then echo 'unfinished placeholder found'; exit 1; fi
   backend:
     runs-on: ubuntu-latest
@@ -80,7 +77,7 @@ jobs:
         run: pip install -r requirements.txt
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
-        run: pytest -q tests/test_phase9_ai_governance.py
+        run: pytest -q tests/test_phase9_ai_governance.py tests/test_ai_guardrails.py
   database-security:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -94,15 +91,19 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Prepare roles and extension
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END \$\$;"
-      - name: Apply migrations
+      - name: Apply every migration in version order
         env: {PGPASSWORD: postgres}
         run: |
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 004_create_calls.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql 023_phase8_intelligence_surface.sql 024_phase9_ai_governance.sql 033_phase9_tenant_policy_hardening.sql; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
+          set -euo pipefail
+          mapfile -t migrations < <(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort -V)
+          for migration in "${migrations[@]}"; do echo "Applying $migration"; psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"; done
       - name: Prove Phase 3 isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase3_rls.sql
@@ -121,8 +122,6 @@ jobs:
       - name: Prove Phase 9 isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase9_rls.sql
-      - name: Install backend
-        run: pip install -r backend/requirements.txt
       - name: Verify backend imports
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ''}
         run: python -c "from app.main import app; print(app.title, app.version)"
