@@ -48,11 +48,14 @@ jobs:
       - name: Prepare roles
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END \$\$;"
-      - name: Apply all production migrations
+      - name: Apply every production migration in version order
         env: {PGPASSWORD: postgres}
         run: |
-          set -e
-          for migration in 001_create_clinics.sql 002_create_patients.sql 003_create_appointments.sql 004_create_calls.sql 011_create_audit_log.sql 015_harden_tenant_rls.sql 016_rls_complete_surface.sql 017_phase3_operational_core.sql 018_phase4_workflow_runtime.sql 019_phase5_operations.sql 020_phase6_healthcare_domain_engine.sql 021_phase7_healthcare_interoperability.sql 022_phase8_analytics_indexes.sql 023_phase8_intelligence_surface.sql 024_phase9_ai_governance.sql 025_phase10_enterprise_hardening.sql 026_phase11_scale_platform.sql 027_phase12_commercial.sql 028_phase13_launch_growth.sql 029_phase9_tenant_integrity_and_controls.sql 030_workflow_tenant_integrity.sql 031_ai_approval_lifecycle.sql 032_phase10_13_tenant_policy_hardening.sql 033_phase9_tenant_policy_hardening.sql; do
+          set -euo pipefail
+          mapfile -t migrations < <(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort -V)
+          test "${#migrations[@]}" -gt 0
+          for migration in "${migrations[@]}"; do
+            echo "Applying $migration"
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/$migration"
           done
       - name: Prove tenant isolation for new surfaces
@@ -64,6 +67,7 @@ jobs:
       - name: Prove legacy RLS surfaces
         env: {PGPASSWORD: postgres}
         run: |
+          set -e
           for test in phase3_rls.sql phase4_workflow_rls.sql phase5_rls.sql phase6_rls.sql phase7_rls.sql phase9_rls.sql; do
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/tests/$test"
           done
@@ -79,9 +83,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: "22"}
+        with: {node-version: "22", cache: "npm", cache-dependency-path: frontend/package-lock.json}
       - working-directory: frontend
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - working-directory: frontend
         run: npm run lint
       - working-directory: frontend
