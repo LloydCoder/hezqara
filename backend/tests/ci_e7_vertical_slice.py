@@ -56,6 +56,7 @@ try:
             },
         )
         call(client, "POST", f"/api/v1/integrations/{integration['id']}/test-connection")
+        call(client, "POST", f"/api/v1/integrations/{integration['id']}/activate")
 
         workflow = call(
             client,
