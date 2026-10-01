@@ -76,6 +76,19 @@ async def test_policy_deny_happens_before_model_call():
 
 
 @pytest.mark.asyncio
+async def test_pre_model_approval_requirement_allows_safe_proposal_generation():
+    provider = FakeProvider()
+    governance = FakeGovernance(initial="approval_required", post="approval_required")
+    executor = AgentExecutor(provider, model="test")
+    context = AgentContext("org-a", "user-a", frozenset({"agents:execute"}), execution_id="exec-proposal", governance=governance)
+    request = AgentRequest("reply", {}, "idem-proposal")
+    result = await executor.execute("reception", context, request)
+    assert provider.calls == 1
+    assert result.status == "escalated"
+    assert result.output["governance_decision"] == "approval_required"
+
+
+@pytest.mark.asyncio
 async def test_model_output_cannot_bypass_post_execution_policy():
     provider = FakeProvider()
     governance = FakeGovernance(post="approval_required")
