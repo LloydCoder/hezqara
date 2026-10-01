@@ -37,6 +37,24 @@ ALTER TABLE public.workflow_step_runs
 UPDATE public.workflow_step_runs
 SET idempotency_key=workflow_run_id||':'||step_key
 WHERE idempotency_key IS NULL;
+
+CREATE OR REPLACE FUNCTION public.workflow_step_runs_set_idempotency()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $
+BEGIN
+  NEW.idempotency_key := COALESCE(NEW.idempotency_key, NEW.workflow_run_id || ':' || NEW.step_key);
+  RETURN NEW;
+END $;
+REVOKE ALL ON FUNCTION public.workflow_step_runs_set_idempotency() FROM PUBLIC;
+
+DROP TRIGGER IF EXISTS workflow_step_runs_idempotency_before_insert ON public.workflow_step_runs;
+CREATE TRIGGER workflow_step_runs_idempotency_before_insert
+BEFORE INSERT ON public.workflow_step_runs
+FOR EACH ROW EXECUTE FUNCTION public.workflow_step_runs_set_idempotency();
+
 ALTER TABLE public.workflow_step_runs ALTER COLUMN idempotency_key SET NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS workflow_step_runs_idempotency_idx
   ON public.workflow_step_runs(clinic_id,idempotency_key);
