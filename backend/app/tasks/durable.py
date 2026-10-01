@@ -3,7 +3,7 @@ import os
 from app.tasks.celery import celery_app
 from app.infrastructure.database import system_session_context
 from app.platform.durable import DurableJobService
-from app.domains.workflows.runtime import execute_run_sync
+from app.domains.workflows.runtime import execute_run
 from app.domains.patient_engagement.outbox import process_communication_outbox
 
 @celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=300,soft_time_limit=240)
@@ -20,7 +20,7 @@ async def _run_platform_job(job_id: str):
             payload=job["payload"] or {}
             job_type=job["job_type"]
             if job_type=="workflow.execute":
-                result=execute_run_sync(str(payload["organization_id"]),str(payload["run_id"]))
+                result=await execute_run(str(payload["organization_id"]),str(payload["run_id"]))
             elif job_type=="communication.outbox":
                 result={"processed":await process_communication_outbox(str(payload["organization_id"]))}
             else:
