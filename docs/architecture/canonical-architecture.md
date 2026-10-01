@@ -34,7 +34,7 @@ FHIR R4 4.0.1 is the explicit resource boundary. SMART App Launch 2.2.0 supplies
 
 ## Commercial and operating architecture
 
-Subscription/provider events are reconciled into PostgreSQL commercial state. E7 activation state, evidence, ROI and export manifests are tenant scoped. E8 adds persisted SLO measurements, worker heartbeats, operational incidents/changes/recovery drills and authenticated readiness/snapshot APIs.
+Subscription/provider events are reconciled into PostgreSQL commercial state. E7 activation state, evidence, ROI and export manifests are tenant scoped. E8 adds persisted SLO measurements, system-owned worker heartbeats, tenant-scoped operational incidents/changes/recovery drills and authenticated readiness/snapshot APIs. Post-E8 forensic hardening prevents tenant mutation of operational evidence and enforces usage quotas at the database boundary.
 
 ## Truthfulness
 

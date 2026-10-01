@@ -27,7 +27,7 @@ Operations: authenticated readiness → worker liveness → SLO/error budget →
 
 ## E8 — Final roadmap phase
 
-E8 provides durable operational evidence for SLOs, worker heartbeats, incidents, changes and recovery drills, authenticated operational readiness, tenant-scoped operational snapshots and deterministic CI proving. The final repository gate also validates database/RLS, backend, frontend, E2E, security, dependency/secret scanning and Docker builds.
+E8 provides durable operational evidence for SLOs, worker heartbeats, incidents, changes and recovery drills, authenticated operational readiness, tenant-scoped operational snapshots and deterministic CI proving. The final repository gate also validates database/RLS, backend, frontend, E2E, security, dependency/secret scanning and Docker builds. A post-E8 forensic gate additionally verifies platform-owned operational evidence and database-enforced usage quotas.
 
 ## Final verification boundary
 
@@ -46,6 +46,7 @@ All eight engineering phases are now verified on `main`. This is not a claim tha
 - `docs/commercial/e6-verification.md`
 - `docs/operations/e7-first-clinic-vertical-slice.md`
 - `docs/operations/e8-production-proving.md`
+- `docs/security/final-forensic-audit.md`
 
 ## License
 
