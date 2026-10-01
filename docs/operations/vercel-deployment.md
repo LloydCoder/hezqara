@@ -6,7 +6,7 @@ HEZQARA is a monorepo with a Next.js frontend, FastAPI API, PostgreSQL/Supabase 
 
 ## Vercel
 
-The Next.js application under `frontend/` is the Vercel deployment target. The repository root contains `vercel.json`, which explicitly installs and builds the Next.js application from `frontend/` and uses `frontend/.next` as the output. Keep the Vercel project connected to the repository root so the committed deployment configuration is applied. Vercel should provide the frontend's public Clerk publishable key and server-side `HEZQARA_API_INTERNAL_URL` according to the selected deployment topology.
+The Next.js application under `frontend/` is the Vercel deployment target. The connected Vercel project resolves the Next.js application as the frontend project root; the committed `vercel.json` pins the framework, locked npm install, build command and `.next` output used by that project. Keep the Vercel project connected to this repository so the committed deployment configuration remains versioned. Vercel should provide the frontend's public Clerk publishable key and server-side `HEZQARA_API_INTERNAL_URL` according to the selected deployment topology.
 
 The FastAPI API, Celery worker/beat processes, Redis and PostgreSQL/Supabase are not assumed to run on Vercel. They require their own production-capable runtime and private connectivity appropriate to the deployment.
 
