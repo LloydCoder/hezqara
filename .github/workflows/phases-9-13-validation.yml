@@ -74,6 +74,9 @@ jobs:
           for test in phase3_rls.sql phase4_workflow_rls.sql phase5_rls.sql phase6_rls.sql phase7_rls.sql phase9_rls.sql; do
             psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/tests/$test"
           done
+      - name: Seed synthetic clinic for authenticated vertical slice
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/ci_vertical_slice_seed.sql
       - name: Install backend dependencies for database vertical slices
         working-directory: backend
         run: pip install -r requirements.txt
