@@ -1,5 +1,5 @@
 from __future__ import annotations
-import asyncio,json
+import asyncio,json,uuid
 from datetime import datetime,timezone
 from sqlalchemy import text
 from app.domains.patient_engagement.schemas import CommunicationCreate
@@ -21,6 +21,16 @@ async def execute_run(organization_id:str,run_id:str):
   run=(await session.execute(text('select wr.*,wv.definition from workflow_runs wr join workflow_versions wv on wv.id=wr.workflow_version_id where wr.id=:id and wr.clinic_id=:clinic'),{'id':run_id,'clinic':clinic_id})).mappings().first()
   if not run:return None
   if run['status']=='cancelled':return dict(run)
+  worker_id=f"workflow:{uuid.uuid4()}"
+  claimed=(await session.execute(text("""
+    update workflow_runs
+    set lease_owner=:worker,lease_expires_at=now()+interval '120 seconds',heartbeat_at=now(),updated_at=now()
+    where id=:id and clinic_id=:clinic
+      and (lease_owner is null or lease_expires_at<now() or lease_owner=:worker)
+    returning *
+  """),{'id':run_id,'clinic':clinic_id,'worker':worker_id})).mappings().first()
+  if not claimed:return dict(run)
+  run=dict(claimed)
   if run['status'] in {'queued','waiting_for_approval'}:await svc.transition(organization_id,run_id,'running')
   steps=(run['definition'] or {}).get('steps',[])
   if not isinstance(steps,list) or len(steps)>MAX_STEPS:raise ValueError('workflow exceeds maximum step count')
@@ -31,7 +41,8 @@ async def execute_run(organization_id:str,run_id:str):
     state=(await session.execute(text('select id,status from workflow_step_runs where workflow_run_id=:run and step_key=:key'),{'run':run_id,'key':key})).mappings().first()
     if not state:raise ValueError(f'workflow step record missing: {key}')
     if state['status']=='completed':continue
-    await session.execute(text("update workflow_step_runs set status='running',attempts=attempts+1,started_at=coalesce(started_at,now()) where workflow_run_id=:run and step_key=:key"),{'run':run_id,'key':key})
+    await session.execute(text("update workflow_runs set heartbeat_at=now(),lease_expires_at=now()+interval '120 seconds' where id=:run and clinic_id=:clinic and lease_owner=:worker"),{'run':run_id,'clinic':clinic_id,'worker':worker_id})
+   await session.execute(text("update workflow_step_runs set status='running',attempts=attempts+1,lease_owner=:worker,lease_expires_at=now()+interval '120 seconds',heartbeat_at=now(),started_at=coalesce(started_at,now()) where workflow_run_id=:run and step_key=:key and (lease_owner is null or lease_expires_at<now() or lease_owner=:worker)"),{'run':run_id,'key':key,'worker':worker_id})
     if kind=='create_task':output={'task_id':(await TaskService(TaskRepository(session)).create(TaskCreate(**step.get('input',{}))))['id']}
     elif kind=='complete':output={'completed_at':datetime.now(timezone.utc).isoformat()}
     elif kind=='classify_message':
@@ -58,10 +69,10 @@ async def execute_run(organization_id:str,run_id:str):
      if approval['status']=='approved':output={'approval_id':approval['id'],'status':'approved'}
      elif approval['status'] in {'rejected','expired','cancelled'}:raise RuntimeError(f'approval_{approval["status"]}')
      else:await session.execute(text("update workflow_step_runs set status='waiting_for_approval' where id=:id"),{'id':state['id']}); await svc.transition(organization_id,run_id,'waiting_for_approval'); return dict((await session.execute(text('select * from workflow_runs where id=:id'),{'id':run_id})).mappings().first())
-    await session.execute(text("update workflow_step_runs set status='completed',output=cast(:output as jsonb),completed_at=now() where workflow_run_id=:run and step_key=:key"),{'run':run_id,'key':key,'output':json.dumps(output,default=str)})
-   await svc.transition(organization_id,run_id,'completed'); await session.execute(text("update workflow_runs set result=cast(:result as jsonb),updated_at=now() where id=:id and clinic_id=:clinic"),{'result':json.dumps({'steps':len(steps)}),'id':run_id,'clinic':clinic_id}); return dict((await session.execute(text('select * from workflow_runs where id=:id'),{'id':run_id})).mappings().first())
+    await session.execute(text("update workflow_step_runs set status='completed',output=cast(:output as jsonb),lease_owner=NULL,lease_expires_at=NULL,heartbeat_at=NULL,completed_at=now() where workflow_run_id=:run and step_key=:key and lease_owner=:worker"),{'run':run_id,'key':key,'worker':worker_id,'output':json.dumps(output,default=str)})
+   await svc.transition(organization_id,run_id,'completed'); await session.execute(text("update workflow_runs set result=cast(:result as jsonb),lease_owner=NULL,lease_expires_at=NULL,heartbeat_at=NULL,updated_at=now() where id=:id and clinic_id=:clinic and lease_owner=:worker"),{'result':json.dumps({'steps':len(steps)}),'id':run_id,'clinic':clinic_id,'worker':worker_id}); return dict((await session.execute(text('select * from workflow_runs where id=:id'),{'id':run_id})).mappings().first())
   except Exception as exc:
-   await session.execute(text("update workflow_step_runs set status='failed',error_class=:error,completed_at=now() where workflow_run_id=:run and status='running'"),{'run':run_id,'error':type(exc).__name__}); await session.execute(text("update workflow_runs set failure_class=:error,updated_at=now() where id=:run and clinic_id=:clinic"),{'run':run_id,'error':type(exc).__name__,'clinic':clinic_id}); current=(await session.execute(text('select status from workflow_runs where id=:id'),{'id':run_id})).scalar_one()
+   await session.execute(text("update workflow_step_runs set status='failed',error_class=:error,lease_owner=NULL,lease_expires_at=NULL,heartbeat_at=NULL,completed_at=now() where workflow_run_id=:run and status='running' and lease_owner=:worker"),{'run':run_id,'error':type(exc).__name__,'worker':worker_id}); await session.execute(text("update workflow_runs set failure_class=:error,lease_owner=NULL,lease_expires_at=NULL,heartbeat_at=NULL,updated_at=now() where id=:run and clinic_id=:clinic and lease_owner=:worker"),{'run':run_id,'error':type(exc).__name__,'clinic':clinic_id,'worker':worker_id}); current=(await session.execute(text('select status from workflow_runs where id=:id'),{'id':run_id})).scalar_one()
    if current in {'running','waiting_for_approval'}:await svc.transition(organization_id,run_id,'failed')
    return dict((await session.execute(text('select * from workflow_runs where id=:id'),{'id':run_id})).mappings().first())
 def execute_run_sync(organization_id:str,run_id:str):return asyncio.run(execute_run(organization_id,run_id))
