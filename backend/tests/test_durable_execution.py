@@ -44,4 +44,4 @@ def test_durable_workflow_job_awaits_async_runtime(monkeypatch):
     result = asyncio.run(durable._run_platform_job("job-1"))
 
     assert result["status"] == "completed"
-    assert result["result"]["result"]["status"] == "waiting_for_approval"
+    assert result["result"]["status"] == "waiting_for_approval"
