@@ -125,6 +125,9 @@ jobs:
       - name: Prove Phase 9 isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase9_rls.sql
+      - name: Install backend dependencies for production-like import
+        working-directory: backend
+        run: pip install -r requirements.txt
       - name: Verify backend imports
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ''}
         run: python -c "from app.main import app; print(app.title, app.version)"
