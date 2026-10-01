@@ -133,10 +133,10 @@ async def create_checkout_session(
         await session.execute(
             text(
                 """
-                select metadata->>'checkout_session_id' checkout_session_id
+                select payload->>'checkout_session_id' checkout_session_id
                 from platform_events
                 where clinic_id=:clinic and event_type='subscription.checkout_created'
-                  and metadata->>'idempotency_key'=:key
+                  and payload->>'idempotency_key'=:key
                 order by created_at desc limit 1
                 """
             ),
