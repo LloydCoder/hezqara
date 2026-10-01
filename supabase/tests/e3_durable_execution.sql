@@ -19,7 +19,10 @@ BEGIN
 END $$;
 
 UPDATE platform_jobs SET lease_expires_at=now()-interval '1 second' WHERE clinic_id='e3-tenant' AND idempotency_key='e3-job';
+RESET ROLE;
 SELECT * FROM public.recover_expired_execution_leases(now());
+SET ROLE authenticated;
+SELECT set_config('app.clerk_org_id','e3_org',false);
 
 DO $$
 BEGIN
@@ -29,7 +32,10 @@ BEGIN
 END $$;
 
 UPDATE platform_jobs SET status='running',attempts=max_attempts,lease_owner='worker-dead',lease_expires_at=now()-interval '1 second' WHERE clinic_id='e3-tenant' AND idempotency_key='e3-job';
+RESET ROLE;
 SELECT * FROM public.recover_expired_execution_leases(now());
+SET ROLE authenticated;
+SELECT set_config('app.clerk_org_id','e3_org',false);
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM platform_jobs WHERE clinic_id='e3-tenant' AND idempotency_key='e3-job' AND status='dead_letter') THEN
