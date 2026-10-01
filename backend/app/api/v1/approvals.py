@@ -91,7 +91,7 @@ async def _decide_workflow(approval_id: str, tenant: TenantContext, status: str)
                 job=(await session.execute(text("select id from platform_jobs where clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true)) and idempotency_key=:key"),{'key':f'workflow:{run_id}'})).scalar_one_or_none()
             if job:
                 from app.tasks.durable import run_platform_job
-                run_platform_job.delay(str(job))
+                run_platform_job.apply_async(args=[str(job)], queue='hezqara')
         elif settings.app_env in {'test','development'}:
             from app.domains.workflows.runtime import execute_run
             result['workflow_run'] = await execute_run(tenant.organization_id, run_id)
