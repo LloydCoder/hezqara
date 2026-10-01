@@ -3,6 +3,7 @@ import sys
 import time
 
 import httpx
+from app.tasks.celery import celery_app
 
 BASE = "http://127.0.0.1:8004"
 
@@ -48,8 +49,17 @@ try:
             time.sleep(1)
 
         call(client, "GET", "/health")
-        time.sleep(2)
-        assert worker.poll() is None, "Celery worker exited before the workflow slice started"
+        for _ in range(30):
+            if worker.poll() is not None:
+                raise AssertionError("Celery worker exited before the workflow slice started")
+            try:
+                if celery_app.control.inspect(timeout=1).ping():
+                    break
+            except Exception:
+                pass
+            time.sleep(1)
+        else:
+            raise AssertionError("Celery worker did not become ready")
 
         for step in ("clinic_profile", "users", "ai_controls", "communications", "billing", "first_workflow"):
             call(client, "POST", "/api/v1/platform/onboarding/complete", json={"step": step})
@@ -112,7 +122,7 @@ try:
                 "context": {"vertical_slice": "e7"},
             },
         )
-        for _ in range(30):
+        for _ in range(60):
             if run["status"] == "waiting_for_approval":
                 break
             if run["status"] in {"failed", "escalated", "cancelled"}:
