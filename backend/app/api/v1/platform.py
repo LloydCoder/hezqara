@@ -6,7 +6,7 @@ from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
 from app.platform.enterprise import readiness, security_posture
 from app.platform.scale import current_usage, get_limits, record_usage
-from app.platform.commercial import PLAN_CATALOG, change_plan, get_subscription
+from app.platform.commercial import PLAN_CATALOG, change_plan, create_checkout_session, get_subscription
 from app.platform.growth import complete_onboarding_step, create_lead, onboarding_status
 
 router = APIRouter(prefix="/platform", tags=["platform"])
@@ -17,6 +17,10 @@ class UsageRequest(BaseModel):
 
 class PlanRequest(BaseModel):
     plan_code: str = Field(min_length=1, max_length=40)
+
+class CheckoutRequest(BaseModel):
+    plan_code: str = Field(min_length=1, max_length=40)
+    idempotency_key: str = Field(min_length=16, max_length=255)
 
 class OnboardingRequest(BaseModel):
     step: str = Field(min_length=1, max_length=80)
@@ -61,6 +65,16 @@ async def plans():
 async def subscription(tenant: TenantContext = Depends(require_permission("billing:read"))):
     async with tenant_session_context(tenant.organization_id) as session:
         return await get_subscription(session, tenant.organization_id)
+
+@router.post("/subscription/checkout")
+async def subscription_checkout(payload: CheckoutRequest, tenant: TenantContext = Depends(require_permission("billing:write"))):
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await create_checkout_session(session, tenant.organization_id, payload.plan_code, payload.idempotency_key)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="payment provider request failed") from exc
 
 @router.post("/subscription/plan")
 async def plan(payload: PlanRequest, tenant: TenantContext = Depends(require_permission("billing:write"))):
