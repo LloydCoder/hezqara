@@ -27,6 +27,16 @@ async def tenant_session_context(organization_id:str):
         except Exception:
             await session.rollback(); raise
 
+@asynccontextmanager
+async def system_session_context():
+    """Internal worker context. Never expose this through request handlers; its DB role is privileged."""
+    async with _session_factory()() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback(); raise
+
 async def tenant_session(organization_id:str)->AsyncGenerator[AsyncSession,None]:
     async with tenant_session_context(organization_id) as session: yield session
 

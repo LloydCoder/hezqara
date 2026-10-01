@@ -1,7 +1,7 @@
 name: HEZQARA Phases 9-13 Validation
 on:
   push:
-    branches: ["implementation/e2-tenant-isolation", "implementation/e1-final", "main"]
+    branches: ["implementation/e3-durable-execution", "implementation/e2-tenant-isolation", "implementation/e1-final", "main"]
   pull_request:
     branches: [main]
 permissions:
@@ -67,6 +67,9 @@ jobs:
       - name: Prove workflow referential tenant integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/workflow_tenant_integrity.sql
+      - name: Prove E3 durable execution state machine
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e3_durable_execution.sql
       - name: Prove E2 canonical tenant isolation and relationship integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e2_tenant_isolation.sql

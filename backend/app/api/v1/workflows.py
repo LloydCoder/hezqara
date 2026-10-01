@@ -8,6 +8,7 @@ from app.infrastructure.database import tenant_session_context
 from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
 from app.security.audit import append_event
+from app.platform.durable import DurableJobService
 
 router=APIRouter(prefix='/workflows',tags=['workflows'])
 @router.get('')
@@ -33,14 +34,27 @@ async def activate_workflow(workflow_id:str,request:Request,tenant:TenantContext
         result=await WorkflowService(session).activate(workflow_id); await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action='workflow.activated',resource_type='workflow',resource_id=workflow_id,outcome='success',request_id=getattr(request.state,'request_id',None)); return result
 @router.post('/{workflow_id}/runs',status_code=201)
 async def trigger_workflow(workflow_id:str,data:WorkflowTrigger,request:Request,tenant:TenantContext=Depends(require_permission('workflow:execute'))):
-    async with tenant_session_context(tenant.organization_id) as session: run=await WorkflowService(session).trigger(tenant.organization_id,tenant.user_id,workflow_id,data.trigger_type,data.idempotency_key,data.context,getattr(request.state,'request_id',None))
+    job=None
+    async with tenant_session_context(tenant.organization_id) as session:
+        run=await WorkflowService(session).trigger(tenant.organization_id,tenant.user_id,workflow_id,data.trigger_type,data.idempotency_key,data.context,getattr(request.state,'request_id',None))
+        if run['status']=='queued':
+            job=await DurableJobService(session).enqueue(
+                tenant.organization_id,
+                'workflow.execute',
+                f"workflow:{run['id']}",
+                {'organization_id':tenant.organization_id,'run_id':run['id']},
+                getattr(request.state,'request_id',None),
+            )
     if run['status']=='queued':
         if settings.redis_url:
-            from app.tasks.workflows import execute_workflow_run
-            execute_workflow_run.delay(tenant.organization_id,run['id'])
-        elif settings.app_env in {'test','development'}: run=await execute_run(tenant.organization_id,run['id'])
-        else: raise HTTPException(status_code=503,detail='workflow worker is not configured')
+            from app.tasks.durable import run_platform_job
+            run_platform_job.delay(str(job['id']))
+        elif settings.app_env in {'test','development'}:
+            run=await execute_run(tenant.organization_id,run['id'])
+        else:
+            raise HTTPException(status_code=503,detail='workflow worker is not configured')
     return run
+
 @router.post('/runs/{run_id}/cancel')
 async def cancel_workflow(run_id:str,tenant:TenantContext=Depends(require_permission('workflow:cancel'))):
     async with tenant_session_context(tenant.organization_id) as session:return await WorkflowService(session).transition(tenant.organization_id,run_id,'cancelled')

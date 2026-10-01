@@ -1,36 +1,27 @@
-# HEZQARA Phases 9–13
+# HEZQARA E1–E8 Execution Roadmap
 
-## Phase 9 — AI Reliability, Evaluation & Governance
+## E1 — AI governance enforcement — VERIFIED
+Mandatory runtime governance, pre/post policy enforcement, governed tools and approval-backed side effects.
 
-### E1 — AI governance enforcement — VERIFIED
+## E2 — Canonical tenant security/data isolation — VERIFIED
+Canonical Clerk organization → clinic mapping, FORCE RLS, restrictive tenant boundary and tenant-bound relationships.
 
-Mandatory workforce governance, pre/post policy enforcement, governed tool access, approval-backed side effects, secondary AI-path governance and adversarial bypass tests are green.
+## E3 — Durable execution/distributed reliability — VERIFIED
+Durable job state, persistent idempotency, atomic claiming, leases, retry/backoff, dead-letter/replay, crash recovery and approval resume.
 
-## Phase 10 — Canonical Tenant Security & Data Isolation
+## E4 — Production healthcare interoperability — NEXT
+FHIR R4 production boundaries, SMART App Launch, EHR/payer/clearinghouse/payment/messaging adapters, OAuth/scopes/token lifecycle and provider certification/testing.
 
-### E2 — VERIFIED
+## E5 — Enterprise security/privacy/compliance readiness
+Threat model, PHI/data-flow inventory, SBOM/vulnerability management, secrets/key rotation, incident response, access review, retention/deletion, BAAs/DPAs and disaster recovery.
 
-- Clerk organization → canonical clinics.id mapping.
-- FORCE RLS on every tenant-owned table.
-- Restrictive defense-in-depth tenant policy.
-- Anonymous access revoked from tenant-owned tables.
-- Tenant-local composite identity keys.
-- Tenant-bound composite foreign keys for tenant-to-tenant relationships.
-- Adversarial Tenant A/B isolation and forged relationship tests.
-- Database, backend and frontend gates green.
+## E6 — Commercial platform completion
+Payment provider integration, signed webhooks, idempotency, subscription state machine, invoices/payments/refunds/chargebacks, reconciliation and entitlement/usage enforcement.
 
-## Phase 11 — Durable Execution & Distributed Reliability
+## E7 — First-clinic production vertical slice
+Discover → signup → tenant → staff → permissions → integration → governed AI workforce → approval → side effect → evidence → ROI → pause/disable/rollback/export/recover.
 
-### E3 — NEXT
+## E8 — Production proving and scale maturity
+SLO/SLI/error budgets, RPO/RTO, restore drills, concurrency/load validation, tracing, runbooks, release/rollback, incident/on-call/support and SLA readiness.
 
-Durable jobs, idempotency, retries, leases, crash recovery, duplicate delivery protection, compensation, dead-letter handling, replay and concurrency controls.
-
-## Later roadmap
-
-E4 — Production healthcare interoperability.
-E5 — Enterprise security, privacy and compliance readiness.
-E6 — Commercial platform completion.
-E7 — First-clinic production vertical slice.
-E8 — Production proving and scale maturity.
-
-Roadmap status is an engineering status, not a production deployment, regulatory certification or clinical-efficacy claim.
+Future phase status must not be promoted to VERIFIED until its own implementation and complete validation gates are green.

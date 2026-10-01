@@ -6,6 +6,7 @@ from app.infrastructure.database import tenant_session_context
 from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
 from app.security.audit import append_event
+from app.core.config import settings
 
 router = APIRouter(prefix='/approvals', tags=['approvals'])
 
@@ -85,8 +86,19 @@ async def _decide_workflow(approval_id: str, tenant: TenantContext, status: str)
         result = dict(updated)
 
     if status == 'approved' and run_id:
-        from app.domains.workflows.runtime import execute_run
-        result['workflow_run'] = await execute_run(tenant.organization_id, run_id)
+        if settings.redis_url:
+            async with tenant_session_context(tenant.organization_id) as session:
+                job=(await session.execute(text("select id from platform_jobs where clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true)) and idempotency_key=:key"),{'key':f'workflow:{run_id}'})).scalar_one_or_none()
+            if job:
+                from app.tasks.durable import run_platform_job
+                run_platform_job.delay(str(job))
+        elif settings.app_env in {'test','development'}:
+            from app.domains.workflows.runtime import execute_run
+            result['workflow_run'] = await execute_run(tenant.organization_id, run_id)
+            async with tenant_session_context(tenant.organization_id) as session:
+                await session.execute(text("update platform_jobs set status='completed',completed_at=now(),updated_at=now() where idempotency_key=:key"),{'key':f'workflow:{run_id}'})
+        else:
+            raise HTTPException(status_code=503,detail='workflow worker is not configured')
     return result
 
 async def _decide_ai(approval_id: str, tenant: TenantContext, status: str, reason: str | None):
