@@ -47,6 +47,15 @@ A restore drill is only passed when the restored environment demonstrates:
 - integration metadata integrity;
 - measured RPO/RTO.
 
+## Post-E8 forensic hardening
+
+The final repository audit tightened two boundaries discovered after E8 closure:
+
+- Worker heartbeats are system-owned. Tenant-authenticated users cannot insert, update, delete or directly read the heartbeat table; readiness uses a protected read-only worker-count function.
+- Operational incidents, changes and recovery drills are platform evidence with tenant-scoped read access. Tenant users cannot mutate these records through the database role.
+- Tenant usage accounting is quota-guarded at the database boundary for executions, voice minutes and messages, preventing direct usage-row writes from exceeding the configured plan limits.
+- The closure workflow executes dedicated adversarial SQL for these controls.
+
 ## Incident/change discipline
 
 Sev1/Sev2 incidents block release until resolved or explicitly accepted by an authorized owner. Every production change has an actor, version, status and rollback evidence. Operational evidence is retained according to the applicable data-retention policy.
