@@ -43,7 +43,7 @@ jobs:
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e8_production_proving.sql
       - name: Install backend dependencies
         working-directory: backend
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt ruff
       - name: Run E8 proving slice
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: redis://127.0.0.1:6379/0}
         run: python backend/tests/ci_e8_proving.py
