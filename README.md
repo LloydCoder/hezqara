@@ -2,83 +2,80 @@
 
 **Governed AI Workforce for Healthcare Operations**
 
-HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and patient-engagement workflows.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a governed AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and patient-engagement workflows.
 
-> **Engineering status:** Phase 9 E1 — AI governance enforcement, Phase 10 E2 — canonical tenant security/data isolation, and Phase 11 E3 — durable execution/distributed reliability are VERIFIED on the E1 closure branch after backend, database/RLS, frontend, security, E2E and Docker validation. Phases 10–13 remain implementation foundations and are not represented as production-proven. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
+> **Engineering status:** E1 AI governance, E2 canonical tenant isolation, E3 durable execution and E4 interoperability controls are VERIFIED on the current mainline after full repository validation. E5–E8 remain roadmap work. Engineering verification is not a HIPAA/GDPR/FHIR/SMART/CMS certification, production-scale proof, clinical-efficacy claim or customer-outcome claim.
 
 ## Canonical architecture
 
 Browser → Clerk identity → verified tenant → server authorization → FastAPI → domain service → repository → PostgreSQL/Supabase → RLS → audit.
 
-AI adds a governed lifecycle: capability/version → untrusted-input boundary → data/tool authorization → bounded provider/model → deterministic output validation → action/risk re-evaluation → approval/escalation → governed side-effect authorization → audit/telemetry/evaluation.
+AI adds: capability/version → untrusted-input boundary → data/tool authorization → bounded provider/model → deterministic validation → action/risk re-evaluation → approval/escalation → governed side effect → audit/telemetry/evaluation.
 
 The LLM is never an authorization source. External healthcare content is untrusted data. Clinical/high-impact decisions are not autonomous.
 
-## Phase 9 — E1 verified
+## Verified phases
 
-E1 establishes runtime governance as a mandatory execution boundary.
+### E1 — AI governance enforcement
+- Workforce execution fails closed without tenant-scoped governance.
+- Policy is enforced before provider invocation and against model-proposed actions.
+- Tools require user permission and governance allowlisting.
+- Consequential side effects require approval-backed governance authorization.
+- Secondary AI paths are governed.
+- Adversarial bypass tests are green.
 
-- Workforce model execution fails closed without tenant-scoped governance.
-- Policy is enforced before model invocation and again against model-proposed actions.
-- Tool calls require both authenticated user permission and governance allowlisting.
-- Consequential tool/API side effects pass through a separate governance authorization barrier.
-- Approval-required side effects require approved, unexpired authorization bound to the execution, policy and action.
-- Secondary healthcare message classification is governed through the same tenant policy boundary.
-- Clinical message classification retains human review.
-- Adversarial tests cover missing governance, policy denial, approval gates, governed tool denial and the secondary AI path.
-- Governance state, policy decisions, approvals, telemetry and failures remain tenant scoped.
+### E2 — Canonical tenant security/data isolation
+- Clerk organization → canonical clinic ID is the tenant authority chain.
+- Tenant-owned tables use RLS/FORCE RLS.
+- Client-supplied clinic IDs cannot establish authority.
+- Cross-tenant workflow and foreign-key integrity is enforced at the database layer.
+- Adversarial tenant-isolation tests are green.
 
-E1 verification is an engineering validation result, not a production-readiness or regulatory-certification claim.
+### E3 — Durable execution/distributed reliability
+- PostgreSQL is authoritative for durable job/workflow state.
+- Broker delivery is a wake-up mechanism, not completion authority.
+- Idempotency, leases, heartbeats, bounded retries, dead-lettering and crash recovery are persisted.
+- Workflow execution survives approval pauses and worker loss.
+- Adversarial duplicate/lease/recovery tests are green.
 
-## Phases 10–13 foundation
+### E4 — Production healthcare interoperability
+- FHIR R4 (4.0.1) is the explicit resource boundary.
+- SMART App Launch 2.2.0 is the OAuth/PKCE contract.
+- OAuth state, PKCE, redirect and OIDC nonce requirements are validated.
+- Raw access/refresh tokens are not returned or persisted by the integration metadata boundary.
+- Current Da Vinci contracts are recorded for HRex 1.2.0, CRD 2.2.1, DTR 2.2.0, PAS 2.2.1 and PDex 2.2.0.
+- Integration metadata is tenant isolated.
+- Deterministic FHIR/SMART interoperability tests are green.
 
-The branch contains implementation foundations for enterprise hardening, scale/platform infrastructure, commercial primitives and launch/growth models. These remain separate roadmap work and should not be interpreted as production-proven functionality.
-
-## Phase 7 interoperability
-
-FHIR is an explicit R4 boundary with deterministic resource validation for common administrative resources. SMART App Launch is the authorization architecture baseline. Da Vinci HRex, PDex, CRD, DTR and PAS inform interoperability contracts. Actual production EHR, payer, clearinghouse, payment and messaging connectivity remains provider/configuration dependent.
-
-## Phase 8 intelligence
-
-Analytics remain deterministic and tenant scoped. Financial and insurance rates are derived from canonical source tables with explicit denominator semantics. Source tracing and governed aggregate exports preserve permission boundaries and auditability.
+E4 is an interoperability engineering boundary; actual EHR/payer production connectivity still requires provider-specific credentials, contracts, endpoint allowlists, sandbox validation and operational certification where applicable.
 
 ## Security boundaries
 
 - PostgreSQL RLS/FORCE RLS isolates tenant-owned data.
 - Client-provided clinic IDs do not establish authorization.
-- Raw credentials are not stored by the integration subsystem.
+- Raw integration credentials/tokens are not persisted by the integration metadata layer.
 - Outbound HTTP retains HTTPS, trusted-host and private-destination protections.
-- Webhook signatures, timestamps and event IDs provide authentication and replay protection.
-- External content is explicitly treated as untrusted before AI processing.
-- AI capabilities can be disabled or forced through human approval server-side.
-- Workforce AI execution cannot proceed without a governance service.
+- Webhooks require signatures, timestamps and replay protection.
+- External content is untrusted before AI processing.
+- AI execution requires governance.
+- Supabase Data API exposure is separate from RLS and must be explicitly granted where required.
 
 ## Validation
 
-The closure workflow validates repository structure, source hygiene, Python syntax/lint/tests, integration and AI security tests, database migrations/RLS, frontend lint/type-check/build, Playwright E2E, Docker and dependency/secret scanning. A green closure workflow is required before E1 is considered verified.
-
-## Documentation
-
-- docs/architecture/canonical-architecture.md
-- docs/architecture/ai-architecture.md
-- docs/ai/phase-9-ai-governance.md
-- docs/ai/phase-9-e1-enforcement.md
-- docs/ai/phase-9-evaluation-report.md
-- docs/phase-1-9-reconciliation.md
-- docs/security/phase-9-ai-security-controls.md
+The repository's required validation covers structure/source hygiene, backend tests, database migrations/RLS/tenant integrity, FHIR/interoperability checks, AI governance/security, frontend lint/type/build, Playwright E2E, Docker and dependency/secret scanning. A phase is not promoted to VERIFIED until its required workflow gates are green.
 
 ## Roadmap
 
 1. **E1 — AI governance enforcement: VERIFIED**
 2. **E2 — Canonical tenant security/data isolation: VERIFIED**
-3. **E3 — Durable execution and distributed reliability: VERIFIED**
-4. **E4 — Production healthcare interoperability: NEXT**
-5. **E5 — Enterprise security, privacy and compliance readiness**
+3. **E3 — Durable execution/distributed reliability: VERIFIED**
+4. **E4 — Production healthcare interoperability: VERIFIED**
+5. **E5 — Enterprise security, privacy and compliance readiness: NEXT**
 6. **E6 — Commercial platform completion**
 7. **E7 — First-clinic production vertical slice**
 8. **E8 — Production proving and scale maturity**
 
-A green E1 workflow verifies the engineering controls covered by E1; it does not prove production scale, regulatory certification, customer outcomes or clinical efficacy.
+The roadmap deliberately separates engineering verification from production proving.
 
 ## License
 
