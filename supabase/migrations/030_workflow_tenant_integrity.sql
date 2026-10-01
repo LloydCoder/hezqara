@@ -12,6 +12,9 @@ ALTER TABLE public.workflow_versions ADD CONSTRAINT workflow_versions_clinic_id_
 ALTER TABLE public.workflow_versions ADD CONSTRAINT workflow_versions_clinic_workflow_fk FOREIGN KEY (clinic_id,workflow_id) REFERENCES public.workflows(clinic_id,id) ON DELETE CASCADE;
 
 ALTER TABLE public.workflow_runs
+  ADD CONSTRAINT workflow_runs_clinic_id_id_key UNIQUE (clinic_id, id);
+
+ALTER TABLE public.workflow_runs
   DROP CONSTRAINT IF EXISTS workflow_runs_workflow_id_fkey,
   DROP CONSTRAINT IF EXISTS workflow_runs_workflow_version_id_fkey;
 ALTER TABLE public.workflow_runs
