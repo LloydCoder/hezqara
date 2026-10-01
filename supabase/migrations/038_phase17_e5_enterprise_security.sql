@@ -86,10 +86,17 @@ BEGIN
     EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON public.%I TO authenticated', t);
     EXECUTE format(
       'DROP POLICY IF EXISTS e5_tenant_boundary ON public.%I;
+       DROP POLICY IF EXISTS e5_tenant_access ON public.%I;
        CREATE POLICY e5_tenant_boundary ON public.%I AS RESTRICTIVE FOR ALL TO authenticated
        USING (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))
        WITH CHECK (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',
-      t, t
+      t, t, t
+    );
+    EXECUTE format(
+      'CREATE POLICY e5_tenant_access ON public.%I AS PERMISSIVE FOR ALL TO authenticated
+       USING (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))
+       WITH CHECK (clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',
+      t
     );
   END LOOP;
 END $$;
