@@ -48,7 +48,7 @@ async def trigger_workflow(workflow_id:str,data:WorkflowTrigger,request:Request,
     if run['status']=='queued':
         if settings.redis_url:
             from app.tasks.durable import run_platform_job
-            run_platform_job.delay(str(job['id']))
+            run_platform_job.apply_async(args=[str(job['id'])], queue='hezqara')
         elif settings.app_env in {'test','development'}:
             run=await execute_run(tenant.organization_id,run['id'])
         else:
