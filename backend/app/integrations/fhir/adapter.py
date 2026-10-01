@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Any
 
 FHIR_R4 = 'R4'
-SUPPORTED_RESOURCES = frozenset({'Patient','Organization','Practitioner','PractitionerRole','Encounter','Appointment','Coverage','Account','Claim','ClaimResponse','CoverageEligibilityRequest','CoverageEligibilityResponse','ExplanationOfBenefit','Task','Communication','ServiceRequest','DocumentReference'})
-REQUIRED_FIELDS = {'Patient': ('resourceType',), 'Coverage': ('resourceType','status','beneficiary'), 'Claim': ('resourceType','status','patient'), 'ClaimResponse': ('resourceType','status','patient')}
+SUPPORTED_RESOURCES = frozenset({'Patient','Organization','Practitioner','PractitionerRole','Encounter','Appointment','Coverage','Account','Claim','ClaimResponse','CoverageEligibilityRequest','CoverageEligibilityResponse','ExplanationOfBenefit','Task','Communication','ServiceRequest','DocumentReference','Bundle','OperationOutcome'})
+REQUIRED_FIELDS = {'Patient': ('resourceType',), 'Coverage': ('resourceType','status','beneficiary'), 'Claim': ('resourceType','status','patient'), 'ClaimResponse': ('resourceType','status','patient'), 'Bundle': ('resourceType','type'), 'OperationOutcome': ('resourceType','issue')}
 
 @dataclass(frozen=True)
 class FHIRMappingResult:
@@ -27,6 +27,10 @@ class FHIRAdapter:
         missing = [field for field in REQUIRED_FIELDS.get(resource_type, ()) if field not in resource]
         if missing: raise FHIRValidationError(f'missing required field(s): {", ".join(missing)}')
         if 'id' in resource and not isinstance(resource['id'], str): raise FHIRValidationError('FHIR id must be a string')
+        if resource_type=='Bundle' and not isinstance(resource.get('entry',[]),list): raise FHIRValidationError('FHIR Bundle.entry must be an array')
+        if resource_type=='OperationOutcome' and (not isinstance(resource.get('issue'),list) or not resource['issue']): raise FHIRValidationError('FHIR OperationOutcome.issue must be a non-empty array')
+        if 'meta' in resource and not isinstance(resource['meta'],dict): raise FHIRValidationError('FHIR meta must be an object')
+        if 'meta' in resource and 'profile' in resource['meta'] and not isinstance(resource['meta']['profile'],list): raise FHIRValidationError('FHIR meta.profile must be an array')
         return FHIRMappingResult(resource_type, resource)
 
     @staticmethod
@@ -59,6 +63,10 @@ class FHIRAdapter:
     def communication(resource: dict[str, Any]) -> FHIRMappingResult: return FHIRAdapter.validate(resource, 'Communication')
     @staticmethod
     def service_request(resource: dict[str, Any]) -> FHIRMappingResult: return FHIRAdapter.validate(resource, 'ServiceRequest')
+    @staticmethod
+    def bundle(resource: dict[str, Any]) -> FHIRMappingResult: return FHIRAdapter.validate(resource, 'Bundle')
+    @staticmethod
+    def operation_outcome(resource: dict[str, Any]) -> FHIRMappingResult: return FHIRAdapter.validate(resource, 'OperationOutcome')
     @staticmethod
     def document_reference(resource: dict[str, Any]) -> FHIRMappingResult: return FHIRAdapter.validate(resource, 'DocumentReference')
 
