@@ -47,6 +47,7 @@ All eight engineering phases are now verified on `main`. This is not a claim tha
 - `docs/operations/e7-first-clinic-vertical-slice.md`
 - `docs/operations/e8-production-proving.md`
 - `docs/security/final-forensic-audit.md`
+- `docs/operations/vercel-deployment.md`
 
 ## License
 
