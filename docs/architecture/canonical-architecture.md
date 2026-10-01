@@ -2,7 +2,7 @@
 
 ## Status
 
-E1 AI governance, E2 canonical tenant isolation, E3 durable execution and E4 interoperability are verified engineering controls on main. This document is authoritative over older phase summaries when they conflict with current code.
+E1 AI governance, E2 canonical tenant isolation, E3 durable execution and E4 interoperability are verified engineering controls on main. E5 enterprise security/privacy controls are implemented on the closure branch pending final verification. This document is authoritative over older phase summaries when they conflict with current code.
 
 ## Request and data architecture
 
