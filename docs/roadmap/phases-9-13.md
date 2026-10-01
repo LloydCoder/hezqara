@@ -12,10 +12,10 @@ Durable job state, persistent idempotency, atomic claiming, leases, retry/backof
 ## E4 — Production healthcare interoperability — VERIFIED
 FHIR R4 4.0.1 boundary, SMART App Launch 2.2.0 authorization/PKCE controls, tenant-scoped OAuth metadata, raw-token exclusion and current Da Vinci capability contracts.
 
-## E5 — Enterprise security/privacy/compliance readiness — NEXT
-Threat model, PHI/data-flow inventory, SBOM/vulnerability management, secrets/key rotation, incident response, access review, retention/deletion, BAAs/DPAs and disaster recovery.
+## E5 — Enterprise security/privacy/compliance readiness — VERIFIED
+Security incident evidence, access-review evidence, processing/retention records, deletion-request evidence, restore-drill evidence, dependency auditing, broad secret scanning and CI-generated SBOM are implemented and green.
 
-## E6 — Commercial platform completion
+## E6 — Commercial platform completion — NEXT
 Payment provider integration, signed webhooks, idempotency, subscription state machine, invoices/payments/refunds/chargebacks, reconciliation and entitlement/usage enforcement.
 
 ## E7 — First-clinic production vertical slice

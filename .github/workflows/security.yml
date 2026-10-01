@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, 'refactor/**', 'implementation/e1-final']
+    branches: [main, 'refactor/**', 'implementation/e1-final', 'implementation/e5-enterprise-security']
   schedule:
     - cron: '0 2 * * *'
 permissions:
@@ -87,3 +87,26 @@ jobs:
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
         run: pytest -q tests/test_phase6_security.py tests/test_ai_workforce.py tests/test_tool_registry.py tests/test_phase7_security.py tests/test_phase9_ai_governance.py tests/test_ai_governance_enforcement.py
+
+
+  secrets-broad:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: gitleaks/gitleaks-action@v3
+
+  sbom:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0.24.0
+        with:
+          artifact-name: hezqara-e5-sbom.spdx.json
+          format: spdx-json
+          output-file: hezqara-e5-sbom.spdx.json

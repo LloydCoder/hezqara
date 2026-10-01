@@ -1,7 +1,7 @@
 name: HEZQARA Phases 9-13 Validation
 on:
   push:
-    branches: ["implementation/e4-interoperability", "implementation/e3-durable-execution", "implementation/e2-tenant-isolation", "implementation/e1-final", "main"]
+    branches: ["implementation/e4-interoperability", "implementation/e3-durable-execution", "implementation/e2-tenant-isolation", "implementation/e1-final", "implementation/e5-enterprise-security", "main"]
   pull_request:
     branches: [main]
 permissions:
@@ -73,6 +73,9 @@ jobs:
       - name: Prove E4 interoperability metadata and SMART boundary
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e4_interoperability.sql
+      - name: Prove E5 enterprise security and privacy evidence
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e5_enterprise_security.sql
       - name: Prove E2 canonical tenant isolation and relationship integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e2_tenant_isolation.sql
