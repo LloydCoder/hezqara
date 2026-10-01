@@ -4,7 +4,7 @@ test.describe("public application smoke", () => {
   test("marketing home renders without authentication", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/HEZQARA/i);
-    await expect(page.getByRole("link", { name: /get started|sign up/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /See HEZQARA in action|Start with HEZQARA/i }).first()).toBeVisible();
   });
 
   test("workforce marketing surface is publicly reachable", async ({ page }) => {
