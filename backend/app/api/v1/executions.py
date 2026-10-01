@@ -28,7 +28,7 @@ async def list_executions(limit: int = 50, offset: int = 0, tenant: TenantContex
     if limit < 1 or limit > 100 or offset < 0:
         raise HTTPException(status_code=400, detail='invalid pagination')
     async with tenant_session_context(tenant.organization_id) as session:
-        result = await session.execute(text("select id,actor_id,agent_type,status,provider,model,confidence,escalation_required,result_summary,error_class,started_at,completed_at,created_at,updated_at from agent_executions where actor_id is not null order by created_at desc,id desc limit :limit offset :offset"), {'limit': limit, 'offset': offset})
+        result = await session.execute(text("select id,actor_id,agent_type,status,provider,model,confidence,escalation_required,result_summary,error_class,started_at,completed_at,created_at,updated_at from agent_executions order by created_at desc,id desc limit :limit offset :offset"), {'limit': limit, 'offset': offset})
         return [dict(r._mapping) for r in result]
 
 @router.post('', status_code=202)
