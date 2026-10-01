@@ -1,4 +1,4 @@
--- E8: production proving and scale/operating maturity evidence.
+-- E8: production proving and operating evidence.
 CREATE TABLE IF NOT EXISTS slo_definitions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id text REFERENCES clinics(id) ON DELETE CASCADE,
@@ -19,12 +19,11 @@ CREATE TABLE IF NOT EXISTS slo_measurements (
   window_end timestamptz NOT NULL,
   good_events bigint NOT NULL DEFAULT 0 CHECK (good_events >= 0),
   total_events bigint NOT NULL DEFAULT 0 CHECK (total_events >= good_events),
-  achieved numeric(8,5) GENERATED ALWAYS AS (
-    CASE WHEN total_events = 0 THEN 1 ELSE good_events::numeric / total_events END
-  ) STORED,
+  achieved numeric(8,5) NOT NULL DEFAULT 1,
   evidence jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
-  CHECK (window_end >= window_start)
+  CHECK (window_end >= window_start),
+  CHECK (achieved >= 0 AND achieved <= 1)
 );
 
 CREATE TABLE IF NOT EXISTS operational_incidents (
@@ -77,37 +76,48 @@ CREATE TABLE IF NOT EXISTS worker_heartbeats (
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 
-DO $$
-DECLARE t text;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['slo_definitions','slo_measurements','operational_incidents','operational_changes','recovery_drills','worker_heartbeats'] LOOP
-    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
-    EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY',t);
-    EXECUTE format('REVOKE ALL ON public.%I FROM anon',t);
-    EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON public.%I TO authenticated',t);
-  END LOOP;
-END $$;
+ALTER TABLE slo_definitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE slo_definitions FORCE ROW LEVEL SECURITY;
+ALTER TABLE slo_measurements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE slo_measurements FORCE ROW LEVEL SECURITY;
+ALTER TABLE operational_incidents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE operational_incidents FORCE ROW LEVEL SECURITY;
+ALTER TABLE operational_changes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE operational_changes FORCE ROW LEVEL SECURITY;
+ALTER TABLE recovery_drills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recovery_drills FORCE ROW LEVEL SECURITY;
+ALTER TABLE worker_heartbeats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE worker_heartbeats FORCE ROW LEVEL SECURITY;
 
+REVOKE ALL ON slo_definitions,slo_measurements,operational_incidents,operational_changes,recovery_drills,worker_heartbeats FROM anon;
+GRANT SELECT,INSERT,UPDATE,DELETE ON slo_definitions,slo_measurements,operational_incidents,operational_changes,recovery_drills,worker_heartbeats TO authenticated;
+
+DROP POLICY IF EXISTS e8_slo_definition_tenant ON slo_definitions;
 CREATE POLICY e8_slo_definition_tenant ON slo_definitions AS RESTRICTIVE FOR ALL TO authenticated
 USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
 WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
 
+DROP POLICY IF EXISTS e8_slo_measurement_tenant ON slo_measurements;
 CREATE POLICY e8_slo_measurement_tenant ON slo_measurements AS RESTRICTIVE FOR ALL TO authenticated
 USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
 WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
 
+DROP POLICY IF EXISTS e8_incident_tenant ON operational_incidents;
 CREATE POLICY e8_incident_tenant ON operational_incidents AS RESTRICTIVE FOR ALL TO authenticated
 USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
 WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
 
+DROP POLICY IF EXISTS e8_change_tenant ON operational_changes;
 CREATE POLICY e8_change_tenant ON operational_changes AS RESTRICTIVE FOR ALL TO authenticated
 USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
 WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
 
+DROP POLICY IF EXISTS e8_recovery_tenant ON recovery_drills;
 CREATE POLICY e8_recovery_tenant ON recovery_drills AS RESTRICTIVE FOR ALL TO authenticated
 USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
 WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
 
+DROP POLICY IF EXISTS e8_heartbeat_platform ON worker_heartbeats;
 CREATE POLICY e8_heartbeat_platform ON worker_heartbeats AS RESTRICTIVE FOR ALL TO authenticated
 USING (true) WITH CHECK (true);
 
