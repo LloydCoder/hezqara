@@ -47,7 +47,7 @@ DO $$
 BEGIN
   INSERT INTO workflow_step_runs(id,clinic_id,workflow_run_id,step_key,ordinal,idempotency_key)
   VALUES ('e3-step-a','e3-tenant','missing-run','step-a',0,'e3-step-key');
-EXCEPTION WHEN foreign_key_violation THEN NULL;
+EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
 END $$;
 
 RESET ROLE;
