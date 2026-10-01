@@ -4,12 +4,23 @@ This document records the production implementation boundary for the final roadm
 
 ## Phase 9 — AI Reliability, Evaluation & Governance
 
-- AI capability catalog and risk tiers.
-- Versioned capability metadata and evaluation suites.
-- Human approval and emergency controls.
-- Execution telemetry, failure taxonomy, policy decisions, and audit evidence.
-- Tenant isolation at RLS and relational-integrity layers.
-- Synthetic evaluation only; no production accuracy or clinical-performance claim.
+### E1 — AI governance enforcement
+
+- Tenant-scoped governance is mandatory at every workforce model execution.
+- Policy is evaluated before model invocation and again against the model-proposed action.
+- User permission and governance tool allowlists are both enforced.
+- Consequential tool/API side effects require a second governance authorization.
+- Approval-required actions require a valid, unexpired human approval before the side effect can proceed.
+- Secondary healthcare AI classification is governed and clinical classification remains human-reviewed.
+- Adversarial tests prove the principal bypass cases fail closed.
+
+### Verification gate
+
+E1 is not declared closed until the complete CI workflow is green on the E1 branch/PR, including backend tests, database migrations/security tests, frontend checks, E2E, and Docker validation.
+
+### Remaining Phase 9 work after E1
+
+Phase 9 closure also requires the broader governance/evaluation evidence already defined by the repository: capability/version lineage, evaluation fixtures and persisted evidence, emergency controls, telemetry/failure taxonomy, and production integration proof.
 
 ## Phase 10 — Production & Enterprise Hardening
 
@@ -44,6 +55,6 @@ This document records the production implementation boundary for the final roadm
 
 ## Verification contract
 
-The implementation branch is validated independently from the normal development workflow. The final validation workflow applies migrations 001–029, executes backend/security tests, proves tenant isolation for the new platform surfaces, and performs a production-like backend import plus frontend lint/type-check/build.
+The implementation branch is validated independently from the normal development workflow. Every migration is applied in version order; backend/security tests, tenant isolation, workflow integrity, production-like imports and frontend validation are required.
 
-A green workflow is required before Phases 9–13 are declared closed. This document does not constitute evidence of production deployment, customer traction, compliance certification, or clinical efficacy.
+A green workflow is required before Phase 9–13 implementation work is declared closed. This document does not constitute evidence of production deployment, customer traction, compliance certification, or clinical efficacy.
