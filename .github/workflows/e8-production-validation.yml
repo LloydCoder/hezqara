@@ -1,0 +1,52 @@
+name: HEZQARA E8 Production Proving
+on:
+  push:
+    branches: ["implementation/e8-production-proving","main"]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: hezqara-e8-\${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  proving:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_PASSWORD: postgres, POSTGRES_DB: hezqara_ci}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hezqara_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Prepare roles
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END \$\$;"
+      - name: Prepare auth compatibility
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/ci_auth_compat.sql
+      - name: Apply all migrations
+        env: {PGPASSWORD: postgres}
+        run: |
+          set -euo pipefail
+          mapfile -t migrations < <(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort -V)
+          for migration in "\${migrations[@]}"; do psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f "supabase/migrations/\$migration"; done
+      - name: Validate E8 database controls
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e8_production_proving.sql
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+      - name: Run E8 proving slice
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: redis://127.0.0.1:6379/0}
+        run: python backend/tests/ci_e8_proving.py
+      - name: Validate backend
+        working-directory: backend
+        run: python -m compileall -q app && ruff check app tests
