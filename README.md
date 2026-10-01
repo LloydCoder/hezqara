@@ -1,5 +1,7 @@
 # HEZQARA
 
+> Documentation baseline: October 2026.
+
 **Governed AI Workforce for Healthcare Operations**
 
 HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It combines tenant-isolated healthcare workflows, governed AI execution, healthcare interoperability, durable background execution, commercial controls, and evidence-backed operational controls.
