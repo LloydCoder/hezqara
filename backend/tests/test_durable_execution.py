@@ -40,6 +40,9 @@ def test_durable_workflow_job_awaits_async_runtime(monkeypatch):
     monkeypatch.setattr(durable, "system_session_context", lambda: SessionContext())
     monkeypatch.setattr(durable, "DurableJobService", Jobs)
     monkeypatch.setattr(durable, "execute_run", fake_execute_run)
+    async def fake_heartbeat(session, worker_id, queue, active_jobs=0, version=None):
+        return None
+    monkeypatch.setattr(durable, "record_worker_heartbeat", fake_heartbeat)
 
     result = asyncio.run(durable._run_platform_job("job-1"))
 

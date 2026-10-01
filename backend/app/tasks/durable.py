@@ -5,6 +5,7 @@ from app.infrastructure.database import system_session_context
 from app.platform.durable import DurableJobService
 from app.domains.workflows.runtime import execute_run
 from app.domains.patient_engagement.outbox import process_communication_outbox
+from app.platform.reliability import record_worker_heartbeat
 
 _worker_loop = None
 _worker_loop_pid = None
@@ -26,6 +27,7 @@ def run_platform_job(self, job_id: str):
 async def _run_platform_job(job_id: str):
     worker_id=f"{os.uname().nodename}:{os.getpid()}"
     async with system_session_context() as session:
+        await record_worker_heartbeat(session,worker_id,'hezqara',1)
         jobs=DurableJobService(session)
         job=await jobs.claim(job_id,worker_id)
         if not job:return {"status":"not_claimed","job_id":job_id}
@@ -39,9 +41,11 @@ async def _run_platform_job(job_id: str):
             else:
                 raise ValueError(f"unsupported durable job type: {job_type}")
             await jobs.complete(job_id,worker_id,{"result":result})
+            await record_worker_heartbeat(session,worker_id,'hezqara',0)
             return {"status":"completed","job_id":job_id,"result":result}
         except Exception as exc:
             state=await jobs.fail(job_id,worker_id,type(exc).__name__,retryable=True)
+            await record_worker_heartbeat(session,worker_id,'hezqara',0)
             return {"status":state["status"] if state else "lost_lease","job_id":job_id,"error":type(exc).__name__}
 
 @celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=60)
