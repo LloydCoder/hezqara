@@ -1,33 +1,56 @@
-# HEZQARA deployment topology
+# HEZQARA Deployment Topology
 
-## Current repository boundary
+## Repository boundary
 
-HEZQARA is a monorepo with a Next.js frontend, FastAPI API, PostgreSQL/Supabase database, Redis/Celery workers and provider integrations. The repository CI proves these components independently and together; it does not create or configure a production cloud environment.
+HEZQARA is a monorepo containing a Next.js frontend, FastAPI API, PostgreSQL/Supabase database, Redis/Celery worker and beat processes, and external provider integrations.
 
-## Vercel
+Repository CI proves these components and their integration tests. It does not create or configure a production cloud environment.
 
-The Next.js application under `frontend/` is the Vercel deployment target. The connected Vercel project resolves the Next.js application as the frontend project root; the committed `vercel.json` pins the framework, locked npm install, build command and `.next` output used by that project. Keep the Vercel project connected to this repository so the committed deployment configuration remains versioned. Vercel should provide the frontend's public Clerk publishable key and server-side `HEZQARA_API_INTERNAL_URL` according to the selected deployment topology.
+## Vercel frontend
 
-The FastAPI API, Celery worker/beat processes, Redis and PostgreSQL/Supabase are not assumed to run on Vercel. They require their own production-capable runtime and private connectivity appropriate to the deployment.
+The Next.js application under frontend/ is the Vercel deployment target. The connected Vercel project uses frontend/ as its project root.
 
-Do not put database credentials, Clerk secret keys, service-role credentials, AI provider keys, Stripe secrets or webhook signing secrets in `NEXT_PUBLIC_*` variables. Next.js public-prefixed variables are exposed to browser JavaScript.
+The committed vercel.json keeps the frontend build/install behavior versioned. Keep the Vercel project's Root Directory aligned with frontend/.
+
+Vercel should provide:
+
+- NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+- HEZQARA_API_INTERNAL_URL;
+- optionally NEXT_PUBLIC_API_URL when the browser must call an external API origin directly.
+
+Do not put database credentials, Clerk secret keys, AI provider keys, Stripe secrets, webhook signing secrets or provider tokens in NEXT_PUBLIC_* variables.
+
+## Backend and workers
+
+The FastAPI API, Celery worker/beat, Redis and PostgreSQL/Supabase are not assumed to run inside the Next.js Vercel project. They require a production-capable runtime with private connectivity and appropriate operational controls.
+
+Backend environment variables are documented in backend/.env.example.
 
 ## Environment separation
 
-Use separate credentials and databases/projects for development, preview/staging and production. Never point a preview deployment at a production healthcare database. Production PHI must not be used for CI or preview validation.
+Use separate credentials and databases/projects for local development, preview/staging and production.
 
-## Required frontend variables
-
-See `frontend/.env.example`.
-
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: public Clerk browser key.
-- `NEXT_PUBLIC_API_URL`: optional browser API origin; leave empty to use the Next.js rewrite.
-- `HEZQARA_API_INTERNAL_URL`: server-side Next.js rewrite target.
-
-## Required backend variables
-
-See `backend/.env.example`. Provider credentials are deployment secrets and must be supplied by the runtime secret manager.
+Never point a preview deployment at a production healthcare database. Never introduce production PHI into CI, preview, benchmarks or test fixtures.
 
 ## Release gate
 
-A Vercel project is not considered production-ready merely because the Next.js build succeeds. Before production traffic, verify Clerk organization mapping, API authorization, tenant isolation, database backups/restore, worker liveness, provider contracts/credentials, monitoring, incident response and production smoke tests.
+A Vercel build succeeding is only a build signal. Production release additionally requires:
+
+1. all required CI/security/E2E checks green;
+2. database migration validation;
+3. authenticated smoke validation against the deployed artifact;
+4. Clerk organization/tenant mapping verified;
+5. tenant-isolation verification;
+6. backup/restore evidence;
+7. worker liveness and durable-job health;
+8. provider contracts/credentials verified;
+9. monitoring and incident response ready;
+10. rollback path tested;
+11. no unresolved release-blocking incident.
+
+If Vercel Deployment Protection is enabled, unauthenticated external HTTP checks may return a protection response even when the deployment is healthy. Use an authenticated smoke path for protected deployments.
+
+## References
+
+- Vercel monorepo deployment guidance: https://vercel.com/academy/production-monorepos/deploy-web-app
+- Next.js documentation: https://nextjs.org/docs
