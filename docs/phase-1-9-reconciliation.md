@@ -1,32 +1,32 @@
-# HEZQARA Phase 1–9 Reconciliation
+# HEZQARA Phase 1–11 Reconciliation
 
-This is the canonical phase-status record. “Verified” means the stated engineering controls are implemented and the required repository validation gates are green; it does not mean production-proven, certified or clinically validated.
+“Verified” means the stated engineering controls are implemented and required repository validation gates are green; it does not mean production-proven, certified or clinically validated.
 
 | Phase | Status | Evidence |
 |---|---|---|
-| 1 Product UI & Experience | VERIFIED | Application shell, operational surfaces and truthful states exist; frontend and E2E validation are green. |
-| 2 Design System & UX | VERIFIED | Shared navigation, primitives and accessibility patterns are used by the application surfaces. |
-| 3 Operational Core | VERIFIED | Server-authoritative tenant → service → repository → PostgreSQL/RLS path remains canonical and database isolation gates are green. |
-| 4 AI Workforce & Automation | VERIFIED + E1 HARDENED | Workforce agents fail closed without tenant governance; model output is re-evaluated; governed tool execution is enforced. |
-| 5 Healthcare Workforce | VERIFIED | Patient communication, scheduling, consent and external-content boundaries remain in place; database-backed vertical slices are green. |
-| 6 Healthcare Domain Engine | VERIFIED | Eligibility, billing, claims, authorization, referrals and administrative safety boundaries remain covered by existing gates. |
-| 7 Interoperability | VERIFIED | FHIR R4/provider boundary, webhook protection, SSRF boundary and deterministic test providers remain in place; integration validation is green. |
-| 8 Intelligence | VERIFIED | Deterministic analytics, canonical metrics, tracing and governed exports remain tenant scoped; analytics validation is green. |
-| 9 AI Reliability & Governance | E1 VERIFIED | Mandatory workforce governance, secondary AI-path governance, governed tool boundary, approval-backed side-effect authorization and adversarial enforcement tests are green. |
-| 10 Canonical Tenant Security & Data Isolation | E2 VERIFIED | FORCE RLS, restrictive tenant policy, canonical Clerk-org → clinic mapping, tenant-bound composite relationships and adversarial cross-tenant tests are green. |
+| 1 Product UI & Experience | VERIFIED | Frontend and E2E validation green. |
+| 2 Design System & UX | VERIFIED | Shared navigation, primitives and accessibility patterns remain green. |
+| 3 Operational Core | VERIFIED | Server-authoritative tenant → service → repository → PostgreSQL/RLS path remains canonical. |
+| 4 AI Workforce & Automation | VERIFIED + E1 HARDENED | Mandatory governance, post-output re-evaluation and governed tools. |
+| 5 Healthcare Workforce | VERIFIED | Communication, scheduling, consent and external-content boundaries. |
+| 6 Healthcare Domain Engine | VERIFIED | Healthcare administrative domain boundaries and regression gates. |
+| 7 Interoperability | VERIFIED | FHIR R4 boundary, webhook/SSRF controls and integration validation. |
+| 8 Intelligence | VERIFIED | Deterministic, tenant-scoped analytics and governed exports. |
+| 9 AI Reliability & Governance | E1 VERIFIED | Mandatory governance and adversarial bypass tests. |
+| 10 Canonical Tenant Security & Data Isolation | E2 VERIFIED | FORCE RLS, canonical tenant mapping, tenant-bound relationships and adversarial isolation. |
+| 11 Durable Execution & Distributed Reliability | E3 VERIFIED | Durable jobs, idempotency, leases, bounded retries, dead-letter/replay, workflow lease recovery and approval resume are green. |
 
-## E2 controls verified
+## E3 controls verified
 
-- Tenant authority comes from verified Clerk organization context, never from a client-provided clinic identifier.
-- Database transactions set the organization context locally for pooled-connection safety.
-- Tenant-owned rows are protected by FORCE RLS.
-- Restrictive tenant policies provide a defense-in-depth boundary even when other permissive policies exist.
-- Tenant-to-tenant relationship forgery is blocked by composite foreign keys.
-- Workflow and AI governance relationships remain tenant-bound.
-- Adversarial tests cover read, insert, reassignment and relationship-forgery attacks.
+- PostgreSQL is the authoritative execution state.
+- Broker delivery cannot mark work complete without a durable database transition.
+- Duplicate claims are prevented by atomic state transitions and row locking.
+- Worker crashes are recoverable through lease expiry.
+- Retry exhaustion is explicit and inspectable through dead-letter state.
+- Human-approval pauses do not retain an execution lease indefinitely.
+- Approved workflows resume through the same durable execution boundary.
+- Legacy vertical slices and all previous phase gates remain green.
 
-## Roadmap boundary
+## Next phase
 
-E1 and E2 are verified. E3 is the next phase: durable execution and distributed reliability.
-
-Phase status is an engineering status, not a regulatory certification.
+E4 — production healthcare interoperability.
