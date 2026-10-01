@@ -1,40 +1,24 @@
-#!/bin/bash
-# Carenova AI — Supabase backup script
-# Run via cron: 0 3 * * * /home/ubuntu/carenova/infrastructure/scripts/backup_db.sh
-
+#!/usr/bin/env bash
+# HEZQARA database backup helper.
+# Requires DATABASE_URL. Optional BACKUP_DIR and BACKUP_RETENTION_DAYS.
 set -euo pipefail
 
-BACKUP_DIR="/home/ubuntu/backups/carenova"
-DATE=$(date '+%Y-%m-%d_%H%M')
-R2_BUCKET="carenova-docs"
+: "${DATABASE_URL:?DATABASE_URL must be set}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/hezqara}"
+RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
+DATE="$(date -u '+%Y-%m-%d_%H%M%S')"
+FILE="$BACKUP_DIR/hezqara_$DATE.sql.gz"
 
 mkdir -p "$BACKUP_DIR"
+umask 077
 
-echo "► Backup started: $DATE"
+echo "HEZQARA backup started: $DATE UTC"
+pg_dump "$DATABASE_URL"   --no-owner   --no-acl   --schema=public   | gzip -9 > "$FILE"
 
-# Supabase exports via pg_dump (Supabase Frankfurt)
-# Production: set DATABASE_URL in environment
-if [ -z "${DATABASE_URL:-}" ]; then
-    echo "⚠️  DATABASE_URL not set — skipping pg_dump"
-else
-    pg_dump "$DATABASE_URL" \
-        --no-owner \
-        --no-acl \
-        --schema=public \
-        -f "$BACKUP_DIR/carenova_$DATE.sql"
+test -s "$FILE"
+sha256sum "$FILE" > "$FILE.sha256"
+find "$BACKUP_DIR" -name 'hezqara_*.sql.gz' -mtime +"$RETENTION_DAYS" -delete
+find "$BACKUP_DIR" -name 'hezqara_*.sql.gz.sha256' -mtime +"$RETENTION_DAYS" -delete
 
-    gzip "$BACKUP_DIR/carenova_$DATE.sql"
-
-    echo "✅ Backup created: carenova_$DATE.sql.gz"
-
-    # Upload to Cloudflare R2
-    # aws s3 cp "$BACKUP_DIR/carenova_$DATE.sql.gz" \
-    #     "s3://$R2_BUCKET/backups/carenova_$DATE.sql.gz" \
-    #     --endpoint-url "$R2_ENDPOINT"
-
-    # Delete local backups older than 7 days
-    find "$BACKUP_DIR" -name "*.sql.gz" -mtime +7 -delete
-    echo "✅ Old backups cleaned"
-fi
-
-echo "► Backup complete: $DATE"
+echo "HEZQARA backup created: $FILE"
+echo "Checksum: $FILE.sha256"
