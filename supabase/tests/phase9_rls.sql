@@ -6,8 +6,8 @@ INSERT INTO clinics(id,name,clerk_org_id) VALUES
 ON CONFLICT (id) DO NOTHING;
 SET ROLE authenticated;
 SELECT set_config('app.clerk_org_id','tenant_a',false);
-INSERT INTO ai_capabilities(id,clinic_id,name,description,domain,owner)
-VALUES ('test-cap','tenant_a','Test Capability','','test','test');
+INSERT INTO ai_capabilities(id,clinic_id,name,description,domain,owner,risk_tier)
+VALUES ('test-cap','tenant_a','Test Capability','','test','test',1);
 INSERT INTO ai_control_state(clinic_id) VALUES ('tenant_a') ON CONFLICT DO NOTHING;
 SELECT set_config('app.clerk_org_id','tenant_b',false);
 DO $$ BEGIN
