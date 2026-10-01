@@ -1,7 +1,7 @@
 name: HEZQARA Phases 9-13 Validation
 on:
   push:
-    branches: ["implementation/phases-9-13"]
+    branches: ["implementation/phases-9-13", "implementation/e1-final"]
   pull_request:
     branches: [main]
 permissions:
