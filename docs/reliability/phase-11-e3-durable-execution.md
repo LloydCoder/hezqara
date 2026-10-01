@@ -19,7 +19,7 @@ E3 makes durable execution state authoritative in PostgreSQL. Redis/Celery is a 
 - Celery uses late acknowledgements and rejects tasks on worker loss so broker delivery does not falsely imply durable completion.
 - Periodic dispatch and lease reconciliation run through the single Celery Beat service.
 
-The design follows established durable-execution principles: persist state separately from broker delivery, make operations idempotent, bound retries, and recover abandoned work. Celery's late-ack/worker-loss controls complement rather than replace database durability. citeturn4search7turn5search0
+The design follows established durable-execution principles: persist state separately from broker delivery, make operations idempotent, bound retries, and recover abandoned work. Celery late acknowledgements and worker-loss handling complement rather than replace database durability.
 
 ## Adversarial proof
 
