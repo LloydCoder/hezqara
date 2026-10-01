@@ -80,7 +80,7 @@ BEGIN
   END IF;
   BEGIN
     INSERT INTO operational_incidents(clinic_id,severity,title,summary)
-    VALUES ('forensic-clinic-a','sev2','authenticated write');
+    VALUES ('forensic-clinic-a','sev2','authenticated write','should not be inserted');
     RAISE EXCEPTION 'authenticated operational evidence write accepted';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
