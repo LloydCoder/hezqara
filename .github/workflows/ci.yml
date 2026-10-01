@@ -1,7 +1,7 @@
 name: HEZQARA CI
 on:
   push:
-    branches: [main, 'refactor/**']
+    branches: [main, 'refactor/**', 'implementation/e1-final']
   pull_request:
     branches: [main]
 permissions: {contents: read}
