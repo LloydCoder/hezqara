@@ -46,8 +46,9 @@ A phase is promoted to VERIFIED only after its required GitHub Actions gates are
 3. **E3 — Durable execution/distributed reliability: VERIFIED**
 4. **E4 — Production healthcare interoperability: VERIFIED**
 5. **E5 — Enterprise security/privacy/compliance readiness: VERIFIED**
-6. **E6 — Commercial platform completion: NEXT**
-7. **E7 — First-clinic production vertical slice**
+6. **E6 — Commercial platform completion: VERIFIED**
+7. **E7 — First-clinic production vertical slice: NEXT**
+
 8. **E8 — Production proving and scale maturity**
 
 ## Documentation
