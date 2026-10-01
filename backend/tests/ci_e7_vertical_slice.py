@@ -20,7 +20,7 @@ def call(client, method, path, **kwargs):
     return response.json()
 
 
-worker = subprocess.Popen(\n    [sys.executable, "-m", "celery", "-A", "app.tasks.celery.celery_app", "worker", "--loglevel=warning", "--pool=solo"],\n    stdout=subprocess.PIPE,\n    stderr=subprocess.STDOUT,\n    text=True,\n)\n\nproc = subprocess.Popen(
+worker = subprocess.Popen(\n    [sys.executable, "-m", "celery", "-A", "app.tasks.celery.celery_app", "worker", "--loglevel=warning", "--pool=solo", "--concurrency=1", "--without-gossip", "--without-mingle"],\n    stdout=subprocess.PIPE,\n    stderr=subprocess.STDOUT,\n    text=True,\n)\n\nproc = subprocess.Popen(
     [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8004"],
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
@@ -37,6 +37,8 @@ try:
             time.sleep(1)
 
         call(client, "GET", "/health")
+        time.sleep(2)
+        assert worker.poll() is None, "Celery worker exited before the workflow slice started"
 
         for step in ("clinic_profile", "users", "ai_controls", "communications", "billing", "first_workflow"):
             call(client, "POST", "/api/v1/platform/onboarding/complete", json={"step": step})
@@ -99,7 +101,7 @@ try:
                 "context": {"vertical_slice": "e7"},
             },
         )
-        for _ in range(30):\n            if run["status"] == "waiting_for_approval":\n                break\n            time.sleep(1)\n            run = call(client, "GET", f"/api/v1/workflows/{workflow_id}/runs") [0]\n        assert run["status"] == "waiting_for_approval", run
+        for _ in range(30):\n            if run["status"] == "waiting_for_approval":\n                break\n            if run["status"] in {"failed", "escalated", "cancelled"}:\n                break\n            time.sleep(1)\n            run = call(client, "GET", f"/api/v1/workflows/{workflow_id}/runs")[0]\n        assert run["status"] == "waiting_for_approval", run
 
         approvals = call(client, "GET", "/api/v1/approvals")
         approval = next(item for item in approvals if item["workflow_run_id"] == run["id"])
