@@ -9,10 +9,10 @@ Canonical Clerk organization → clinic mapping, FORCE RLS, restrictive tenant b
 ## E3 — Durable execution/distributed reliability — VERIFIED
 Durable job state, persistent idempotency, atomic claiming, leases, retry/backoff, dead-letter/replay, crash recovery and approval resume.
 
-## E4 — Production healthcare interoperability — NEXT
-FHIR R4 production boundaries, SMART App Launch, EHR/payer/clearinghouse/payment/messaging adapters, OAuth/scopes/token lifecycle and provider certification/testing.
+## E4 — Production healthcare interoperability — VERIFIED
+FHIR R4 4.0.1 boundary, SMART App Launch 2.2.0 authorization/PKCE controls, tenant-scoped OAuth metadata, raw-token exclusion and current Da Vinci capability contracts.
 
-## E5 — Enterprise security/privacy/compliance readiness
+## E5 — Enterprise security/privacy/compliance readiness — NEXT
 Threat model, PHI/data-flow inventory, SBOM/vulnerability management, secrets/key rotation, incident response, access review, retention/deletion, BAAs/DPAs and disaster recovery.
 
 ## E6 — Commercial platform completion
