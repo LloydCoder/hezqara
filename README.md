@@ -2,67 +2,42 @@
 
 **Governed AI Workforce for Healthcare Operations**
 
-HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a governed AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and patient-engagement workflows.
-
-> **Engineering status:** E1 AI governance, E2 canonical tenant isolation, E3 durable execution and E4 interoperability controls are VERIFIED on the current mainline after full repository validation. E5–E8 remain roadmap work. Engineering verification is not a HIPAA/GDPR/FHIR/SMART/CMS certification, production-scale proof, clinical-efficacy claim or customer-outcome claim.
-
-## Canonical architecture
-
-Browser → Clerk identity → verified tenant → server authorization → FastAPI → domain service → repository → PostgreSQL/Supabase → RLS → audit.
-
-AI adds: capability/version → untrusted-input boundary → data/tool authorization → bounded provider/model → deterministic validation → action/risk re-evaluation → approval/escalation → governed side effect → audit/telemetry/evaluation.
-
-The LLM is never an authorization source. External healthcare content is untrusted data. Clinical/high-impact decisions are not autonomous.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices with a governed AI workforce runtime.
 
 ## Verified phases
 
-### E1 — AI governance enforcement
-- Workforce execution fails closed without tenant-scoped governance.
-- Policy is enforced before provider invocation and against model-proposed actions.
-- Tools require user permission and governance allowlisting.
-- Consequential side effects require approval-backed governance authorization.
-- Secondary AI paths are governed.
-- Adversarial bypass tests are green.
+- **E1 — AI governance enforcement:** runtime policy, tool and side-effect governance is enforced and adversarially tested.
+- **E2 — Canonical tenant security/data isolation:** Clerk organization → canonical clinic identity → server authorization → PostgreSQL RLS/FORCE RLS is enforced.
+- **E3 — Durable execution/distributed reliability:** durable jobs/workflows, idempotency, leases, bounded retries, dead-lettering and recovery are persisted.
+- **E4 — Healthcare interoperability:** FHIR R4 4.0.1, SMART App Launch 2.2.0/PKCE, tenant-scoped OAuth metadata and current Da Vinci capability contracts are validated.
+- **E5 — Enterprise security/privacy/compliance readiness:** security incidents, access reviews, processing/retention records, deletion evidence, restore-drill evidence, broad secret scanning and SBOM generation are implemented on the E5 closure branch and are pending final green verification.
 
-### E2 — Canonical tenant security/data isolation
-- Clerk organization → canonical clinic ID is the tenant authority chain.
-- Tenant-owned tables use RLS/FORCE RLS.
-- Client-supplied clinic IDs cannot establish authority.
-- Cross-tenant workflow and foreign-key integrity is enforced at the database layer.
-- Adversarial tenant-isolation tests are green.
+Engineering verification is not a HIPAA/GDPR/NDPA/SOC 2/ISO/FHIR/SMART certification, production-scale proof or clinical-efficacy claim.
 
-### E3 — Durable execution/distributed reliability
-- PostgreSQL is authoritative for durable job/workflow state.
-- Broker delivery is a wake-up mechanism, not completion authority.
-- Idempotency, leases, heartbeats, bounded retries, dead-lettering and crash recovery are persisted.
-- Workflow execution survives approval pauses and worker loss.
-- Adversarial duplicate/lease/recovery tests are green.
+## Canonical architecture
 
-### E4 — Production healthcare interoperability
-- FHIR R4 (4.0.1) is the explicit resource boundary.
-- SMART App Launch 2.2.0 is the OAuth/PKCE contract.
-- OAuth state, PKCE, redirect and OIDC nonce requirements are validated.
-- Raw access/refresh tokens are not returned or persisted by the integration metadata boundary.
-- Current Da Vinci contracts are recorded for HRex 1.2.0, CRD 2.2.1, DTR 2.2.0, PAS 2.2.1 and PDex 2.2.0.
-- Integration metadata is tenant isolated.
-- Deterministic FHIR/SMART interoperability tests are green.
+Browser → Clerk identity → verified tenant → server authorization → FastAPI → domain service → repository → PostgreSQL/Supabase → RLS → audit/security evidence.
 
-E4 is an interoperability engineering boundary; actual EHR/payer production connectivity still requires provider-specific credentials, contracts, endpoint allowlists, sandbox validation and operational certification where applicable.
+AI adds capability/version → untrusted-input boundary → data/tool authorization → bounded provider/model → deterministic validation → policy/risk re-evaluation → approval/escalation → governed side effect → audit/telemetry/evaluation.
 
 ## Security boundaries
 
-- PostgreSQL RLS/FORCE RLS isolates tenant-owned data.
-- Client-provided clinic IDs do not establish authorization.
-- Raw integration credentials/tokens are not persisted by the integration metadata layer.
-- Outbound HTTP retains HTTPS, trusted-host and private-destination protections.
-- Webhooks require signatures, timestamps and replay protection.
-- External content is untrusted before AI processing.
+- Client-provided clinic IDs never establish tenant authority.
+- PostgreSQL RLS/FORCE RLS protects tenant-owned data.
+- Raw integration OAuth tokens are not persisted by the E4 metadata boundary.
+- Webhooks use signature, timestamp and replay controls.
+- External healthcare content is untrusted before AI processing.
 - AI execution requires governance.
-- Supabase Data API exposure is separate from RLS and must be explicitly granted where required.
+- Dependencies are audited; CI produces an SBOM and performs broad secret scanning.
+- Security incidents, access reviews, privacy-processing records, deletion requests and restore drills have tenant-scoped evidence tables.
+
+## E5 evidence model
+
+E5 aligns engineering controls to NIST CSF 2.0's Govern, Identify, Protect, Detect, Respond and Recover functions, NIST SP 800-61r3 incident-response guidance, NIST SSDF/800-218A and HIPAA Security Rule risk-analysis principles. These frameworks guide controls; they do not constitute certification. citeturn2search49turn2search16turn2search14turn2search48
 
 ## Validation
 
-The repository's required validation covers structure/source hygiene, backend tests, database migrations/RLS/tenant integrity, FHIR/interoperability checks, AI governance/security, frontend lint/type/build, Playwright E2E, Docker and dependency/secret scanning. A phase is not promoted to VERIFIED until its required workflow gates are green.
+A phase is promoted to VERIFIED only after its required GitHub Actions gates are green. Required validation includes source hygiene, backend tests, database migration/RLS tests, integration/security tests, frontend checks, E2E, Docker, dependency scanning, broad secret scanning and SBOM generation.
 
 ## Roadmap
 
@@ -70,12 +45,21 @@ The repository's required validation covers structure/source hygiene, backend te
 2. **E2 — Canonical tenant security/data isolation: VERIFIED**
 3. **E3 — Durable execution/distributed reliability: VERIFIED**
 4. **E4 — Production healthcare interoperability: VERIFIED**
-5. **E5 — Enterprise security, privacy and compliance readiness: NEXT**
+5. **E5 — Enterprise security/privacy/compliance readiness: IN PROGRESS**
 6. **E6 — Commercial platform completion**
 7. **E7 — First-clinic production vertical slice**
 8. **E8 — Production proving and scale maturity**
 
-The roadmap deliberately separates engineering verification from production proving.
+## Documentation
+
+- docs/architecture/canonical-architecture.md
+- docs/security/e5-enterprise-security.md
+- docs/security/threat-model.md
+- docs/security/incident-response.md
+- docs/security/data-protection-and-retention.md
+- docs/security/access-review.md
+- docs/security/disaster-recovery.md
+- docs/interoperability/e4-verification.md
 
 ## License
 
