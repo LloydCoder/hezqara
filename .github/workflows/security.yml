@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, 'refactor/**']
+    branches: [main, 'refactor/**', 'implementation/e1-final']
   schedule:
     - cron: '0 2 * * *'
 permissions:
