@@ -42,7 +42,7 @@ async def execute_run(organization_id:str,run_id:str):
     if not state:raise ValueError(f'workflow step record missing: {key}')
     if state['status']=='completed':continue
     await session.execute(text("update workflow_runs set heartbeat_at=now(),lease_expires_at=now()+interval '120 seconds' where id=:run and clinic_id=:clinic and lease_owner=:worker"),{'run':run_id,'clinic':clinic_id,'worker':worker_id})
-   await session.execute(text("update workflow_step_runs set status='running',attempts=attempts+1,lease_owner=:worker,lease_expires_at=now()+interval '120 seconds',heartbeat_at=now(),started_at=coalesce(started_at,now()) where workflow_run_id=:run and step_key=:key and (lease_owner is null or lease_expires_at<now() or lease_owner=:worker)"),{'run':run_id,'key':key,'worker':worker_id})
+    await session.execute(text("update workflow_step_runs set status='running',attempts=attempts+1,lease_owner=:worker,lease_expires_at=now()+interval '120 seconds',heartbeat_at=now(),started_at=coalesce(started_at,now()) where workflow_run_id=:run and step_key=:key and (lease_owner is null or lease_expires_at<now() or lease_owner=:worker)"),{'run':run_id,'key':key,'worker':worker_id})
     if kind=='create_task':output={'task_id':(await TaskService(TaskRepository(session)).create(TaskCreate(**step.get('input',{}))))['id']}
     elif kind=='complete':output={'completed_at':datetime.now(timezone.utc).isoformat()}
     elif kind=='classify_message':
