@@ -25,7 +25,7 @@ worker = subprocess.Popen(
     [
         sys.executable, "-m", "celery", "-A", "app.tasks.celery.celery_app", "worker",
         "--loglevel=warning", "--pool=solo", "--concurrency=1",
-        "--without-gossip", "--without-mingle",
+        "--without-gossip", "--without-mingle", "--hostname", "e7@%h", "-Q", "hezqara",
     ],
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
@@ -53,8 +53,13 @@ try:
             if worker.poll() is not None:
                 raise AssertionError("Celery worker exited before the workflow slice started")
             try:
-                if celery_app.control.inspect(timeout=1).ping():
-                    break
+                inspector = celery_app.control.inspect(timeout=1)
+                if inspector.ping():
+                    registered = inspector.registered() or {}
+                    tasks = next(iter(registered.values()), [])
+                    if "app.tasks.durable.run_platform_job" in tasks:
+                        break
+                    raise AssertionError(f"Celery worker is ready but durable task is not registered: {tasks}")
             except Exception:
                 pass
             time.sleep(1)
