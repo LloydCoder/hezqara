@@ -1,4 +1,4 @@
-# HEZQARA Phase 1–11 Reconciliation
+# HEZQARA Phase 1–E8 Reconciliation
 
 “Verified” means the stated engineering controls are implemented and required repository validation gates are green; it does not mean production-proven, certified or clinically validated.
 
@@ -14,19 +14,15 @@
 | 8 Intelligence | VERIFIED | Deterministic, tenant-scoped analytics and governed exports. |
 | 9 AI Reliability & Governance | E1 VERIFIED | Mandatory governance and adversarial bypass tests. |
 | 10 Canonical Tenant Security & Data Isolation | E2 VERIFIED | FORCE RLS, canonical tenant mapping, tenant-bound relationships and adversarial isolation. |
-| 11 Durable Execution & Distributed Reliability | E3 VERIFIED | Durable jobs, idempotency, leases, bounded retries, dead-letter/replay, workflow lease recovery and approval resume are green. |
+| 11 Durable Execution & Distributed Reliability | E3 VERIFIED | Durable jobs, idempotency, leases, bounded retries, dead-letter/replay, workflow lease recovery and approval resume. |
+| 12 Production Healthcare Interoperability | E4 VERIFIED | FHIR/SMART boundary, OAuth metadata controls and deterministic protocol validation. |
+| 13 Enterprise Security, Privacy & Compliance Readiness | E5 VERIFIED | Security/privacy evidence, broad secret scanning, SBOM, recovery evidence and runbooks. |
+| 14 Commercial Platform | E6 VERIFIED | Stripe subscription state, verified webhooks, idempotency, commercial ledger and tenant entitlements. |
+| 15 First-Clinic Production Vertical Slice | E7 VERIFIED | Onboarding → activation → governed work → evidence → ROI → export → pause/recover/rollback path. |
+| 16 Production Proving & Operating Maturity | E8 VERIFIED | SLO evidence, worker liveness, operational readiness, recovery/change/incident evidence and final CI/E2E/Docker gates. |
 
-## E3 controls verified
+## Final verification contract
 
-- PostgreSQL is the authoritative execution state.
-- Broker delivery cannot mark work complete without a durable database transition.
-- Duplicate claims are prevented by atomic state transitions and row locking.
-- Worker crashes are recoverable through lease expiry.
-- Retry exhaustion is explicit and inspectable through dead-letter state.
-- Human-approval pauses do not retain an execution lease indefinitely.
-- Approved workflows resume through the same durable execution boundary.
-- Legacy vertical slices and all previous phase gates remain green.
+All eight E1–E8 phases are verified on `main`. Any later change that alters a verified boundary must reopen the affected verification gate rather than relying on historical green results.
 
-## Next phase
-
-E4 — production healthcare interoperability.
+This is an engineering verification record, not regulatory certification, clinical validation, or a production SLA.
