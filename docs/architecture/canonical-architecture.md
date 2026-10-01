@@ -2,13 +2,13 @@
 
 ## Status
 
-E1 AI governance, E2 canonical tenant isolation, E3 durable execution and E4 interoperability are verified engineering controls on main. E5 enterprise security/privacy controls are implemented on the closure branch pending final verification. This document is authoritative over older phase summaries when they conflict with current code.
+E1 AI governance, E2 canonical tenant isolation, E3 durable execution, E4 interoperability, E5 enterprise security/privacy, E6 commercial platform, E7 first-clinic vertical slice and E8 production proving are verified engineering controls on `main`. This document is authoritative over older phase summaries when they conflict with current code.
 
 ## Request and data architecture
 
 Browser → Clerk identity → verified organization/tenant → server authorization → FastAPI → domain service → repository → PostgreSQL/Supabase → RLS → audit.
 
-The browser never establishes tenant authority. current_tenant derives organization identity from authenticated Clerk context; database access uses a transaction-scoped organization context and the authenticated database role.
+The browser never establishes tenant authority. `current_tenant` derives organization identity from authenticated Clerk context; database access uses transaction-scoped organization context and the authenticated database role.
 
 ## AI architecture
 
@@ -28,14 +28,18 @@ PostgreSQL is authoritative for durable platform/workflow/outbox state. Redis/Ce
 
 ## Interoperability
 
-authenticated tenant/policy → integration port → provider adapter → protocol validation → normalized result → domain state → audit/observability.
+Authenticated tenant/policy → integration port → provider adapter → protocol validation → normalized result → domain state → audit/observability.
 
 FHIR R4 4.0.1 is the explicit resource boundary. SMART App Launch 2.2.0 supplies the OAuth authorization contract and PKCE requirements. Integration metadata is tenant scoped; raw OAuth tokens are intentionally excluded from the metadata persistence boundary. Da Vinci protocol versions are recorded as capabilities, not as a claim of full implementation-guide conformance.
 
+## Commercial and operating architecture
+
+Subscription/provider events are reconciled into PostgreSQL commercial state. E7 activation state, evidence, ROI and export manifests are tenant scoped. E8 adds persisted SLO measurements, worker heartbeats, operational incidents/changes/recovery drills and authenticated readiness/snapshot APIs.
+
 ## Truthfulness
 
-Configuration presence is not proof of provider connectivity. Deterministic CI providers are test-only. Production EHR/payer connectivity requires provider-specific configuration, credentials, endpoint validation, contractual prerequisites and operational testing.
+Configuration presence is not proof of provider connectivity. Deterministic CI providers are test-only. Production EHR/payer/payment/voice connectivity requires provider-specific configuration, credentials, endpoint validation, contractual prerequisites and operational testing.
 
 ## External standards
 
-HL7 FHIR R4, SMART App Launch, Da Vinci implementation guides, OWASP API/GenAI guidance, NIST AI RMF/GenAI Profile and NIST SSDF are engineering references. They are not certification claims.
+HL7 FHIR R4, SMART App Launch, Da Vinci implementation guides, OWASP API/GenAI guidance, NIST AI RMF/GenAI Profile, NIST SSDF and healthcare security guidance are engineering references. They are not certification claims.
