@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -16,7 +17,7 @@ export default clerkConfigured
         await auth.protect();
       }
     })
-  : function unconfiguredAuthProxy(request: Request) {
+  : function unconfiguredAuthProxy(request: NextRequest) {
       if (isPublicRoute(request)) {
         return NextResponse.next();
       }
