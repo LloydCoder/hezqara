@@ -16,8 +16,8 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO slo_definitions(clinic_id,name,target,metric) VALUES
 ('e8-clinic-a','api_availability',0.999,'availability');
 
-INSERT INTO slo_measurements(clinic_id,window_start,window_end,good_events,total_events)
-VALUES ('e8-clinic-a',now()-interval '1 day',now(),999,1000);
+INSERT INTO slo_measurements(clinic_id,window_start,window_end,good_events,total_events,achieved)
+VALUES ('e8-clinic-a',now()-interval '1 day',now(),999,1000,0.999);
 
 DO $$
 BEGIN
