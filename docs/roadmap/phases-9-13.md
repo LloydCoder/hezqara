@@ -15,10 +15,10 @@ FHIR R4 4.0.1 boundary, SMART App Launch 2.2.0 authorization/PKCE controls, tena
 ## E5 — Enterprise security/privacy/compliance readiness — VERIFIED
 Security incident evidence, access-review evidence, processing/retention records, deletion-request evidence, restore-drill evidence, dependency auditing, broad secret scanning and CI-generated SBOM are implemented and green.
 
-## E6 — Commercial platform completion — NEXT
-Payment provider integration, signed webhooks, idempotency, subscription state machine, invoices/payments/refunds/chargebacks, reconciliation and entitlement/usage enforcement.
+## E6 — Commercial platform completion — VERIFIED
+Canonical subscription state, Stripe Checkout integration, idempotent checkout, verified Stripe webhook events, durable event deduplication, commercial ledger, tenant-scoped entitlements and RLS controls are implemented and green.
 
-## E7 — First-clinic production vertical slice
+## E7 — First-clinic production vertical slice — NEXT
 Discover → signup → tenant → staff → permissions → integration → governed AI workforce → approval → side effect → evidence → ROI → pause/disable/rollback/export/recover.
 
 ## E8 — Production proving and scale maturity

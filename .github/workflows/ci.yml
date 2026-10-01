@@ -1,7 +1,7 @@
 name: HEZQARA CI
 on:
   push:
-    branches: [main, 'refactor/**', 'implementation/e1-final', 'implementation/e5-enterprise-security']
+    branches: [main, 'refactor/**', 'implementation/e1-final', 'implementation/e5-enterprise-security', 'implementation/e6-commercial-platform']
   pull_request:
     branches: [main]
 permissions: {contents: read}
@@ -17,7 +17,7 @@ jobs:
       - name: Canonical repository gates
         run: |
           set -euo pipefail
-          required=(backend/app/main.py backend/app/security/clerk.py backend/app/ai/governance/contracts.py backend/app/ai/governance/service.py backend/app/workforce/registry.py backend/app/api/v1/executions.py frontend/package.json frontend/src/proxy.ts supabase/migrations/024_phase9_ai_governance.sql supabase/migrations/029_phase9_tenant_integrity_and_controls.sql supabase/migrations/030_workflow_tenant_integrity.sql supabase/migrations/031_ai_approval_lifecycle.sql supabase/migrations/032_phase10_13_tenant_policy_hardening.sql supabase/migrations/033_phase9_tenant_policy_hardening.sql supabase/migrations/035_phase14_e2_tenant_isolation.sql supabase/migrations/036_phase15_e3_durable_execution.sql supabase/migrations/037_phase16_e4_interoperability_metadata.sql supabase/migrations/038_phase17_e5_enterprise_security.sql)
+          required=(backend/app/main.py backend/app/security/clerk.py backend/app/ai/governance/contracts.py backend/app/ai/governance/service.py backend/app/workforce/registry.py backend/app/api/v1/executions.py frontend/package.json frontend/src/proxy.ts supabase/migrations/024_phase9_ai_governance.sql supabase/migrations/029_phase9_tenant_integrity_and_controls.sql supabase/migrations/030_workflow_tenant_integrity.sql supabase/migrations/031_ai_approval_lifecycle.sql supabase/migrations/032_phase10_13_tenant_policy_hardening.sql supabase/migrations/033_phase9_tenant_policy_hardening.sql supabase/migrations/035_phase14_e2_tenant_isolation.sql supabase/migrations/036_phase15_e3_durable_execution.sql supabase/migrations/037_phase16_e4_interoperability_metadata.sql supabase/migrations/038_phase17_e5_enterprise_security.sql supabase/migrations/039_phase18_e6_commercial_platform.sql)
           for path in "${required[@]}"; do test -f "$path" || { echo "missing required path: $path"; exit 1; }; done
           if grep -RniE 'NEXT_PUBLIC_DEMO_CLINIC_ID|demo_clinic_ng' frontend backend --exclude-dir=node_modules; then echo 'forbidden demo tenant identifier found'; exit 1; fi
           if grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src; then echo 'unfinished placeholder found'; exit 1; fi
@@ -128,6 +128,9 @@ jobs:
       - name: Prove E5 enterprise security and privacy evidence
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e5_enterprise_security.sql
+      - name: Prove E6 commercial platform tenant and ledger controls
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e6_commercial_platform.sql
       - name: Install backend dependencies for production-like import
         working-directory: backend
         run: pip install -r requirements.txt

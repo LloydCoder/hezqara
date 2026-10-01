@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     db_pool_size:int=Field(default=10,ge=1,le=100); db_max_overflow:int=Field(default=20,ge=0,le=200)
     clerk_secret_key:str=''; clerk_publishable_key:str=''; clerk_jwt_key:str=''; clerk_authorized_parties:str=''; clerk_webhook_secret:str=''
     redis_url:str='redis://localhost:6379/0'
-    stripe_secret_key:str=''; stripe_webhook_secret:str=''; retell_api_key:str=''; retell_webhook_secret:str=''; whatsapp_webhook_secret:str=''; whatsapp_business_api_token:str=''; whatsapp_phone_number_id:str=''
+    stripe_secret_key:str=''; stripe_webhook_secret:str=''; stripe_price_starter:str=''; stripe_price_growth:str=''; stripe_price_professional:str=''; stripe_price_enterprise:str=''; stripe_checkout_success_url:str='http://localhost:3004/dashboard/billing?checkout=success'; stripe_checkout_cancel_url:str='http://localhost:3004/dashboard/billing?checkout=cancelled'; retell_api_key:str=''; retell_webhook_secret:str=''; whatsapp_webhook_secret:str=''; whatsapp_business_api_token:str=''; whatsapp_phone_number_id:str=''
     anthropic_api_key:str=''; openai_api_key:str=''; ai_provider:str='anthropic'; ai_model:str='claude-3-5-sonnet-latest'; ai_timeout_seconds:float=Field(default=30.0,gt=0,le=120)
     model_config=SettingsConfigDict(env_file='.env',env_file_encoding='utf-8',case_sensitive=False,extra='ignore')
     @property
