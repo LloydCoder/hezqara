@@ -1,0 +1,26 @@
+name: HEZQARA Lockfile Bootstrap
+on:
+  push:
+    branches: [lockfile-bootstrap]
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with: {node-version: '24'}
+      - name: Generate frontend lockfile
+        working-directory: frontend
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile
+        run: |
+          set -euo pipefail
+          test -s frontend/package-lock.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add frontend/package-lock.json
+          if git diff --cached --quiet; then echo 'lockfile unchanged'; exit 0; fi
+          git commit -m 'chore(frontend): add deterministic npm lockfile'
+          git push
