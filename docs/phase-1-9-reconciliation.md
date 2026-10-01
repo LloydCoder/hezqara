@@ -5,22 +5,24 @@
 | 1 Product UI & Experience | VERIFIED | Authenticated application shell, operational surfaces and truthful states exist. |
 | 2 Design System & UX | VERIFIED | Shared navigation, tokens/primitives and accessibility patterns are used by governance UI. |
 | 3 Operational Core | VERIFIED | Server-authoritative tenant → service → repository → PostgreSQL/RLS path remains canonical. |
-| 4 AI Workforce & Automation | VERIFIED + HARDENED | Existing registry/executor remains the runtime; Phase 9 adds governance gates and lineage. |
+| 4 AI Workforce & Automation | VERIFIED + E1 HARDENED | Workforce agents now fail closed without tenant governance; model output is re-evaluated before completion. |
 | 5 Healthcare Workforce | VERIFIED | Patient communication, scheduling, consent and external-content boundaries remain in place. |
 | 6 Healthcare Domain Engine | VERIFIED | Eligibility, billing, claims, authorization, referrals and administrative safety boundaries remain. |
 | 7 Interoperability | VERIFIED | FHIR R4/provider boundary, webhook protection, SSRF boundary and deterministic test providers remain. |
 | 8 Intelligence | VERIFIED | Deterministic analytics, canonical metrics, tracing and governed exports remain tenant scoped. |
-| 9 AI Reliability & Governance | IMPLEMENTED | Registry, versioning, policy/risk controls, evaluation primitives, telemetry, approvals, emergency controls, API/UI and documentation added. |
+| 9 AI Reliability & Governance | E1 IMPLEMENTED — VALIDATION GATE PENDING | Runtime enforcement, secondary AI-path governance, governed tool boundary, approval-backed side-effect authorization and adversarial tests are implemented on the E1 branch. CI must be fully green before this is declared verified. |
 
-## Reconciliation findings fixed in Phase 9
+## E1 reconciliation findings fixed
 
-- Updated stale repository phase-status documentation.
-- Reconciled the AI prompt registry with all current workforce agent names.
-- Added explicit capability risk classification instead of treating every agent as the same risk.
-- Added server-authoritative AI emergency controls.
-- Added capability/version/evaluation/telemetry/policy/approval persistence with RLS.
-- Added synthetic-only evaluation fixtures and deterministic scoring.
-- Added AI governance API and command-center UI.
+- Closed the principal bypass in `AgentExecutor`: model execution now requires a tenant-scoped governance service.
+- Added pre-model governance evaluation and post-output action/risk re-evaluation.
+- Propagated governance context from the authenticated execution API into every workforce agent.
+- Added tool allowlist enforcement in addition to existing user-permission checks.
+- Added a reusable governed tool-call boundary.
+- Added approval-backed side-effect authorization with execution, policy, action and expiry checks.
+- Closed the secondary `MessageIntelligence` AI path behind the same governance boundary.
+- Added adversarial tests for missing governance, pre-model denial, post-model approval gates, governed tool denial and clinical human-review enforcement.
+- Preserved the existing API defense-in-depth policy/telemetry/audit path.
 
 ## Remaining roadmap
 
