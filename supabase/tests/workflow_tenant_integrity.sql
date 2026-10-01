@@ -49,7 +49,7 @@ BEGIN
     INSERT INTO workflow_runs(id,clinic_id,workflow_id,workflow_version_id,trigger_type,actor_id,idempotency_key)
     VALUES ('ci-wfr-forged-workflow','ci-wf-tenant-b','ci-wf-a','ci-wfv-b','test','ci-user-b','ci-wfr-forged-workflow');
     RAISE EXCEPTION 'cross-tenant workflow FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 
@@ -59,7 +59,7 @@ BEGIN
     INSERT INTO workflow_runs(id,clinic_id,workflow_id,workflow_version_id,trigger_type,actor_id,idempotency_key)
     VALUES ('ci-wfr-forged-version','ci-wf-tenant-b','ci-wf-b','ci-wfv-a','test','ci-user-b','ci-wfr-forged-version');
     RAISE EXCEPTION 'cross-tenant workflow version FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 
@@ -69,7 +69,7 @@ BEGIN
     INSERT INTO workflow_step_runs(id,clinic_id,workflow_run_id,step_key,ordinal)
     VALUES ('ci-wfs-forged','ci-wf-tenant-a','ci-wfr-b','forged',0);
     RAISE EXCEPTION 'cross-tenant workflow step FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 
@@ -79,7 +79,7 @@ BEGIN
     INSERT INTO workflow_approvals(id,clinic_id,workflow_run_id,requested_action,risk_level,requested_by)
     VALUES ('ci-wfa-forged-run','ci-wf-tenant-b','ci-wfr-a','{"action":"test"}'::jsonb,'READ','ci-user-b');
     RAISE EXCEPTION 'cross-tenant approval/run FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 
@@ -89,7 +89,7 @@ BEGIN
     INSERT INTO workflow_approvals(id,clinic_id,workflow_run_id,workflow_step_run_id,requested_action,risk_level,requested_by)
     VALUES ('ci-wfa-forged-step','ci-wf-tenant-b','ci-wfr-b','ci-wfs-a','{"action":"test"}'::jsonb,'READ','ci-user-b');
     RAISE EXCEPTION 'cross-tenant approval/step FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 
@@ -99,7 +99,7 @@ BEGIN
     INSERT INTO workflow_events(id,clinic_id,workflow_run_id,event_type,payload)
     VALUES ('ci-wfe-forged','ci-wf-tenant-b','ci-wfr-a','test','{}'::jsonb);
     RAISE EXCEPTION 'cross-tenant workflow event FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 

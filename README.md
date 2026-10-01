@@ -4,7 +4,7 @@
 
 HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and patient-engagement workflows.
 
-> **Engineering status:** Phase 9 E1 — AI governance enforcement is VERIFIED on the E1 closure branch after backend, database/RLS, frontend, security, E2E and Docker validation. Phases 10–13 remain implementation foundations and are not represented as production-proven. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
+> **Engineering status:** Phase 9 E1 — AI governance enforcement and Phase 10 E2 — canonical tenant security/data isolation are VERIFIED on the E1 closure branch after backend, database/RLS, frontend, security, E2E and Docker validation. Phases 10–13 remain implementation foundations and are not represented as production-proven. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
 
 ## Canonical architecture
 
@@ -70,8 +70,8 @@ The closure workflow validates repository structure, source hygiene, Python synt
 ## Roadmap
 
 1. **E1 — AI governance enforcement: VERIFIED**
-2. **E2 — Canonical tenant security/data isolation: NEXT**
-3. **E3 — Durable execution and distributed reliability**
+2. **E2 — Canonical tenant security/data isolation: VERIFIED**
+3. **E3 — Durable execution and distributed reliability: NEXT**
 4. **E4 — Production healthcare interoperability**
 5. **E5 — Enterprise security, privacy and compliance readiness**
 6. **E6 — Commercial platform completion**
