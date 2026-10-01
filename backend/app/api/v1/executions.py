@@ -28,7 +28,7 @@ async def list_executions(limit: int = 50, offset: int = 0, tenant: TenantContex
     if limit < 1 or limit > 100 or offset < 0:
         raise HTTPException(status_code=400, detail='invalid pagination')
     async with tenant_session_context(tenant.organization_id) as session:
-        result = await session.execute(text("select id,actor_id,agent_type,status,provider,model,confidence,escalation_required,result_summary,error_class,started_at,completed_at,created_at,updated_at from agent_executions order by created_at desc,id desc limit :limit offset :offset"), {'limit': limit, 'offset': offset})
+        result = await session.execute(text("select id,actor_id,agent_type,status,provider,model,confidence,escalation_required,result_summary,error_class,started_at,completed_at,created_at,updated_at from agent_executions where actor_id is not null order by created_at desc,id desc limit :limit offset :offset"), {'limit': limit, 'offset': offset})
         return [dict(r._mapping) for r in result]
 
 @router.post('', status_code=202)
@@ -37,7 +37,12 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
         agent = registry.get(payload.agent_type)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail='agent not found') from exc
-    request = AgentRequest(task=payload.task, input=payload.input, idempotency_key=payload.idempotency_key, metadata={'data_classes': ','.join(payload.data_classes)})
+    request = AgentRequest(
+        task=payload.task,
+        input=payload.input,
+        idempotency_key=payload.idempotency_key,
+        metadata={'data_classes': ','.join(payload.data_classes),'tools':','.join(payload.tools)},
+    )
     prompt_injection_detected = detect_prompt_injection(request)
     phi_boundary_violation = detect_phi_boundary_violation(request)
     effective_data_classes = tuple(sorted(set(payload.data_classes) | set(classify_input_data_classes(request))))
@@ -59,7 +64,7 @@ async def execute(payload: ExecutionRequest, http_request: Request, tenant: Tena
         await repo.mark_running(execution['id'])
         request_id = getattr(http_request.state, 'request_id', None)
         await append_event(session, organization_id=tenant.organization_id, actor=tenant.user_id, action='ai.execution.created', resource_type='agent_execution', resource_id=execution['id'], outcome='started', request_id=request_id, metadata={'capability_version': initial.capability_version, 'policy_version': initial.policy_version})
-        context = AgentContext(tenant_id=tenant.organization_id, user_id=tenant.user_id, permissions=tenant.permissions, execution_id=execution['id'], request_id=request_id)
+        context = AgentContext(tenant_id=tenant.organization_id, user_id=tenant.user_id, permissions=tenant.permissions, execution_id=execution['id'], request_id=request_id, governance=governance)
         try:
             response = await agent.execute(context, request)
             raw = response.output if isinstance(response.output, dict) else {}
