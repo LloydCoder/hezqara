@@ -9,24 +9,18 @@
 - E5 — Enterprise security/privacy/compliance readiness — VERIFIED
 - E6 — Commercial platform completion — VERIFIED
 - E7 — First-clinic production vertical slice — VERIFIED
-- E8 — Production proving and operating maturity — IN PROGRESS
+- E8 — Production proving and operating maturity — VERIFIED
 
-## E8 acceptance contract
+## E8 verified controls
 
-E8 is complete only when the repository demonstrates measurable operational controls:
+- Authenticated operational readiness checks.
+- Durable worker liveness via persisted heartbeats.
+- Explicit SLO targets and persisted measurements.
+- Tenant-scoped operational snapshots.
+- Durable incident, change and recovery-drill evidence.
+- Release gates covering security, migration, smoke, backup/restore, SLO and rollback evidence.
+- Dedicated E8 database/proving workflow plus full repository CI, Security, regression, E2E and Docker gates.
 
-1. authenticated operational readiness checks;
-2. durable worker liveness;
-3. SLO targets and persisted measurements;
-4. incident/change/recovery evidence;
-5. tenant-scoped operational snapshots;
-6. recovery and rollback release gates;
-7. scale/concurrency evidence;
-8. production smoke/E2E and Docker validation;
-9. all security, dependency, database and application workflows green.
+## Final forensic gate
 
-E8 verification is an engineering status, not regulatory certification, a production SLA, or clinical efficacy.
-
-## Post-E8 forensic gate
-
-After E8 passes, run a repository-wide forensic audit covering every phase, migration, API, worker, UI route, test, workflow, security control and documentation surface. Any concrete gap found becomes a blocking fix before final closure.
+E1–E8 are verified on `main`. Future changes that alter a verified boundary must reopen the relevant phase gate. The repository remains explicit that engineering verification is not regulatory certification, clinical validation or a production SLA.
