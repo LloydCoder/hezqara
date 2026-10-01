@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, 'refactor/**']
+    branches: [main, 'refactor/**', 'implementation/e1-final']
   schedule:
     - cron: '0 2 * * *'
 permissions:
@@ -53,7 +53,7 @@ jobs:
         run: pip install -r requirements.txt ruff
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
-        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py tests/test_phase7_security.py tests/test_phase8_analytics.py tests/test_phase8_analytics_security.py
+        run: pytest -q tests/test_phase6_security.py tests/test_security_architecture.py tests/test_webhook_security.py tests/test_phase7_security.py tests/test_phase8_analytics.py tests/test_phase8_analytics_security.py tests/test_phase9_ai_governance.py tests/test_ai_governance_enforcement.py
   integration-security:
     runs-on: ubuntu-latest
     steps:
@@ -86,4 +86,4 @@ jobs:
         run: pip install -r requirements.txt
       - working-directory: backend
         env: {APP_ENV: test, PYTHONPATH: .}
-        run: pytest -q tests/test_phase6_security.py tests/test_ai_workforce.py tests/test_tool_registry.py tests/test_phase7_security.py
+        run: pytest -q tests/test_phase6_security.py tests/test_ai_workforce.py tests/test_tool_registry.py tests/test_phase7_security.py tests/test_phase9_ai_governance.py tests/test_ai_governance_enforcement.py

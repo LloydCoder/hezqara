@@ -13,6 +13,7 @@ from app.domains.tasks.schemas import TaskCreate
 from app.domains.tasks.service import TaskService
 from app.domains.workflows.service import WorkflowService,SUPPORTED_STEP_TYPES
 from app.infrastructure.database import tenant_session_context
+from app.ai.governance.service import AIGovernanceService
 MAX_STEPS=25
 async def execute_run(organization_id:str,run_id:str):
  async with tenant_session_context(organization_id) as session:
@@ -35,7 +36,7 @@ async def execute_run(organization_id:str,run_id:str):
     elif kind=='complete':output={'completed_at':datetime.now(timezone.utc).isoformat()}
     elif kind=='classify_message':
      from app.domains.patient_engagement.ai import MessageIntelligence
-     output=(await MessageIntelligence().classify(str(step.get('input',{}).get('message','')))).model_dump()
+     output=(await MessageIntelligence().classify(str(step.get('input',{}).get('message','')),governance=AIGovernanceService(session,organization_id))).model_dump()
     elif kind=='update_appointment':
      inp=step.get('input',{}); appointment_id=inp.get('appointment_id')
      if not appointment_id:raise ValueError('appointment_id is required')
