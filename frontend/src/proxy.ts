@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -7,11 +8,23 @@ const isPublicRoute = createRouteMatcher([
   "/api/health",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect();
-  }
-});
+const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
+export default clerkConfigured
+  ? clerkMiddleware(async (auth, request) => {
+      if (!isPublicRoute(request)) {
+        await auth.protect();
+      }
+    })
+  : function unconfiguredAuthProxy(request: Request) {
+      if (isPublicRoute(request)) {
+        return NextResponse.next();
+      }
+      return new NextResponse("Authentication is not configured for this deployment.", {
+        status: 503,
+        headers: { "Cache-Control": "no-store" },
+      });
+    };
 
 export const config = {
   matcher: [
