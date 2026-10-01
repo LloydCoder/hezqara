@@ -41,6 +41,9 @@ jobs:
       - name: Validate E8 database controls
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e8_production_proving.sql
+      - name: Validate post-E8 forensic hardening
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/post_e8_forensic.sql
       - name: Install backend dependencies
         working-directory: backend
         run: pip install -r requirements.txt ruff
