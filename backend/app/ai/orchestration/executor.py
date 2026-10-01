@@ -41,7 +41,7 @@ class AgentExecutor:
             prompt_injection_detected=False,
             phi_boundary_violation=False,
         )
-        if initial.decision!='allow':
+        if initial.decision not in {'allow','approval_required'}:
             return await self._finish(
                 context,
                 agent_name,
