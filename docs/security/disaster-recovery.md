@@ -2,7 +2,7 @@
 
 ## Objectives
 
-Every production deployment must define RPO and RTO by service/tenant class. E5 records measured restore-drill evidence; E8 will prove scale and operational maturity.
+Every production deployment must define RPO and RTO by service/tenant class. E5 established restore-drill evidence and E8 added the operational evidence layer for recovery drills, worker liveness, SLOs, incidents and changes.
 
 ## Restore procedure
 
@@ -15,13 +15,19 @@ Every production deployment must define RPO and RTO by service/tenant class. E5 
 7. Validate AI governance and approval state.
 8. Validate integration metadata without exposing raw credentials.
 9. Compare recovered data with expected integrity checks.
-10. Record measured RPO/RTO and evidence.
+10. Record measured RPO/RTO and recovery-drill evidence.
 11. Promote only after owner approval.
 
 ## Backup requirements
 
-Backups must be encrypted, access-controlled, monitored and tested. Restore drills must be performed periodically and after material recovery architecture changes.
+Backups must be encrypted, access-controlled, monitored and tested. The repository helper `ops/backup_db.sh` requires `DATABASE_URL`, creates a compressed public-schema dump, records a SHA-256 checksum and applies a configurable local retention period. A successful script run is not proof that an external backup store, encryption-at-rest policy or cloud restore target is configured.
+
+Restore drills must be performed periodically and after material recovery architecture changes.
+
+## E8 operational evidence
+
+The `recovery_drills` table records drill type, start/completion, result, measured RPO/RTO, owner and evidence. A drill is not considered passed merely because a row exists; the evidence must demonstrate an actual recovery test.
 
 ## Non-claims
 
-A database schema that contains restore-drill fields is not proof that a cloud backup provider is configured or that a recovery target has been met.
+The repository does not claim a specific cloud backup provider, RPO/RTO target, regulatory recovery certification or production disaster-recovery SLA without deployment evidence.
