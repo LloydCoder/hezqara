@@ -53,7 +53,9 @@ DO $$ DECLARE t text; BEGIN
   EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
   EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY',t);
   EXECUTE format('DROP POLICY IF EXISTS e4_tenant_boundary ON public.%I',t);
+  EXECUTE format('DROP POLICY IF EXISTS e4_tenant_access ON public.%I',t);
   EXECUTE format('CREATE POLICY e4_tenant_boundary ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+  EXECUTE format('CREATE POLICY e4_tenant_access ON public.%I AS PERMISSIVE FOR ALL TO authenticated USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
   EXECUTE format('REVOKE ALL ON public.%I FROM anon',t);
   EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON public.%I TO authenticated',t);
  END LOOP;
