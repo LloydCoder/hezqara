@@ -12,8 +12,8 @@ ON CONFLICT (clinic_id) DO UPDATE SET monthly_executions=1,monthly_voice_minutes
 
 INSERT INTO operational_incidents(clinic_id,severity,status,title,summary)
 VALUES ('forensic-clinic-a','sev2','open','tenant incident','forensic tenant incident');
-INSERT INTO operational_incidents(clinic_id,severity,status,category,summary)
-VALUES (NULL,'high','open','platform','global platform incident');
+INSERT INTO operational_incidents(clinic_id,severity,status,title,summary)
+VALUES (NULL,'sev2','open','global platform incident','forensic global platform incident');
 
 SET ROLE authenticated;
 SELECT set_config('app.clerk_org_id','forensic-org-a',false);
