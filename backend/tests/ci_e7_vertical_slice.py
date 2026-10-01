@@ -23,7 +23,7 @@ def call(client, method, path, **kwargs):
 
 worker = subprocess.Popen(
     [
-        sys.executable, "-m", "celery", "-A", "app.tasks.celery.celery_app", "worker",
+        sys.executable, "-m", "celery", "-A", "app.tasks.celery", "worker",
         "--loglevel=warning", "--pool=solo", "--concurrency=1",
         "--without-gossip", "--without-mingle", "--hostname", "e7@%h", "-Q", "hezqara",
     ],
@@ -56,8 +56,12 @@ try:
                 inspector = celery_app.control.inspect(timeout=1)
                 if inspector.ping():
                     registered = inspector.registered() or {}
+                    queues = inspector.active_queues() or {}
                     tasks = next(iter(registered.values()), [])
-                    if "app.tasks.durable.run_platform_job" in tasks:
+                    active = next(iter(queues.values()), [])
+                    queue_names = {item.get("name") for item in active}
+                    if "app.tasks.durable.run_platform_job" in tasks and "hezqara" in queue_names:
+                        print(f"Celery worker ready: tasks={len(tasks)} queues={sorted(queue_names)}", flush=True)
                         break
                     raise AssertionError(f"Celery worker is ready but durable task is not registered: {tasks}")
             except Exception:
