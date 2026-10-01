@@ -13,7 +13,7 @@ def test_stripe_signature_is_verified_with_timestamp():
     import stripe
 
     payload = b'{"id":"evt_test","type":"invoice.paid","data":{"object":{"id":"in_test"}}}'
-    secret = "whsec_test_secret"
+    secret = "stripe-signing-secret"
     timestamp = int(time.time())
     signed = f"{timestamp}.".encode() + payload
     signature = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
