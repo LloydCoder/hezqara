@@ -8,6 +8,7 @@ from app.domains.patient_engagement.schemas import CommunicationCreate,Communica
 from app.domains.patient_engagement.service import CommunicationService
 from app.domains.patient_engagement.providers import build_communication_provider
 from app.domains.patient_engagement.ai import MessageIntelligence
+from app.ai.governance.service import AIGovernanceService
 router=APIRouter(prefix='/communications',tags=['communications'])
 @router.get('')
 async def list_communications(limit:int=Query(50,ge=1,le=100),offset:int=Query(0,ge=0),tenant:TenantContext=Depends(require_permission('communications:read'))):
@@ -30,5 +31,11 @@ async def classify_message(data:MessageIntake,tenant:TenantContext=Depends(requi
     async with tenant_session_context(tenant.organization_id) as session:
         patient=(await session.execute(text('select id from patients where id=:id and clinic_id in (select id from clinics where clerk_org_id=current_setting(\'app.clerk_org_id\',true))'),{'id':data.patient_id})).scalar_one_or_none()
         if not patient:raise HTTPException(status_code=404,detail='patient not found')
-    try:return await MessageIntelligence().classify(data.message)
-    except RuntimeError as exc:raise HTTPException(status_code=503,detail='AI provider is not configured') from exc
+        governance=AIGovernanceService(session,tenant.organization_id)
+        try:
+            return await MessageIntelligence().classify(data.message,governance=governance)
+        except RuntimeError as exc:
+            detail=str(exc)
+            if 'provider is not configured' in detail:
+                raise HTTPException(status_code=503,detail='AI provider is not configured') from exc
+            raise HTTPException(status_code=403,detail='AI message classification blocked by governance') from exc
