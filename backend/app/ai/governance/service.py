@@ -151,3 +151,77 @@ class AIGovernanceService:
         d = classify_risk(int(policy.risk_tier), action, policy.approval_required)
         await self.session.execute(text("insert into ai_policy_decisions(id,clinic_id,execution_id,policy_version_id,risk_tier,decision,reason) values(:id,:clinic,:execution,:policy,:risk,:decision,:reason)"), {"id": str(uuid.uuid4()), "clinic": clinic, "execution": execution_id, "policy": getattr(policy, "policy_version_id", None), "risk": int(d.risk_tier), "decision": d.decision, "reason": d.reason})
         return d
+
+    async def authorize_side_effect(self, execution_id: str, capability_id: str, action: str, provider: str | None = None, confidence: float | None = None, data_classes=(), tools=(), approval_id: str | None = None) -> GovernanceDecision:
+        decision = await self.resolve_execution_policy(
+            capability_id,
+            action,
+            provider,
+            confidence,
+            data_classes=data_classes,
+            tools=tools,
+        )
+        if decision.decision != "approval_required":
+            return decision
+        if not approval_id:
+            return decision
+        clinic = await self._clinic_id()
+        approved = (await self.session.execute(text("""
+            select 1
+            from ai_approvals
+            where id=:approval
+              and clinic_id=:clinic
+              and execution_id=:execution
+              and decision='approved'
+              and policy_version=:policy
+              and proposed_action @> cast(:action as jsonb)
+              and (expires_at is null or expires_at > now())
+            limit 1
+        """), {
+            "approval": approval_id,
+            "clinic": clinic,
+            "execution": execution_id,
+            "policy": decision.policy_version or "",
+            "action": json.dumps({"action": action}),
+        })).scalar_one_or_none()
+        if not approved:
+            return GovernanceDecision(
+                decision="deny",
+                risk_tier=decision.risk_tier,
+                capability_id=decision.capability_id,
+                capability_version=decision.capability_version,
+                policy_version_id=decision.policy_version_id,
+                reason="No valid approved human authorization exists for this side effect",
+                allowed_actions=decision.allowed_actions,
+                allowed_data_classes=decision.allowed_data_classes,
+                allowed_tools=decision.allowed_tools,
+                approval_required=True,
+                escalation_required=True,
+                failure_category="AUTHORIZATION_DENIED",
+                policy_version=decision.policy_version,
+                prompt_version=decision.prompt_version,
+                max_output_tokens=decision.max_output_tokens,
+                max_tool_calls=decision.max_tool_calls,
+                max_retries=decision.max_retries,
+                safety_threshold=decision.safety_threshold,
+            )
+        return GovernanceDecision(
+            decision="allow",
+            risk_tier=decision.risk_tier,
+            capability_id=decision.capability_id,
+            capability_version=decision.capability_version,
+            policy_version_id=decision.policy_version_id,
+            reason="Human approval verified for bounded side effect",
+            allowed_actions=decision.allowed_actions,
+            allowed_data_classes=decision.allowed_data_classes,
+            allowed_tools=decision.allowed_tools,
+            approval_required=True,
+            escalation_required=decision.escalation_required,
+            failure_category=None,
+            policy_version=decision.policy_version,
+            prompt_version=decision.prompt_version,
+            max_output_tokens=decision.max_output_tokens,
+            max_tool_calls=decision.max_tool_calls,
+            max_retries=decision.max_retries,
+            safety_threshold=decision.safety_threshold,
+        )
