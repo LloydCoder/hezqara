@@ -1,5 +1,4 @@
 from celery import Celery
-from celery.schedules import crontab
 from app.core.config import settings
 celery_app=Celery('hezqara',broker=settings.redis_url,backend=settings.redis_url,include=['app.tasks.workflows','app.tasks.communications','app.tasks.durable'])
 celery_app.conf.update(
