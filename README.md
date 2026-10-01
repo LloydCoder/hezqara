@@ -2,51 +2,37 @@
 
 **Governed AI Workforce for Healthcare Operations**
 
-HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and revenue-cycle workflows.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It provides a common AI workforce runtime for reception, scheduling, intake, insurance, prior authorization, refill, records, referrals, recall and patient-engagement workflows.
 
-> **Engineering status:** Phases 9–13 implementation foundation is present on the Phase 1–8 platform. Final closure remains gated by green CI, Codespace validation, adversarial security checks and production smoke testing. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
+> **Engineering status:** Phase 9 E1 — AI governance enforcement is VERIFIED on the E1 closure branch after backend, database/RLS, frontend, security, E2E and Docker validation. Phases 10–13 remain implementation foundations and are not represented as production-proven. Source-code controls do not constitute HIPAA/GDPR, FHIR, SMART, CMS or other certification/compliance claims.
 
 ## Canonical architecture
 
-```text
-Browser
-  ↓
-Clerk identity
-  ↓
-Verified organization / tenant
-  ↓
-Server authorization
-  ↓
-FastAPI
-  ↓
-Domain service
-  ↓
-Repository
-  ↓
-PostgreSQL / Supabase
-  ↓
-RLS
-  ↓
-Audit
-```
+Browser → Clerk identity → verified tenant → server authorization → FastAPI → domain service → repository → PostgreSQL/Supabase → RLS → audit.
 
-AI adds a governed lifecycle: capability/version → trusted/untrusted input boundary → bounded model/provider → structured output → validation → deterministic policy → risk → authorization → approval → controlled tool/workflow execution → audit/telemetry/evaluation.
+AI adds a governed lifecycle: capability/version → untrusted-input boundary → data/tool authorization → bounded provider/model → deterministic output validation → action/risk re-evaluation → approval/escalation → governed side-effect authorization → audit/telemetry/evaluation.
 
-AI is not an authorization boundary. External healthcare content is untrusted data. Clinical/high-impact decisions are not autonomous.
+The LLM is never an authorization source. External healthcare content is untrusted data. Clinical/high-impact decisions are not autonomous.
 
-## Phase 9
+## Phase 9 — E1 verified
 
-The AI governance subsystem provides tenant-scoped capability/version records, evaluation suites/cases/runs/results, policy decisions, minimized execution telemetry, failure taxonomy, approval records, provider health and server-authoritative emergency controls. Governance APIs require explicit AI governance permissions and use the existing Clerk tenant/RLS architecture.
+E1 establishes runtime governance as a mandatory execution boundary.
 
-Server-side input guardrails detect common prompt-injection and cross-tenant PHI-boundary signals before model execution. These deterministic detectors are defense-in-depth, not a claim of complete prompt-injection detection.
+- Workforce model execution fails closed without tenant-scoped governance.
+- Policy is enforced before model invocation and again against model-proposed actions.
+- Tool calls require both authenticated user permission and governance allowlisting.
+- Consequential tool/API side effects pass through a separate governance authorization barrier.
+- Approval-required side effects require approved, unexpired authorization bound to the execution, policy and action.
+- Secondary healthcare message classification is governed through the same tenant policy boundary.
+- Clinical message classification retains human review.
+- Adversarial tests cover missing governance, policy denial, approval gates, governed tool denial and the secondary AI path.
+- Governance state, policy decisions, approvals, telemetry and failures remain tenant scoped.
 
-Evaluation fixtures are synthetic-only. No production accuracy, provider connectivity or healthcare outcome is fabricated.
+E1 verification is an engineering validation result, not a production-readiness or regulatory-certification claim.
 
 ## Phases 10–13 foundation
 
-The implementation branch adds enterprise readiness/security-posture primitives, tenant limits and usage accounting, platform job/subscription primitives, onboarding/referral/growth models, approval lifecycle hardening, workflow tenant referential integrity and tenant-policy hardening across the Phase 9–13 database surfaces.
-
-These are implementation foundations; final production closure requires successful database, backend, frontend, security and runtime validation.
+The branch contains implementation foundations for enterprise hardening, scale/platform infrastructure, commercial primitives and launch/growth models. These remain separate roadmap work and should not be interpreted as production-proven functionality.
 
 ## Phase 7 interoperability
 
@@ -65,29 +51,34 @@ Analytics remain deterministic and tenant scoped. Financial and insurance rates 
 - Webhook signatures, timestamps and event IDs provide authentication and replay protection.
 - External content is explicitly treated as untrusted before AI processing.
 - AI capabilities can be disabled or forced through human approval server-side.
-
-## Local development
-
-Backend: FastAPI on `:8004`  
-Frontend: Next.js on `:3004`  
-Redis: `:6380`
+- Workforce AI execution cannot proceed without a governance service.
 
 ## Validation
 
-CI validates repository structure, source hygiene, Python syntax/lint/tests, integration and AI security tests, database migrations/RLS, frontend lint/type-check/build, Playwright, Docker and dependency/secret scanning. A green CI result is required before the implementation branch is merged.
+The closure workflow validates repository structure, source hygiene, Python syntax/lint/tests, integration and AI security tests, database migrations/RLS, frontend lint/type-check/build, Playwright E2E, Docker and dependency/secret scanning. A green closure workflow is required before E1 is considered verified.
 
 ## Documentation
 
-- `docs/architecture/canonical-architecture.md`
-- `docs/ai/phase-9-ai-governance.md`
-- `docs/ai/phase-9-evaluation-report.md`
-- `docs/phase-1-9-reconciliation.md`
-- `docs/phase-8-intelligence-surface.md`
-- `docs/architecture/phase-7-healthcare-interoperability.md`
+- docs/architecture/canonical-architecture.md
+- docs/architecture/ai-architecture.md
+- docs/ai/phase-9-ai-governance.md
+- docs/ai/phase-9-e1-enforcement.md
+- docs/ai/phase-9-evaluation-report.md
+- docs/phase-1-9-reconciliation.md
+- docs/security/phase-9-ai-security-controls.md
 
 ## Roadmap
 
-Phases 1–13 have implementation foundations on this branch. Remaining closure work is validation and hardening: green CI, Codespace execution of the complete validation suite, adversarial tenant/governance tests, governed tool execution, deterministic fallback verification, approval end-to-end verification, production smoke testing and final documentation reconciliation.
+1. **E1 — AI governance enforcement: VERIFIED**
+2. **E2 — Canonical tenant security/data isolation: NEXT**
+3. **E3 — Durable execution and distributed reliability**
+4. **E4 — Production healthcare interoperability**
+5. **E5 — Enterprise security, privacy and compliance readiness**
+6. **E6 — Commercial platform completion**
+7. **E7 — First-clinic production vertical slice**
+8. **E8 — Production proving and scale maturity**
+
+A green E1 workflow verifies the engineering controls covered by E1; it does not prove production scale, regulatory certification, customer outcomes or clinical efficacy.
 
 ## License
 
