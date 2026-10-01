@@ -86,17 +86,21 @@ async def _decide_workflow(approval_id: str, tenant: TenantContext, status: str)
         result = dict(updated)
 
     if status == 'approved' and run_id:
+        resume_key = f'workflow:{run_id}:approval:{approval_id}'
         if settings.redis_url:
             async with tenant_session_context(tenant.organization_id) as session:
-                job=(await session.execute(text("select id from platform_jobs where clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true)) and idempotency_key=:key"),{'key':f'workflow:{run_id}'})).scalar_one_or_none()
-            if job:
-                from app.tasks.durable import run_platform_job
-                run_platform_job.apply_async(args=[str(job)], queue='hezqara')
+                from app.platform.durable import DurableJobService
+                job = await DurableJobService(session).enqueue(
+                    tenant.organization_id,
+                    'workflow.execute.resume',
+                    resume_key,
+                    {'organization_id': tenant.organization_id, 'run_id': run_id, 'approval_id': approval_id},
+                )
+            from app.tasks.durable import run_platform_job
+            run_platform_job.apply_async(args=[str(job['id'])], queue='hezqara')
         elif settings.app_env in {'test','development'}:
             from app.domains.workflows.runtime import execute_run
             result['workflow_run'] = await execute_run(tenant.organization_id, run_id)
-            async with tenant_session_context(tenant.organization_id) as session:
-                await session.execute(text("update platform_jobs set status='completed',completed_at=now(),updated_at=now() where idempotency_key=:key"),{'key':f'workflow:{run_id}'})
         else:
             raise HTTPException(status_code=503,detail='workflow worker is not configured')
     return result
