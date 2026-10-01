@@ -27,7 +27,7 @@ def test_stripe_signature_rejects_tampering():
     import stripe
 
     payload = b'{"id":"evt_test"}'
-    secret = "whsec_test_secret"
+    secret = "stripe-signing-secret"
     timestamp = int(time.time())
     signature = hmac.new(secret.encode(), f"{timestamp}.".encode() + payload, hashlib.sha256).hexdigest()
     header = f"t={timestamp},v1={signature}"
