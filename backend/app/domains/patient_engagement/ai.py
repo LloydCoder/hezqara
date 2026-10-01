@@ -2,7 +2,6 @@ from app.ai.providers.factory import build_provider
 from app.core.config import settings
 from app.domains.patient_engagement.schemas import MessageClassification
 from app.ai.governance.service import AIGovernanceService
-from app.ai.governance.contracts import validate_output
 
 class MessageIntelligence:
     async def classify(self,message:str,*,governance:AIGovernanceService|None=None)->MessageClassification:
