@@ -23,11 +23,11 @@ The audit distinguishes repository controls from deployment, contractual, regula
 
 The audit uses current guidance from:
 
-- OWASP API Security Top 10 — especially API1 BOLA, API4 Unrestricted Resource Consumption, API5 Function-Level Authorization, API7 SSRF and API10 Unsafe Consumption.
-- OWASP agentic/AI security guidance for runtime authorization, complete mediation, least privilege and human approval.
-- NIST AI RMF / GenAI Profile and secure-development guidance.
+- OWASP API Security guidance, including object-level authorization, unrestricted resource consumption, function-level authorization, SSRF and unsafe consumption controls.
+- OWASP AI/agentic security guidance for runtime authorization, complete mediation, least privilege and human approval.
+- NIST AI RMF 1.0 / AI 600-1 and secure-development guidance.
 - HHS HIPAA Security Rule guidance for access control, audit controls, authentication, transmission security, risk analysis and contingency planning.
-- HL7 FHIR R4 and SMART App Launch 2.2.0 for interoperability boundaries.
+- HL7 FHIR R4 4.0.1 and SMART App Launch 2.2.0 for interoperability boundaries.
 - Stripe API guidance for idempotent requests and verified webhook processing.
 
 ## Findings and repairs
