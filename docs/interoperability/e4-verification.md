@@ -2,32 +2,36 @@
 
 ## Scope
 
-E4 hardens the healthcare integration boundary around FHIR R4 and SMART App Launch and records current Da Vinci protocol contracts.
+E4 hardens the healthcare integration boundary around HL7 FHIR R4 4.0.1 and SMART App Launch 2.2.0.
 
 ## Verified controls
 
-- FHIR resources are accepted only through the explicit R4 adapter boundary.
-- Supported resource types and required structural fields are deterministic.
+- FHIR resources enter through the explicit R4 adapter boundary.
+- Supported resource types and required structural fields are validated deterministically.
 - SMART discovery rejects insecure endpoints.
 - Authorization-code requests use state and PKCE S256.
 - OIDC authorization requests require nonce when openid is requested.
 - Patient launch context is represented through the SMART scope contract.
-- Token metadata never returns raw access or refresh tokens.
-- OAuth metadata tables are tenant scoped and RLS/FORCE RLS protected.
-- No raw OAuth token columns exist in the E4 metadata tables.
-- E4 tests validate migration state and tenant-owned protocol metadata.
+- Raw access and refresh tokens are not returned by the metadata boundary.
+- OAuth metadata is tenant scoped and RLS/FORCE RLS protected.
+- E4 metadata tables do not persist raw OAuth token columns.
+- Migration and tenant-integrity tests validate the protocol metadata boundary.
 
-## Standards evidence
+## Standards basis
 
-HL7 identifies SMART App Launch 2.2.0 as an OAuth 2.0-based application authorization framework and documents PKCE additions. HL7's current US Realm publication index lists the Da Vinci versions used by HEZQARA.
+HEZQARA documents standards versions explicitly so future upgrades can be reviewed rather than silently changing the protocol contract.
 
-## Non-claims
+- FHIR: R4, version 4.0.1.
+- SMART App Launch: version 2.2.0, based on FHIR R4.
+- Da Vinci: implementation-guide versions are tracked as capabilities where implemented.
 
-This verification does not mean:
-- a provider is connected;
-- a payer/EHR sandbox has certified HEZQARA;
-- full implementation-guide conformance has been established;
-- HIPAA/NDPA/GDPR compliance has been certified;
-- clinical interoperability has been proven in production.
+## Production boundary
 
-Those require provider-specific testing, contracts, security review and operational evidence.
+Provider connectivity requires provider-specific endpoint discovery, registration, credentials, scopes, contractual authorization, sandbox/live testing and monitoring.
+
+This repository verification does not establish provider certification, payer/EHR production connectivity, full implementation-guide conformance, HIPAA/NDPA/GDPR compliance certification or clinical interoperability efficacy.
+
+## References
+
+- HL7 FHIR R4 4.0.1: https://hl7.org/fhir/R4/
+- HL7 SMART App Launch 2.2.0: https://hl7.org/fhir/smart-app-launch/
