@@ -89,37 +89,25 @@ ALTER TABLE recovery_drills FORCE ROW LEVEL SECURITY;
 ALTER TABLE worker_heartbeats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE worker_heartbeats FORCE ROW LEVEL SECURITY;
 
-REVOKE ALL ON slo_definitions,slo_measurements,operational_incidents,operational_changes,recovery_drills,worker_heartbeats FROM anon;
-GRANT SELECT,INSERT,UPDATE,DELETE ON slo_definitions,slo_measurements,operational_incidents,operational_changes,recovery_drills,worker_heartbeats TO authenticated;
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['slo_definitions','slo_measurements','operational_incidents','operational_changes','recovery_drills'] LOOP
+    EXECUTE format('REVOKE ALL ON public.%I FROM anon',t);
+    EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON public.%I TO authenticated',t);
+    EXECUTE format('DROP POLICY IF EXISTS e8_tenant_boundary ON public.%I',t);
+    EXECUTE format('DROP POLICY IF EXISTS e8_tenant_access ON public.%I',t);
+    EXECUTE format('CREATE POLICY e8_tenant_boundary ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+    EXECUTE format('CREATE POLICY e8_tenant_access ON public.%I AS PERMISSIVE FOR ALL TO authenticated USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM public.clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+  END LOOP;
+END $$;
 
-DROP POLICY IF EXISTS e8_slo_definition_tenant ON slo_definitions;
-CREATE POLICY e8_slo_definition_tenant ON slo_definitions AS RESTRICTIVE FOR ALL TO authenticated
-USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
-WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
-
-DROP POLICY IF EXISTS e8_slo_measurement_tenant ON slo_measurements;
-CREATE POLICY e8_slo_measurement_tenant ON slo_measurements AS RESTRICTIVE FOR ALL TO authenticated
-USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
-WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
-
-DROP POLICY IF EXISTS e8_incident_tenant ON operational_incidents;
-CREATE POLICY e8_incident_tenant ON operational_incidents AS RESTRICTIVE FOR ALL TO authenticated
-USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
-WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
-
-DROP POLICY IF EXISTS e8_change_tenant ON operational_changes;
-CREATE POLICY e8_change_tenant ON operational_changes AS RESTRICTIVE FOR ALL TO authenticated
-USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
-WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
-
-DROP POLICY IF EXISTS e8_recovery_tenant ON recovery_drills;
-CREATE POLICY e8_recovery_tenant ON recovery_drills AS RESTRICTIVE FOR ALL TO authenticated
-USING (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
-WITH CHECK (clinic_id IS NULL OR clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
-
-DROP POLICY IF EXISTS e8_heartbeat_platform ON worker_heartbeats;
-CREATE POLICY e8_heartbeat_platform ON worker_heartbeats AS RESTRICTIVE FOR ALL TO authenticated
-USING (true) WITH CHECK (true);
+REVOKE ALL ON public.worker_heartbeats FROM anon;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.worker_heartbeats TO authenticated;
+DROP POLICY IF EXISTS e8_heartbeat_boundary ON public.worker_heartbeats;
+DROP POLICY IF EXISTS e8_heartbeat_access ON public.worker_heartbeats;
+CREATE POLICY e8_heartbeat_boundary ON public.worker_heartbeats AS RESTRICTIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY e8_heartbeat_access ON public.worker_heartbeats AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 CREATE INDEX IF NOT EXISTS slo_measurements_tenant_window ON slo_measurements(clinic_id,window_end DESC);
 CREATE INDEX IF NOT EXISTS operational_incidents_tenant_time ON operational_incidents(clinic_id,detected_at DESC);
