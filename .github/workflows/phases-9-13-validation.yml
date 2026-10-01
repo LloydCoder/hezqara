@@ -48,6 +48,9 @@ jobs:
       - name: Prepare roles
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END \$\$;"
+      - name: Prepare Supabase auth compatibility schema
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/ci_auth_compat.sql
       - name: Apply every production migration in version order
         env: {PGPASSWORD: postgres}
         run: |
@@ -83,9 +86,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: "22", cache: "npm", cache-dependency-path: frontend/package-lock.json}
+        with: {node-version: "22"}
       - working-directory: frontend
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - working-directory: frontend
         run: npm run lint
       - working-directory: frontend
