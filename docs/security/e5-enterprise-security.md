@@ -2,9 +2,7 @@
 
 ## Status
 
-E5 is the enterprise security engineering phase. It establishes evidence-producing controls aligned to NIST CSF 2.0, NIST SSDF/800-218A, NIST SP 800-61r3 and HIPAA Security Rule risk-analysis principles. These references are control frameworks, not certification evidence.
-
-NIST CSF 2.0 organizes cybersecurity outcomes across Govern, Identify, Protect, Detect, Respond and Recover. citeturn2search49turn2search50 NIST SP 800-61r3 is the current incident-response guidance and supersedes revision 2. citeturn2search16 HHS describes risk analysis as foundational to the HIPAA Security Rule safeguard program. citeturn2search48
+E5 is VERIFIED as an engineering-control phase on `main`. It establishes evidence-producing controls aligned to NIST CSF 2.0, NIST SSDF/800-218A, NIST SP 800-61r3 and HIPAA Security Rule risk-analysis principles. These references are control frameworks, not certification evidence.
 
 ## Implemented evidence controls
 
@@ -18,7 +16,7 @@ NIST CSF 2.0 organizes cybersecurity outcomes across Govern, Identify, Protect, 
 - Broad secret scanning in addition to verified-secret scanning.
 - CI-generated SBOM artifact.
 - Security architecture and incident-response runbooks.
-- Explicit non-claims around compliance certification.
+- E8 adds the operational SLO, worker-liveness, incident/change and recovery evidence layer that consumes and extends the E5 foundations.
 
 ## PHI and data-flow boundary
 
@@ -42,7 +40,7 @@ Incidents move through open → contained → eradicated → recovered → close
 
 ## Supply chain
 
-CI produces an SBOM and runs Python and npm vulnerability audits. The SBOM is an inventory, not a statement that every component is vulnerability-free. CISA's 2025 SBOM minimum-elements guidance emphasizes consistent component and supplier information for useful SBOMs. citeturn2search51
+CI produces an SBOM and runs Python and npm vulnerability audits. The SBOM is an inventory, not a statement that every component is vulnerability-free.
 
 ## Key and credential lifecycle
 
@@ -50,7 +48,7 @@ Raw secrets remain environment/provider-managed. Production readiness requires d
 
 ## Recovery
 
-Production deployment requires tested backups, restore drills, defined RPO/RTO targets, evidence capture and an owner. E5 records restore-drill evidence; E8 will prove scale and operational SLO/SLA maturity.
+E5 established restore-drill evidence and recovery controls. E8 now provides the final operating evidence layer: measured SLOs, worker liveness, operational incidents/changes and recovery-drill records.
 
 ## Non-claims
 
