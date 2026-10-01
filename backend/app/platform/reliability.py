@@ -25,7 +25,7 @@ async def readiness(session) -> dict:
         checks["durable_jobs"] = "ok"
     except Exception:
         checks["durable_jobs"] = "unavailable"
-    worker = (await session.execute(text("select count(*) from worker_heartbeats where last_seen_at >= now()-interval '2 minutes'"))).scalar_one()
+    worker = (await session.execute(text("select public.healthy_worker_count(interval '2 minutes')"))).scalar_one()
     checks["worker_heartbeat"] = "ok" if worker > 0 else "degraded"
     return {"status":"ready" if all(v=="ok" for v in checks.values()) else "degraded","checks":checks,"generated_at":datetime.now(timezone.utc)}
 
@@ -33,7 +33,7 @@ async def operational_snapshot(session, organization_id: str) -> dict:
     clinic = await _clinic_id(session, organization_id)
     incidents = (await session.execute(text("select count(*) from operational_incidents where clinic_id=:clinic and status not in ('resolved','closed')"),{"clinic":clinic})).scalar_one()
     jobs = (await session.execute(text("select count(*) from platform_jobs where clinic_id=:clinic and status in ('queued','running','failed')"),{"clinic":clinic})).scalar_one()
-    workers = (await session.execute(text("select count(*) from worker_heartbeats where last_seen_at >= now()-interval '2 minutes'"))).scalar_one()
+    workers = (await session.execute(text("select public.healthy_worker_count(interval '2 minutes')"))).scalar_one()
     return {"clinic_id":clinic,"open_incidents":incidents,"active_or_retrying_jobs":jobs,"healthy_workers":workers,"generated_at":datetime.now(timezone.utc)}
 
 async def record_worker_heartbeat(session, worker_id: str, queue: str, active_jobs: int = 0, version: str|None = None) -> None:
