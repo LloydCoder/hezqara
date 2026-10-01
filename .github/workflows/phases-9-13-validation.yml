@@ -1,7 +1,7 @@
 name: HEZQARA Phases 9-13 Validation
 on:
   push:
-    branches: ["implementation/e4-interoperability", "implementation/e3-durable-execution", "implementation/e2-tenant-isolation", "implementation/e1-final", "implementation/e5-enterprise-security", "implementation/e6-commercial-platform", "main"]
+    branches: ["implementation/e4-interoperability", "implementation/e3-durable-execution", "implementation/e2-tenant-isolation", "implementation/e1-final", "implementation/e5-enterprise-security", "implementation/e6-commercial-platform", "implementation/e7-first-clinic-vertical-slice", "main"]
   pull_request:
     branches: [main]
 permissions:
@@ -95,6 +95,9 @@ jobs:
       - name: Install backend dependencies for database vertical slices
         working-directory: backend
         run: pip install -r requirements.txt
+      - name: Run E7 first-clinic production vertical slice
+        env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: redis://127.0.0.1:6379/0}
+        run: python backend/tests/ci_e7_vertical_slice.py
       - name: Run existing database-backed vertical slices
         env: {APP_ENV: test, DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/hezqara_ci, PYTHONPATH: backend, REDIS_URL: ""}
         run: python backend/tests/ci_workflow_vertical_slice.py && python backend/tests/ci_phase5_vertical_slice.py
