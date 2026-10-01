@@ -1,27 +1,32 @@
-# HEZQARA E1–E8 Execution Roadmap
+# HEZQARA Roadmap Boundary
 
-## E1 — AI governance enforcement — VERIFIED
-Mandatory runtime governance, pre/post policy enforcement, governed tools and approval-backed side effects.
+## Verified phases
 
-## E2 — Canonical tenant security/data isolation — VERIFIED
-Canonical Clerk organization → clinic mapping, FORCE RLS, restrictive tenant boundary and tenant-bound relationships.
+- E1 — AI governance enforcement — VERIFIED
+- E2 — Canonical tenant security/data isolation — VERIFIED
+- E3 — Durable execution and distributed reliability — VERIFIED
+- E4 — Production healthcare interoperability boundary — VERIFIED
+- E5 — Enterprise security/privacy/compliance readiness — VERIFIED
+- E6 — Commercial platform completion — VERIFIED
+- E7 — First-clinic production vertical slice — VERIFIED
+- E8 — Production proving and operating maturity — IN PROGRESS
 
-## E3 — Durable execution/distributed reliability — VERIFIED
-Durable job state, persistent idempotency, atomic claiming, leases, retry/backoff, dead-letter/replay, crash recovery and approval resume.
+## E8 acceptance contract
 
-## E4 — Production healthcare interoperability — VERIFIED
-FHIR R4 4.0.1 boundary, SMART App Launch 2.2.0 authorization/PKCE controls, tenant-scoped OAuth metadata, raw-token exclusion and current Da Vinci capability contracts.
+E8 is complete only when the repository demonstrates measurable operational controls:
 
-## E5 — Enterprise security/privacy/compliance readiness — VERIFIED
-Security incident evidence, access-review evidence, processing/retention records, deletion-request evidence, restore-drill evidence, dependency auditing, broad secret scanning and CI-generated SBOM are implemented and green.
+1. authenticated operational readiness checks;
+2. durable worker liveness;
+3. SLO targets and persisted measurements;
+4. incident/change/recovery evidence;
+5. tenant-scoped operational snapshots;
+6. recovery and rollback release gates;
+7. scale/concurrency evidence;
+8. production smoke/E2E and Docker validation;
+9. all security, dependency, database and application workflows green.
 
-## E6 — Commercial platform completion — VERIFIED
-Canonical subscription state, Stripe Checkout integration, idempotent checkout, verified Stripe webhook events, durable event deduplication, commercial ledger, tenant-scoped entitlements and RLS controls are implemented and green.
+E8 verification is an engineering status, not regulatory certification, a production SLA, or clinical efficacy.
 
-## E7 — First-clinic production vertical slice — NEXT
-Discover → signup → tenant → staff → permissions → integration → governed AI workforce → approval → side effect → evidence → ROI → pause/disable/rollback/export/recover.
+## Post-E8 forensic gate
 
-## E8 — Production proving and scale maturity
-SLO/SLI/error budgets, RPO/RTO, restore drills, concurrency/load validation, tracing, runbooks, release/rollback, incident/on-call/support and SLA readiness.
-
-Future phase status must not be promoted to VERIFIED until its own implementation and complete validation gates are green.
+After E8 passes, run a repository-wide forensic audit covering every phase, migration, API, worker, UI route, test, workflow, security control and documentation surface. Any concrete gap found becomes a blocking fix before final closure.
