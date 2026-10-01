@@ -58,8 +58,11 @@ async def usage(tenant: TenantContext = Depends(require_permission("analytics:re
 
 @router.post("/usage", status_code=201)
 async def add_usage(payload: UsageRequest, tenant: TenantContext = Depends(require_permission("analytics:write"))):
-    async with tenant_session_context(tenant.organization_id) as session:
-        return await record_usage(session, tenant.organization_id, payload.metric, payload.amount)
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await record_usage(session, tenant.organization_id, payload.metric, payload.amount)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 @router.get("/plans")
 async def plans():
