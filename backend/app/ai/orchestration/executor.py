@@ -141,7 +141,7 @@ class AgentExecutor:
         record(tenant=context.tenant_id,actor=context.user_id,action='agent.execute',resource=agent_name,resource_id=execution_id,outcome=response.status,request_id=context.request_id,metadata={'provider':response.provider,'model':response.model})
         return response
 
-    async def execute_tool(self, context:AgentContext, tool:AgentTool, arguments:dict, *, action:str, approval_id:str|None=None, data_classes=()):
+    async def execute_tool(self, context:AgentContext, tool:AgentTool, arguments:dict, *, capability_id:str, action:str, approval_id:str|None=None, data_classes=()):
         governance=context.governance
         if governance is None:
             raise RuntimeError('AI tool execution requires a tenant-scoped governance service')
@@ -150,7 +150,7 @@ class AgentExecutor:
             raise PermissionError('agent tool permission denied')
         decision=await governance.authorize_side_effect(
             context.execution_id,
-            getattr(context,'agent_name',None) or 'unknown',
+            capability_id,
             action,
             getattr(self.provider,'name',None),
             data_classes=data_classes,
