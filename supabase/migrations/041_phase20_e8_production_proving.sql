@@ -22,11 +22,6 @@ CREATE TABLE IF NOT EXISTS slo_measurements (
   achieved numeric(8,5) GENERATED ALWAYS AS (
     CASE WHEN total_events = 0 THEN 1 ELSE good_events::numeric / total_events END
   ) STORED,
-  error_budget_remaining numeric(8,5) GENERATED ALWAYS AS (
-    CASE WHEN slo_id IS NULL OR total_events = 0 THEN 1
-         ELSE greatest(0, (good_events::numeric / total_events - (SELECT target FROM slo_definitions s WHERE s.id=slo_id)))
-    END
-  ) STORED,
   evidence jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   CHECK (window_end >= window_start)
