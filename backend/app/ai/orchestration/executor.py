@@ -140,3 +140,34 @@ class AgentExecutor:
             await self.idempotency.put(context.tenant_id,agent_name,key,response.__dict__)
         record(tenant=context.tenant_id,actor=context.user_id,action='agent.execute',resource=agent_name,resource_id=execution_id,outcome=response.status,request_id=context.request_id,metadata={'provider':response.provider,'model':response.model})
         return response
+
+    async def execute_tool(self, context:AgentContext, tool:AgentTool, arguments:dict, *, action:str, approval_id:str|None=None, data_classes=()):
+        governance=context.governance
+        if governance is None:
+            raise RuntimeError('AI tool execution requires a tenant-scoped governance service')
+        required_permission=getattr(tool,'required_permission',None)
+        if required_permission and required_permission not in context.permissions:
+            raise PermissionError('agent tool permission denied')
+        decision=await governance.authorize_side_effect(
+            context.execution_id,
+            getattr(context,'agent_name',None) or 'unknown',
+            action,
+            getattr(self.provider,'name',None),
+            data_classes=data_classes,
+            tools=(getattr(tool,'name',''),),
+            approval_id=approval_id,
+        )
+        if decision.decision!='allow':
+            return {'status':'blocked','reason':decision.reason,'failure_category':decision.failure_category,'governance_decision':decision.decision}
+        result=await tool.execute(context,arguments)
+        record(
+            tenant=context.tenant_id,
+            actor=context.user_id,
+            action='agent.tool.execute',
+            resource=getattr(tool,'name','unknown'),
+            resource_id=context.execution_id,
+            outcome='success',
+            request_id=context.request_id,
+            metadata={'governance_decision':'allow','policy_version':decision.policy_version,'capability_version':decision.capability_version},
+        )
+        return result
