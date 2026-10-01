@@ -1,36 +1,35 @@
-# Carenova AI — Makefile
-# Usage: make <target>
-
-.PHONY: help dev test lint deploy health
+# HEZQARA — developer and operations commands
+.PHONY: help dev test lint health deploy backup migrate
 
 help:
-	@echo "Carenova AI — Available commands:"
-	@echo "  make dev      Start local development (Docker)"
-	@echo "  make test     Run full backend test suite"
-	@echo "  make lint     Run Ruff linter + type check"
-	@echo "  make health   Check if Carenova is running"
-	@echo "  make deploy   Deploy to EC2 (runs deploy.sh)"
-	@echo "  make backup   Run database backup"
+	@echo "HEZQARA commands:"
+	@echo "  make dev      Start local development stack"
+	@echo "  make test     Run backend tests"
+	@echo "  make lint     Run Ruff + frontend type check"
+	@echo "  make health   Check the local backend health endpoint"
+	@echo "  make deploy   Run the HEZQARA deployment helper"
+	@echo "  make backup   Run the database backup helper"
+	@echo "  make migrate  Show the Supabase migration command"
 
 dev:
-	docker compose -f infrastructure/docker/docker-compose.yml up
+	docker compose up
 
 test:
 	cd backend && pytest tests/ -v --cov=app --cov-report=term-missing
 
 lint:
-	cd backend && ruff check app/
+	cd backend && ruff check app tests
 	cd frontend && npm run type-check
 
 health:
-	curl -s http://localhost:8004/health | python3 -m json.tool
+	curl -fsS http://localhost:8004/health | python3 -m json.tool
 
 deploy:
-	bash infrastructure/scripts/deploy.sh
+	bash ops/deploy.sh
 
 backup:
-	bash infrastructure/scripts/backup_db.sh
+	bash ops/backup_db.sh
 
 migrate:
-	@echo "Apply migrations via Supabase dashboard or:"
+	@echo "Apply migrations through the configured Supabase deployment path:"
 	@echo "  supabase db push --db-url \$$DATABASE_URL"
