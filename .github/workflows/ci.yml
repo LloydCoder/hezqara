@@ -131,6 +131,9 @@ jobs:
       - name: Prove E6 commercial platform tenant and ledger controls
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e6_commercial_platform.sql
+      - name: Prove E7 activation tenant isolation
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e7_vertical_slice.sql
       - name: Install backend dependencies for production-like import
         working-directory: backend
         run: pip install -r requirements.txt
