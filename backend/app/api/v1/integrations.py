@@ -48,6 +48,16 @@ async def test_connection(integration_id:str,request:Request,tenant:TenantContex
         await s.execute(text('insert into integration_health(clinic_id,integration_id,state,latency_ms,error_code) values(:clinic,:id,:state,:latency,:error)'),{'clinic':row['clinic_id'],'id':integration_id,'state':health.state,'latency':health.latency_ms,'error':health.error.code if health.error else None})
         await append_event(s,organization_id=tenant.organization_id,actor=tenant.user_id,action='integration.connection_tested',resource_type='integration',resource_id=integration_id,outcome=health.state,request_id=getattr(request.state,'request_id',None)); return {'state':health.state,'provider':provider.name,'version':provider.version,'checked_at':datetime.now(timezone.utc).isoformat()}
 
+@router.post('/{integration_id}/activate')
+async def activate_integration(integration_id:str,request:Request,tenant:TenantContext=Depends(require_permission('integrations:manage'))):
+    async with tenant_session_context(tenant.organization_id) as s:
+        row=(await s.execute(text("select id,status,environment from integrations where id=:id and clinic_id in (select id from clinics where clerk_org_id=current_setting('app.clerk_org_id',true))"),{"id":integration_id})).mappings().first()
+        if not row: raise HTTPException(404,'integration not found')
+        if row['status'] != 'healthy': raise HTTPException(409,'integration must pass connection test before activation')
+        await s.execute(text("update integrations set enabled=true,status='healthy',updated_at=now() where id=:id"),{"id":integration_id})
+        await append_event(s,organization_id=tenant.organization_id,actor=tenant.user_id,action='integration.activated',resource_type='integration',resource_id=integration_id,outcome='success',request_id=getattr(request.state,'request_id',None))
+        return {"id":integration_id,"status":"healthy","enabled":True}
+
 @router.get('/{integration_id}/health')
 async def integration_health(integration_id:str,tenant:TenantContext=Depends(require_permission('integrations:read'))):
     async with tenant_session_context(tenant.organization_id) as s:

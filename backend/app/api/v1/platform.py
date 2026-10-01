@@ -8,6 +8,7 @@ from app.platform.enterprise import readiness, security_posture
 from app.platform.scale import current_usage, get_limits, record_usage
 from app.platform.commercial import PLAN_CATALOG, change_plan, create_checkout_session, get_subscription
 from app.platform.growth import complete_onboarding_step, create_lead, onboarding_status
+from app.platform.activation import activate, export_manifest, preflight, roi_snapshot, rollback, set_state, state
 
 router = APIRouter(prefix="/platform", tags=["platform"])
 
@@ -17,6 +18,9 @@ class UsageRequest(BaseModel):
 
 class PlanRequest(BaseModel):
     plan_code: str = Field(min_length=1, max_length=40)
+
+class ActivationStateRequest(BaseModel):
+    reason: str = Field(default="", max_length=500)
 
 class CheckoutRequest(BaseModel):
     plan_code: str = Field(min_length=1, max_length=40)
@@ -83,6 +87,66 @@ async def plan(payload: PlanRequest, tenant: TenantContext = Depends(require_per
             return await change_plan(session, tenant.organization_id, payload.plan_code, tenant.user_id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+@router.get("/activation")
+async def activation_state(tenant: TenantContext = Depends(require_permission("platform:read"))):
+    async with tenant_session_context(tenant.organization_id) as session:
+        return await state(session, tenant.organization_id)
+
+@router.post("/activation/preflight")
+async def activation_preflight(tenant: TenantContext = Depends(require_permission("platform:write"))):
+    async with tenant_session_context(tenant.organization_id) as session:
+        return await preflight(session, tenant.organization_id, tenant.user_id)
+
+@router.post("/activation/activate")
+async def activation_activate(tenant: TenantContext = Depends(require_permission("platform:write"))):
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await activate(session, tenant.organization_id, tenant.user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+@router.post("/activation/pause")
+async def activation_pause(payload: ActivationStateRequest, tenant: TenantContext = Depends(require_permission("platform:write"))):
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await set_state(session, tenant.organization_id, "paused", tenant.user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+@router.post("/activation/disable")
+async def activation_disable(payload: ActivationStateRequest, tenant: TenantContext = Depends(require_permission("platform:write"))):
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await set_state(session, tenant.organization_id, "disabled", tenant.user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+@router.post("/activation/recover")
+async def activation_recover(payload: ActivationStateRequest, tenant: TenantContext = Depends(require_permission("platform:write"))):
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await set_state(session, tenant.organization_id, "recovering", tenant.user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+@router.post("/activation/rollback")
+async def activation_rollback(payload: ActivationStateRequest, tenant: TenantContext = Depends(require_permission("platform:write"))):
+    try:
+        async with tenant_session_context(tenant.organization_id) as session:
+            return await rollback(session, tenant.organization_id, tenant.user_id, payload.reason)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+@router.post("/activation/roi")
+async def activation_roi(tenant: TenantContext = Depends(require_permission("analytics:read"))):
+    async with tenant_session_context(tenant.organization_id) as session:
+        return await roi_snapshot(session, tenant.organization_id, tenant.user_id)
+
+@router.post("/activation/export")
+async def activation_export(tenant: TenantContext = Depends(require_permission("compliance:read"))):
+    async with tenant_session_context(tenant.organization_id) as session:
+        return await export_manifest(session, tenant.organization_id, tenant.user_id)
 
 @router.get("/onboarding")
 async def onboarding(tenant: TenantContext = Depends(require_permission("platform:read"))):
