@@ -4,12 +4,8 @@ from fastapi import APIRouter, HTTPException, Request
 from app.core.config import settings
 from app.infrastructure.database import system_session_context
 from app.platform.commercial import apply_provider_event
-from app.security.webhook import WebhookReplayStore
 
 router = APIRouter(prefix="/webhooks/stripe", tags=["webhooks"])
-replay = WebhookReplayStore()
-
-
 @router.post("")
 async def stripe_webhook(request: Request):
     if not settings.stripe_webhook_secret:
@@ -30,11 +26,7 @@ async def stripe_webhook(request: Request):
     if not event_id:
         raise HTTPException(status_code=400, detail="stripe event id required")
 
-    # Redis is a fast duplicate filter; PostgreSQL subscription_events is the
-    # durable idempotency authority so correctness does not depend on Redis.
-    if not await replay.claim("stripe", event_id):
-        return {"received": True, "event_id": event_id, "duplicate": True}
-
+    # PostgreSQL subscription_events is the durable idempotency authority.
     try:
         async with system_session_context() as session:
             result = await apply_provider_event(session, event)
