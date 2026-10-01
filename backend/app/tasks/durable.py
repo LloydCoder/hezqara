@@ -6,9 +6,22 @@ from app.platform.durable import DurableJobService
 from app.domains.workflows.runtime import execute_run
 from app.domains.patient_engagement.outbox import process_communication_outbox
 
+_worker_loop = None
+_worker_loop_pid = None
+
+def _run_async(coro):
+    global _worker_loop, _worker_loop_pid
+    pid = os.getpid()
+    if _worker_loop is None or _worker_loop.is_closed() or _worker_loop_pid != pid:
+        if _worker_loop is not None and not _worker_loop.is_closed():
+            _worker_loop.close()
+        _worker_loop = asyncio.new_event_loop()
+        _worker_loop_pid = pid
+    return _worker_loop.run_until_complete(coro)
+
 @celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=300,soft_time_limit=240)
 def run_platform_job(self, job_id: str):
-    return asyncio.run(_run_platform_job(job_id))
+    return _run_async(_run_platform_job(job_id))
 
 async def _run_platform_job(job_id: str):
     worker_id=f"{os.uname().nodename}:{os.getpid()}"
@@ -33,7 +46,7 @@ async def _run_platform_job(job_id: str):
 
 @celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=60)
 def dispatch_due_platform_jobs(self, limit: int=20):
-    return asyncio.run(_dispatch_due_platform_jobs(limit))
+    return _run_async(_dispatch_due_platform_jobs(limit))
 
 async def _dispatch_due_platform_jobs(limit:int):
     from sqlalchemy import text
@@ -52,7 +65,7 @@ async def _dispatch_due_platform_jobs(limit:int):
 
 @celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=60)
 def reconcile_execution_leases(self):
-    return asyncio.run(_reconcile_execution_leases())
+    return _run_async(_reconcile_execution_leases())
 
 async def _reconcile_execution_leases():
     from sqlalchemy import text
