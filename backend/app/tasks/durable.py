@@ -32,7 +32,7 @@ async def _run_platform_job(job_id: str):
         try:
             payload=job["payload"] or {}
             job_type=job["job_type"]
-            if job_type=="workflow.execute":
+            if job_type in {"workflow.execute", "workflow.execute.resume"}:
                 result=await execute_run(str(payload["organization_id"]),str(payload["run_id"]))
             elif job_type=="communication.outbox":
                 result={"processed":await process_communication_outbox(str(payload["organization_id"]))}
@@ -59,7 +59,7 @@ async def _dispatch_due_platform_jobs(limit:int):
         """),{"limit":limit})
         ids=[str(r.id) for r in rows]
     for job_id in ids:
-        run_platform_job.delay(job_id)
+        run_platform_job.apply_async(args=[job_id], queue="hezqara")
         dispatched+=1
     return {"dispatched":dispatched}
 
