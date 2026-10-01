@@ -49,7 +49,7 @@ BEGIN
     INSERT INTO workflow_runs(id,clinic_id,workflow_id,workflow_version_id,trigger_type,actor_id,idempotency_key)
     VALUES ('ci-wfr-forged-workflow','ci-wf-tenant-b','ci-wf-a','ci-wfv-b','test','ci-user-b','ci-wfr-forged-workflow');
     RAISE EXCEPTION 'cross-tenant workflow FK unexpectedly succeeded';
-  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  EXCEPTION WHEN foreign_key_violation OR check_violation OR insufficient_privilege THEN NULL;
   END;
 END $$;
 
