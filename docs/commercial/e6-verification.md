@@ -15,7 +15,7 @@
 - Tenant-scoped commercial tables use RLS/FORCE RLS.
 - Manual plan changes remain available as an administrative/testing path and are not treated as proof of payment.
 
-Stripe's API supports idempotency keys for safe retries, and Checkout Sessions support recurring subscription mode, client references and metadata used for reconciliation. citeturn6search0turn7search0 Stripe publishes subscription and invoice webhook event types that are used by the state machine. citeturn6search6
+Stripe's API supports idempotency keys for safe retries, and Checkout Sessions support recurring subscription mode, client references and metadata used for reconciliation. Stripe publishes subscription and invoice webhook event types that are used by the state machine.
 
 ## Non-claims
 
