@@ -31,6 +31,7 @@ async def execute_run(organization_id:str,run_id:str):
   """),{'id':run_id,'clinic':clinic_id,'worker':worker_id})).mappings().first()
   if not claimed:return dict(run)
   run=dict(claimed)
+  run['definition']=(await session.execute(text('select definition from workflow_versions where id=:version'),{'version':run['workflow_version_id']})).scalar_one()
   if run['status'] in {'queued','waiting_for_approval'}:await svc.transition(organization_id,run_id,'running')
   steps=(run['definition'] or {}).get('steps',[])
   if not isinstance(steps,list) or len(steps)>MAX_STEPS:raise ValueError('workflow exceeds maximum step count')
