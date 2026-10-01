@@ -20,7 +20,7 @@ def call(client, method, path, **kwargs):
     return response.json()
 
 
-proc = subprocess.Popen(
+worker = subprocess.Popen(\n    [sys.executable, "-m", "celery", "-A", "app.tasks.celery.celery_app", "worker", "--loglevel=warning", "--pool=solo"],\n    stdout=subprocess.PIPE,\n    stderr=subprocess.STDOUT,\n    text=True,\n)\n\nproc = subprocess.Popen(
     [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8004"],
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
@@ -99,7 +99,7 @@ try:
                 "context": {"vertical_slice": "e7"},
             },
         )
-        assert run["status"] == "waiting_for_approval", run
+        for _ in range(30):\n            if run["status"] == "waiting_for_approval":\n                break\n            time.sleep(1)\n            run = call(client, "GET", f"/api/v1/workflows/{workflow_id}/runs") [0]\n        assert run["status"] == "waiting_for_approval", run
 
         approvals = call(client, "GET", "/api/v1/approvals")
         approval = next(item for item in approvals if item["workflow_run_id"] == run["id"])
