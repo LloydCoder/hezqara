@@ -144,7 +144,13 @@ try:
         approval = next(item for item in approvals if item["workflow_run_id"] == run["id"])
         call(client, "POST", f"/api/v1/approvals/{approval['id']}/approve")
 
-        runs = call(client, "GET", f"/api/v1/workflows/{workflow_id}/runs")
+        for _ in range(60):
+            runs = call(client, "GET", f"/api/v1/workflows/{workflow_id}/runs")
+            if runs[0]["status"] == "completed":
+                break
+            if runs[0]["status"] in {"failed", "escalated", "cancelled"}:
+                break
+            time.sleep(1)
         assert runs[0]["status"] == "completed", runs
 
         roi = call(client, "POST", "/api/v1/platform/activation/roi")
