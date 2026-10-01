@@ -43,11 +43,12 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $
+AS $e3_idempotency$
 BEGIN
   NEW.idempotency_key := COALESCE(NEW.idempotency_key, NEW.workflow_run_id || ':' || NEW.step_key);
   RETURN NEW;
-END $;
+END;
+$e3_idempotency$;
 REVOKE ALL ON FUNCTION public.workflow_step_runs_set_idempotency() FROM PUBLIC;
 
 DROP TRIGGER IF EXISTS workflow_step_runs_idempotency_before_insert ON public.workflow_step_runs;
