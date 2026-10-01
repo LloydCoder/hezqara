@@ -10,7 +10,7 @@ class AllowGovernance:
             decision='allow', risk_tier=1, capability_id=capability_id,
             capability_version='1', policy_version_id=1, reason='test allow',
             allowed_actions=('draft_response',), allowed_data_classes=('operational',),
-            allowed_tools=(), policy_version='1', prompt_version='1',
+            allowed_tools=(), policy_version='1', prompt_version='1', safety_threshold=0.8,
         )
 
 class FakeProvider:
