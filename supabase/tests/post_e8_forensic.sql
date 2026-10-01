@@ -11,7 +11,7 @@ VALUES ('forensic-clinic-a','starter',1,2,3)
 ON CONFLICT (clinic_id) DO UPDATE SET monthly_executions=1,monthly_voice_minutes=2,monthly_messages=3;
 
 INSERT INTO operational_incidents(clinic_id,severity,status,title,summary)
-VALUES ('forensic-clinic-a','high','open','tenant incident','forensic tenant incident');
+VALUES ('forensic-clinic-a','sev2','open','tenant incident','forensic tenant incident');
 INSERT INTO operational_incidents(clinic_id,severity,status,category,summary)
 VALUES (NULL,'high','open','platform','global platform incident');
 
@@ -80,7 +80,7 @@ BEGIN
   END IF;
   BEGIN
     INSERT INTO operational_incidents(clinic_id,severity,title,summary)
-    VALUES ('forensic-clinic-a','high','test','authenticated write');
+    VALUES ('forensic-clinic-a','sev2','authenticated write');
     RAISE EXCEPTION 'authenticated operational evidence write accepted';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
