@@ -2,53 +2,178 @@
 
 **Governed AI Workforce for Healthcare Operations**
 
-HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. Its architecture combines governed AI execution, tenant-isolated healthcare operations, healthcare interoperability, durable workflows, commercial controls and evidence-backed operating maturity.
+HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It combines tenant-isolated healthcare workflows, governed AI execution, healthcare interoperability, durable background execution, commercial controls, and evidence-backed operational controls.
+
+> **Engineering status:** E1–E8 and the post-E8 forensic hardening gate are verified on main by the repository automated validation suite. This is an engineering verification statement—not a claim of HIPAA, GDPR, NDPA, SOC 2, ISO 27001, FHIR/SMART certification, clinical efficacy, customer ROI, SLA attainment, or arbitrary production-scale proof.
+
+## Architecture at a glance
+
+~~~text
+Browser
+  │
+  ▼
+Clerk identity / organization
+  │
+  ▼
+Server authorization + immutable TenantContext
+  │
+  ▼
+FastAPI domain/API layer
+  │
+  ├── AI governance → policy → approval → execution → validation → audit
+  ├── Healthcare integrations → FHIR/SMART adapter boundaries
+  ├── Durable workflows/jobs → PostgreSQL authority + Redis/Celery delivery
+  └── Commercial controls → subscriptions → entitlements → usage/quota
+  │
+  ▼
+Repository layer
+  │
+  ▼
+PostgreSQL / Supabase
+  │
+  └── RLS + FORCE RLS + tenant-bound integrity
+~~~
+
+The browser never establishes tenant authority. Client-provided tenant/clinic identifiers are not trusted as authorization primitives. Database enforcement remains a defense-in-depth boundary.
 
 ## Verified engineering phases
 
-1. E1 — AI governance enforcement — VERIFIED
-2. E2 — Canonical tenant security/data isolation — VERIFIED
-3. E3 — Durable execution/distributed reliability — VERIFIED
-4. E4 — Production healthcare interoperability — VERIFIED
-5. E5 — Enterprise security/privacy/compliance readiness — VERIFIED
-6. E6 — Commercial platform completion — VERIFIED
-7. E7 — First-clinic production vertical slice — VERIFIED
-8. E8 — Production proving/operating maturity — VERIFIED
+| Phase | Scope | Status |
+|---|---|---|
+| E1 | AI governance enforcement | Verified |
+| E2 | Canonical tenant security and data isolation | Verified |
+| E3 | Durable execution and distributed reliability | Verified |
+| E4 | Healthcare interoperability boundary | Verified |
+| E5 | Enterprise security, privacy and compliance readiness | Verified |
+| E6 | Commercial platform controls | Verified |
+| E7 | First-clinic synthetic vertical slice | Verified |
+| E8 | Production proving and operating maturity | Verified |
+| Post-E8 | Forensic hardening of operational evidence and usage quotas | Verified |
 
-“Verified” means the documented engineering acceptance gates are implemented and green. It does not mean HIPAA/SOC 2 certification, clinical validation, arbitrary production-scale proof, or a specific cloud-provider configuration.
+"Verified" means the repository acceptance gates for the documented control have passed. It does not mean the external deployment, providers, contracts, organizational safeguards, or regulatory obligations have been completed.
 
-## Canonical control chain
+## Technology
 
-Tenant identity → authorization → domain service → repository → PostgreSQL/RLS.
+- **Frontend:** Next.js 16, React 19, TypeScript
+- **Authentication:** Clerk Organizations
+- **Backend:** FastAPI, Python
+- **Database:** PostgreSQL / Supabase with RLS and FORCE RLS
+- **Durable execution:** PostgreSQL-backed state with Redis/Celery delivery and worker orchestration
+- **Interoperability:** FHIR R4 (4.0.1) and SMART App Launch 2.2.0 boundaries
+- **Commercial:** Stripe integration boundary
+- **AI:** governed provider abstraction with deterministic validation, policy checks and human approval for consequential actions
+- **Deployment:** Next.js frontend on Vercel; API/workers/database/Redis require production-capable runtime(s) appropriate to the deployment topology
+- **CI/CD:** GitHub Actions with frontend, backend, database/RLS, E2E, Docker and security gates
 
-AI: tenant identity → authorization → capability/version → policy/risk → approval → provider/tool authorization → execution → output validation → side-effect authorization → audit/telemetry.
+## Repository layout
 
-Operations: authenticated readiness → worker liveness → SLO/error budget → incident/change control → backup/restore evidence → rollback/release gate → measured production smoke.
+~~~text
+.
+├── backend/        # FastAPI application, domain services, workers and tests
+├── frontend/       # Next.js application
+├── supabase/       # PostgreSQL migrations and database security tests
+├── docs/           # Architecture, security, operations and phase evidence
+├── .github/        # CI and security workflows
+├── vercel.json     # Vercel frontend project configuration
+├── SECURITY.md     # Vulnerability reporting and security boundary
+├── CONTRIBUTING.md # Contribution and verification workflow
+└── LICENSE         # Repository license
+~~~
 
-## E8 — Final roadmap phase
+## Local development
 
-E8 provides durable operational evidence for SLOs, worker heartbeats, incidents, changes and recovery drills, authenticated operational readiness, tenant-scoped operational snapshots and deterministic CI proving. The final repository gate also validates database/RLS, backend, frontend, E2E, security, dependency/secret scanning and Docker builds. A post-E8 forensic gate additionally verifies platform-owned operational evidence and database-enforced usage quotas.
+### Prerequisites
 
-## Final verification boundary
+Use the versions declared by the repository/toolchain configuration. The frontend currently targets Node.js 24.x.
 
-All eight engineering phases are now verified on `main`. This is not a claim that HEZQARA is certified, legally compliant, clinically validated, or proven against arbitrary production scale. Deployment-specific controls, provider contracts, BAAs/DPAs, organizational safeguards, live integrations, monitoring, backups and operating evidence remain required for an actual production launch.
+Typical services:
 
-## Documentation
+1. PostgreSQL/Supabase
+2. Redis
+3. FastAPI backend
+4. Next.js frontend
+5. Celery worker/beat when exercising durable background execution
 
-- `docs/architecture/canonical-architecture.md`
-- `docs/architecture/system-architecture.md`
-- `docs/architecture/multi-tenancy.md`
-- `docs/ai/phase-9-e1-enforcement.md`
-- `docs/security/phase-10-e2-tenant-isolation.md`
-- `docs/reliability/phase-11-e3-durable-execution.md`
-- `docs/interoperability/e4-verification.md`
-- `docs/security/e5-enterprise-security.md`
-- `docs/commercial/e6-verification.md`
-- `docs/operations/e7-first-clinic-vertical-slice.md`
-- `docs/operations/e8-production-proving.md`
-- `docs/security/final-forensic-audit.md`
-- `docs/operations/vercel-deployment.md`
+### Frontend
+
+~~~bash
+cd frontend
+npm ci
+npm run lint
+npm run type-check
+npm run build
+~~~
+
+### Backend
+
+Install the backend dependencies from the repository Python dependency configuration, then run the backend test suite. Database/RLS validation requires a migrated PostgreSQL test database.
+
+### End-to-end
+
+The CI workflow provisions the required test services and runs the Playwright suite against the application stack. Do not use production healthcare data in local, CI or preview environments.
+
+## Configuration
+
+Frontend configuration is documented in frontend/.env.example. Backend configuration is documented in backend/.env.example.
+
+Never commit real credentials. NEXT_PUBLIC_* variables are browser-visible. Backend secrets—including database credentials, Clerk secret material, AI provider keys, Stripe secrets, webhook secrets and provider tokens—must remain server-side and be supplied by the deployment secret manager.
+
+## Security model
+
+The canonical security chain is:
+
+**tenant identity → authorization → domain service → repository → PostgreSQL/RLS**
+
+For AI:
+
+**tenant identity → authorization → capability/version → policy/risk → approval → provider/tool authorization → execution → output validation → side-effect authorization → audit/telemetry**
+
+AI output is untrusted data. AI is not an authorization authority and cannot bypass tenant isolation.
+
+## Healthcare interoperability
+
+HEZQARA uses FHIR R4 (4.0.1) as the explicit interoperability resource boundary and SMART App Launch 2.2.0 for the OAuth authorization contract. These are implementation boundaries, not certification claims. Provider-specific interoperability requires endpoint validation, credentials, contracts, implementation-guide testing and operational evidence.
+
+## Production deployment
+
+The frontend is the Vercel deployment target. The connected project uses frontend/ as its project root. The FastAPI API, Celery worker/beat, Redis and PostgreSQL/Supabase are not assumed to run inside the Next.js Vercel deployment.
+
+Production release requirements are documented in docs/operations/e8-production-proving.md and docs/operations/vercel-deployment.md.
+
+A Vercel deployment being READY is not, by itself, evidence of production readiness. Deployment Protection may also require authenticated smoke testing.
+
+## Documentation map
+
+- docs/architecture/ — canonical system and tenancy architecture
+- docs/ai/ — AI governance and execution controls
+- docs/security/ — security, privacy, incident response and forensic evidence
+- docs/reliability/ — durable execution and recovery
+- docs/interoperability/ — FHIR/SMART integration boundaries
+- docs/commercial/ — subscriptions, billing and usage controls
+- docs/operations/ — clinic activation, production proving and deployment
+- docs/validation/ — validation/acceptance evidence where present
+
+## External standards and references
+
+- OWASP ASVS 5.0.0
+- OWASP API Security and GenAI/agentic security guidance
+- NIST CSF 2.0
+- NIST AI RMF 1.0 and NIST AI 600-1 (Generative AI Profile)
+- NIST SP 800-218 SSDF 1.1
+- NIST SP 800-61 Rev. 3
+- HL7 FHIR R4 4.0.1
+- HL7 SMART App Launch 2.2.0
+- Applicable Da Vinci implementation guides
+- Stripe API/webhook security guidance
+
+Standards references guide engineering controls; they do not constitute certification.
+
+## Security reporting
+
+See SECURITY.md. Do not publish credentials, patient information, access tokens or exploitable details in public issues.
 
 ## License
 
-Proprietary — Tinlance Limited. All rights reserved.
+Copyright © 2024–2026 Tinlance Limited.
+
+HEZQARA is proprietary software. See LICENSE for the governing terms.
