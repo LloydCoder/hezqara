@@ -180,6 +180,14 @@ finally:
         proc.wait(timeout=5)
     except subprocess.TimeoutExpired:
         proc.kill()
-    output = proc.stdout.read() if proc.stdout else ""
-    if output:
-        print(output, flush=True)
+    for child, name in ((proc, "uvicorn"), (worker, "celery")):
+        if child.poll() is None:
+            child.terminate()
+            try:
+                child.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                child.kill()
+        output = child.stdout.read() if child.stdout else ""
+        if output:
+            print(f"--- {name} output ---", flush=True)
+            print(output, flush=True)
