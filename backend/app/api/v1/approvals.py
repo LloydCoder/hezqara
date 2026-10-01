@@ -7,7 +7,6 @@ from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
 from app.security.audit import append_event
 from app.core.config import settings
-from app.platform.durable import DurableJobService
 
 router = APIRouter(prefix='/approvals', tags=['approvals'])
 
