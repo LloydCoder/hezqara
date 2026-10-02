@@ -123,7 +123,7 @@ class PatientAccessRepository:
             RETURNING id,patient_id,provider_id,appointment_datetime,duration_minutes,reason,status,slot_id,created_at,updated_at
         """), {"clinic_id":clinic_id,"patient_id":patient_id,"provider_id":slot["provider_id"],
                "starts_at":slot["starts_at"],"ends_at":slot["ends_at"],"reason":reason,
-               "slot_id":slot_id,"idempotency_key":idempotency_key}).mappings().one()
+               "slot_id":slot_id,"idempotency_key":idempotency_key}).mappings().one())
         await self.session.execute(text("""
             UPDATE schedule_slots SET status='busy',appointment_id=:appointment_id,updated_at=NOW()
             WHERE clinic_id=:clinic_id AND id=:slot_id
