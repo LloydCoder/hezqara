@@ -6,7 +6,6 @@ INSERT INTO clinics(id,name,clerk_org_id) VALUES
  ('ci-e10-b','CI E10 B','ci_e10_org_b')
 ON CONFLICT (id) DO NOTHING;
 
-SET ROLE service_role;
 SELECT set_config('app.clerk_org_id','ci_e10_org_a',false);
 
 INSERT INTO patients(id,clinic_id,first_name,last_name)
