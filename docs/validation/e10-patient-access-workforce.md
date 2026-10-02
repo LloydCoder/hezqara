@@ -58,9 +58,9 @@ Next:
 
 ## External standards evidence
 
-FHIR R4 defines Schedule as a container for time slots and Slot as bookable time on a schedule. FHIR Appointment describes the booking and documents discovery, optional availability checking, appointment request and optional waitlisting workflows. citeturn3search1turn3search0turn3search2
+FHIR R4 defines Schedule as a container for time slots, Slot as bookable time on a schedule, and Appointment as the booking resource with discovery, optional availability checking, appointment request and optional waitlisting workflows. Sources: https://hl7.org/fhir/R4/schedule-definitions.html, https://hl7.org/fhir/R4/slot.html, https://hl7.org/fhir/R4/appointment.html
 
-CMS's 2026 interoperability framework explicitly identifies modern scheduling as a use case, including real-time appointment discovery, booking, rescheduling and cancellation using FHIR Schedule, Slot and Appointment resources. This is a framework/use-case commitment, not a claim that Hezqara itself is certified or enrolled. citeturn2search2turn2search10
+CMS's 2026 interoperability framework identifies modern scheduling as a use case, including real-time appointment discovery, booking, rescheduling and cancellation using FHIR Schedule, Slot and Appointment resources. This is a framework/use-case commitment, not a claim that Hezqara itself is certified or enrolled. Sources: https://www.cms.gov/initiatives/health-technology-ecosystem/overview/interoperability-framework and https://www.cms.gov/initiatives/health-technology-ecosystem/overview/early-adopters-all-pledgees/additional-use-case/additional-use-case-modern-scheduling
 
 ## Exit gates
 
