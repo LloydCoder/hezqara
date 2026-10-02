@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timezone
 from app.domains.patient_access.schemas import (
-    AccessRequestCreate, AccessRequestUpdate, SlotCreate, BookSlotRequest,
+    AccessRequestCreate, AccessRequestUpdate, SlotCreate, BookSlotRequest, WaitlistCreate,
     RescheduleRequest, CancelAppointmentRequest,
 )
 from app.domains.patient_access.service import PatientAccessService
@@ -26,6 +26,10 @@ async def test_access_request_rejects_invalid_transition():
     repo=FakeRepository(); repo.rows[0]["status"]="completed"
     with pytest.raises(Exception, match="invalid access request state transition"):
         await PatientAccessService(repo).update_access_request("clinic","r1","new")
+
+def test_waitlist_requires_idempotency_key():
+    with pytest.raises(ValueError):
+        WaitlistCreate(patient_id="p1", idempotency_key="short")
 
 def test_idempotency_keys_are_required():
     with pytest.raises(ValueError):
