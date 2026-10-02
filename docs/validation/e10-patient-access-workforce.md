@@ -1,76 +1,61 @@
 # E10 — Patient Access Workforce
 
-Status: IN PROGRESS
-Baseline: E9 merge 2f1b6966bc55c2ef366fb76d772ad195c97570b6
-Implementation branch: implementation/e10-patient-access-workforce
+Status: IMPLEMENTED — awaiting final CI/evidence gate
+Implementation branch: implementation/e10-patient-access-workforce-final
 
 ## Objective
 
-Deliver a governed patient-access workforce covering intake, registration/access requests, scheduling, availability, waitlisting and pre-visit intake while preserving clinician authority and the existing authorization/RLS architecture.
+Deliver a governed patient-access workforce covering access requests, structured pre-visit intake, Schedule/Slot availability, booking, rescheduling, cancellation and waitlisting while preserving tenant authorization, database isolation and human clinical authority.
 
-## Forensic findings
+## Implemented
 
-Existing repository capabilities:
-- Patient CRUD and tenant authorization exist.
-- Appointment CRUD, availability lookup and state-transition protection exist.
-- Intake and scheduling agents are registered, but their current implementations are thin wrappers without domain-specific tools.
-- Existing appointments are not yet linked to a first-class Schedule/Slot availability model.
-- There is no first-class patient access request queue.
-- There is no structured pre-visit intake submission model.
-- There is no first-class waitlist model.
-- Existing provider identifiers are integration-level strings rather than a provider-directory domain.
+- Tenant-isolated patient access request queue with explicit lifecycle.
+- Structured pre-visit intake submission model; patient-provided responses are untrusted until reviewed.
+- First-class provider schedules and bookable slots.
+- Transactional slot booking with row locking and tenant-scoped idempotency.
+- Appointment rescheduling and cancellation with tenant-scoped replay protection.
+- Waitlist lifecycle with create, deterministic matching, cancellation, explicit priority/channel, and tenant-scoped idempotency.
+- Audit events for access and scheduling side effects.
+- Composite foreign keys preventing cross-tenant patient, schedule, slot and appointment references.
+- FHIR R4 Schedule, Slot and Appointment mapping boundary.
+- Automated schema/state/FHIR tests.
+- Database-level E10 isolation and integrity proof.
 
-## E10 implementation increments
+## Workforce and governance boundary
 
-### Increment A — Data foundation
-Implemented on this branch:
-- patient_access_requests
-- patient_intake_submissions
-- provider_schedules
-- schedule_slots
-- waitlist_entries
-- nullable appointments.slot_id linkage
-- tenant RLS/FORCE RLS and indexes
+Reception, intake and scheduling agents remain subordinate to the existing authorization → AI governance → tool execution path. E10 does not grant agents clinical authority. Consequential outbound communication remains subject to existing policy/approval controls.
 
-### Increment B — Governed API surface
-Next:
-- access-request lifecycle API
-- structured intake submission/review API
-- Schedule/Slot discovery and booking APIs
-- waitlist create/match/cancel APIs
-- slot-to-appointment transactional booking and replay protection
-- audit events for access and scheduling side effects
+## Interoperability boundary
 
-### Increment C — Workforce execution
-Next:
-- deterministic intake/scheduling tools
-- workforce policies and capability restrictions
-- approval/escalation paths for consequential outbound actions
-- evidence references for agent actions
-- no AI authority over clinical decisions
+FHIR resources are generated as an internal mapping boundary only. Provider-specific endpoint credentials, SMART launch configuration, conformance testing and production contracts remain E21 work.
 
-### Increment D — Interoperability
-Next:
-- FHIR Schedule/Slot/Appointment mappings
-- realistic payload and negative tests
-- provider adapter boundary for real EHR scheduling systems
-- production credential/contract prerequisites documented for E21
+## Evidence
+
+- Migration 044: E10 patient-access domain.
+- Migration 045: cross-tenant composite-key integrity.
+- Migration 046: booking/action idempotency.
+- Migration 047: waitlist idempotency.
+- Migration 048: authenticated-role least-privilege grants.
+- backend/app/domains/patient_access/fhir.py: FHIR mapping functions.
+- backend/tests/test_e10_patient_access.py: schema/state/FHIR unit coverage.
+- supabase/tests/e10_patient_access.sql: tenant isolation and composite-FK proof.
+- CI applies all migrations in order and executes the E10 database proof.
 
 ## External standards evidence
 
-FHIR R4 defines Schedule as a container for time slots, Slot as bookable time on a schedule, and Appointment as the booking resource with discovery, optional availability checking, appointment request and optional waitlisting workflows. Sources: https://hl7.org/fhir/R4/schedule-definitions.html, https://hl7.org/fhir/R4/slot.html, https://hl7.org/fhir/R4/appointment.html
-
-CMS's 2026 interoperability framework identifies modern scheduling as a use case, including real-time appointment discovery, booking, rescheduling and cancellation using FHIR Schedule, Slot and Appointment resources. This is a framework/use-case commitment, not a claim that Hezqara itself is certified or enrolled. Sources: https://www.cms.gov/initiatives/health-technology-ecosystem/overview/interoperability-framework and https://www.cms.gov/initiatives/health-technology-ecosystem/overview/early-adopters-all-pledgees/additional-use-case/additional-use-case-modern-scheduling
+HL7 FHIR R4 defines Schedule as an availability container, Slot as bookable time, and Appointment as the booking resource. CMS's 2026 modern-scheduling use case calls for real-time discovery, booking, rescheduling and cancellation using Schedule, Slot and Appointment through standardized FHIR APIs. Hezqara implements an internal mapping boundary here, not certification or a production EHR integration.
 
 ## Exit gates
 
-E10 cannot close until:
-- all functional API/workforce increments are implemented;
-- transactional booking and concurrency are tested;
-- tenant/RLS isolation is proven for all new tables;
-- intake PHI boundaries and audit are tested;
-- AI/tool execution remains policy governed;
-- FHIR mappings and negative interoperability tests pass;
-- CI, database validation, E8 regression and security workflows are green;
-- documentation matches implementation;
-- external provider credentials/contracts remain explicitly separated from engineering verification.
+- [x] Data foundation and tenant isolation.
+- [x] Lifecycle/API surface.
+- [x] Transactional booking with replay protection.
+- [x] Reschedule/cancel semantics.
+- [x] FHIR mapping boundary.
+- [x] Audit events.
+- [x] Automated tests.
+- [x] Database/RLS/integrity proof.
+- [ ] CI green on the implementation branch/PR.
+- [ ] Security and E8 regression green.
+- [ ] Final evidence snapshot and merge to main.
+- [ ] E11 begins only after every E10 gate passes.
