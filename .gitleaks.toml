@@ -1,0 +1,11 @@
+title = "Hezqara Gitleaks Configuration"
+
+[allowlist]
+description = "Narrow allowlist for synthetic CI/test literals that are intentionally non-secret."
+regexTarget = "secret"
+
+regexes = [
+  '''^pk_test_ZXhhbXBsZS5hY2NvdW50cy5kZXYk$''',
+  '''^phase5-(communication|workflow)-001$''',
+  '''^(scheduling|billing|missing|injection|phi|clinical)-001$'''
+]
