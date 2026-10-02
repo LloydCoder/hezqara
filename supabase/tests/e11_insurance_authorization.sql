@@ -42,15 +42,14 @@ END $;
 
 SELECT set_config('app.clerk_org_id','ci_e11_org_b',false);
 
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM authorizations WHERE id='ci-e11-auth-a') THEN
-    RAISE EXCEPTION 'cross-tenant authorization read';
+DO 'BEGIN
+  IF EXISTS (SELECT 1 FROM authorizations WHERE id=''ci-e11-auth-a'') THEN
+    RAISE EXCEPTION ''cross-tenant authorization read'';
   END IF;
-  IF EXISTS (SELECT 1 FROM authorization_documents WHERE id='ci-e11-doc-a') THEN
-    RAISE EXCEPTION 'cross-tenant authorization document read';
+  IF EXISTS (SELECT 1 FROM authorization_documents WHERE id=''ci-e11-doc-a'') THEN
+    RAISE EXCEPTION ''cross-tenant authorization document read'';
   END IF;
-END $$;
+END';
 
 RESET ROLE;
 ROLLBACK;
