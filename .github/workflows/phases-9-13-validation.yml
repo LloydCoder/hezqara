@@ -76,6 +76,9 @@ jobs:
       - name: Prove E11 insurance authorization isolation and integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e11_insurance_authorization.sql
+      - name: Prove E12 revenue cycle isolation and integrity
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e12_revenue_cycle.sql
       - name: Prove workflow referential tenant integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/workflow_tenant_integrity.sql
