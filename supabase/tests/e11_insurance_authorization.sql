@@ -29,13 +29,16 @@ ON CONFLICT (id) DO NOTHING;
 SET ROLE authenticated;
 SELECT set_config('app.clerk_org_id','ci_e11_org_a',false);
 
-SELECT CASE WHEN EXISTS (
-  SELECT 1 FROM authorizations WHERE id='ci-e11-auth-a'
-) THEN 1 ELSE 1/0 END AS own_tenant_authorization_visible;
+DO $
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM authorizations WHERE id='ci-e11-auth-a') THEN
+    RAISE EXCEPTION 'tenant A cannot read its own authorization';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM coverage_benefits WHERE id='ci-e11-benefit-a') THEN
+    RAISE EXCEPTION 'tenant A cannot read its own benefit';
+  END IF;
+END $;
 
-SELECT CASE WHEN EXISTS (
-  SELECT 1 FROM coverage_benefits WHERE id='ci-e11-benefit-a'
-) THEN 1 ELSE 1/0 END AS own_tenant_benefit_visible;
 
 SELECT set_config('app.clerk_org_id','ci_e11_org_b',false);
 
