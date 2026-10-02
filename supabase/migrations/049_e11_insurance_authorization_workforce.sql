@@ -1,5 +1,7 @@
 -- Migration 049: E11 insurance and authorization workforce hardening.
 
+CREATE UNIQUE INDEX IF NOT EXISTS authorizations_clinic_id_uidx ON authorizations(clinic_id,id);
+
 ALTER TABLE authorizations ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS authorizations_clinic_idempotency_uidx
 ON authorizations(clinic_id,idempotency_key)
