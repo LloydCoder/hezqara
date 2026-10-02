@@ -7,6 +7,9 @@ ALTER TABLE patients
 ALTER TABLE appointments
     ADD CONSTRAINT appointments_clinic_id_id_key UNIQUE (clinic_id, id);
 
+ALTER TABLE patient_access_requests
+    ADD CONSTRAINT patient_access_requests_clinic_id_id_key UNIQUE (clinic_id, id);
+
 ALTER TABLE provider_schedules
     ADD CONSTRAINT provider_schedules_clinic_id_id_key UNIQUE (clinic_id, id);
 
