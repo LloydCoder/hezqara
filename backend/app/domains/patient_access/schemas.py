@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 RequestType = Literal["new_patient","appointment","intake","registration","access_question"]
 RequestChannel = Literal["staff","patient_portal","phone","sms","email","agent","api"]
 RequestStatus = Literal["new","in_progress","ready","escalated","completed","cancelled"]
-WaitlistStatus = Literal["active","contacted","booked","cancelled","expired"]
+SlotStatus = Literal["free","busy","busy-unavailable","busy-tentative","entered-in-error"]
 
 class AccessRequestCreate(BaseModel):
     patient_id: str | None = None
@@ -37,7 +37,7 @@ class ScheduleCreate(BaseModel):
 class SlotCreate(BaseModel):
     starts_at: datetime
     ends_at: datetime
-    status: Literal["free","busy","busy-unavailable","busy-tentative","entered-in-error"] = "free"
+    status: SlotStatus = "free"
     comment: str | None = Field(default=None, max_length=1000)
 
 class WaitlistCreate(BaseModel):
@@ -48,7 +48,17 @@ class WaitlistCreate(BaseModel):
     requested_end: datetime | None = None
     priority: int = Field(default=100, ge=0)
     notification_channel: Literal["sms","email","phone","portal","none"] = "sms"
+    idempotency_key: str = Field(min_length=8, max_length=200)
 
 class BookSlotRequest(BaseModel):
     patient_id: str
+    reason: str | None = Field(default=None, max_length=500)
+    idempotency_key: str = Field(min_length=8, max_length=200)
+
+class RescheduleRequest(BaseModel):
+    new_slot_id: str
+    idempotency_key: str = Field(min_length=8, max_length=200)
+
+class CancelAppointmentRequest(BaseModel):
+    idempotency_key: str = Field(min_length=8, max_length=200)
     reason: str | None = Field(default=None, max_length=500)
