@@ -63,7 +63,7 @@ async def create_statement(data:StatementCreate,request:Request,tenant:TenantCon
             INSERT INTO patient_statements
               (clinic_id,account_id,patient_id,statement_number,amount_due,due_date,status,delivery_channel,issued_at)
             SELECT a.clinic_id,a.id,a.patient_id,
-                   'HZ-' || to_char(NOW(),'YYYYMMDDHH24MISSMS') || '-' || substr(a.id,1,8),
+                   'HZ-' || substr(gen_random_uuid()::text,1,18),
                    :amount_due,:due_date,'issued',:delivery_channel,NOW()
             FROM billing_accounts a
             WHERE a.id=:account_id
