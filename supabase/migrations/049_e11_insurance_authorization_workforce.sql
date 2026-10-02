@@ -101,6 +101,7 @@ CREATE POLICY payer_adapter_registry_isolation ON payer_adapter_registry
 USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)))
 WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting('app.clerk_org_id',true)));
 
+GRANT SELECT,INSERT,UPDATE,DELETE ON patient_coverages,eligibility_requests,authorizations,records_v2 TO authenticated;
 GRANT SELECT,INSERT,UPDATE,DELETE ON coverage_benefits,authorization_documents,authorization_events,payer_adapter_registry TO authenticated;
 
 CREATE INDEX IF NOT EXISTS idx_e11_benefits_coverage ON coverage_benefits(clinic_id,coverage_id,category);
