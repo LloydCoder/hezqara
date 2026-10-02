@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS document_intake_items (
     CONSTRAINT document_intake_patient_tenant_fk
       FOREIGN KEY (clinic_id,patient_id) REFERENCES patients(clinic_id,id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS document_intake_items_clinic_id_uidx ON document_intake_items(clinic_id,id);
 CREATE UNIQUE INDEX IF NOT EXISTS document_intake_dedupe_uidx
 ON document_intake_items(clinic_id,content_hash)
 WHERE content_hash IS NOT NULL;
