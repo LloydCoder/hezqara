@@ -88,6 +88,31 @@ async def book_slot(slot_id:str,data:BookSlotRequest,request:Request,tenant:Tena
         await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,action="patient_access.slot_booked",resource_type="appointment",resource_id=row["id"],outcome="success",request_id=getattr(request.state,"request_id",None),metadata={"slot_id":slot_id})
         return row
 
+@router.get("/waitlist/matches")
+async def match_waitlist(
+    start:datetime,
+    end:datetime,
+    provider_id:str|None=None,
+    service_type:str|None=None,
+    limit:int=Query(20,ge=1,le=100),
+    tenant:TenantContext=Depends(require_permission("appointments:read")),
+):
+    if end <= start: raise HTTPException(422,"end must be after start")
+    async with tenant_session_context(tenant.organization_id) as session:
+        return await PatientAccessRepository(session).match_waitlist(
+            tenant.organization_id,provider_id,service_type,start,end,limit
+        )
+
+@router.post("/waitlist/{entry_id}/cancel")
+async def cancel_waitlist(entry_id:str,request:Request,tenant:TenantContext=Depends(require_permission("appointments:write"))):
+    async with tenant_session_context(tenant.organization_id) as session:
+        try: row=await PatientAccessRepository(session).cancel_waitlist(tenant.organization_id,entry_id)
+        except ValueError as exc: raise HTTPException(404,str(exc)) from exc
+        await append_event(session,organization_id=tenant.organization_id,actor=tenant.user_id,
+                           action="patient_access.waitlist_cancelled",resource_type="waitlist_entry",
+                           resource_id=entry_id,outcome="success",request_id=getattr(request.state,"request_id",None))
+        return row
+
 @router.post("/appointments/{appointment_id}/reschedule")
 async def reschedule_appointment(appointment_id:str,data:RescheduleRequest,request:Request,tenant:TenantContext=Depends(require_permission("appointments:write"))):
     async with tenant_session_context(tenant.organization_id) as session:
