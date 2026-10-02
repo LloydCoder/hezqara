@@ -6,9 +6,19 @@ from app.infrastructure.database import tenant_session_context
 from app.security.authorization import require_permission
 from app.security.tenant import TenantContext
 from app.security.audit import append_event
+from app.core.config import settings
+from app.domains.insurance.engine import EligibilityRequest, build_eligibility_provider
 from app.domains.insurance.fhir import coverage_resource, eligibility_request_resource, eligibility_response_resource, authorization_task_resource
 
 router=APIRouter(prefix="/insurance",tags=["insurance-authorization"])
+
+class EligibilityCreateV2(BaseModel):
+    patient_id:str
+    coverage_id:str|None=None
+    payer_name:str=Field(min_length=1,max_length=200)
+    member_id:str=Field(min_length=1,max_length=200)
+    service_code:str|None=None
+    idempotency_key:str=Field(min_length=8,max_length=200)
 
 class BenefitCreate(BaseModel):
     coverage_id:str
@@ -52,6 +62,38 @@ ALLOWED={
     "approved":{"expired","cancelled"},
     "denied":set(),"expired":set(),"cancelled":set(),
 }
+
+@router.post("/eligibility",status_code=201)
+async def check_eligibility_v2(data:EligibilityCreateV2,request:Request,tenant:TenantContext=Depends(require_permission("eligibility:write"))):
+    provider=build_eligibility_provider(app_env=settings.app_env,configured=False)
+    result=await provider.check(EligibilityRequest(
+        data.patient_id,data.payer_name,data.member_id,data.service_code,getattr(request.state,"request_id",None)
+    ))
+    async with tenant_session_context(tenant.organization_id) as s:
+        row=(await s.execute(text("""
+            INSERT INTO eligibility_requests
+              (clinic_id,patient_id,coverage_id,payer_name,status,provider,provider_reference,response,idempotency_key,correlation_id,responded_at)
+            SELECT c.id,:patient_id,:coverage_id,:payer_name,:status,:provider,:provider_reference,
+                   :response::jsonb,:idempotency_key,:correlation_id,NOW()
+            FROM clinics c
+            WHERE c.clerk_org_id=current_setting('app.clerk_org_id',true)
+              AND EXISTS (SELECT 1 FROM patients p WHERE p.id=:patient_id AND p.clinic_id=c.id)
+              AND (:coverage_id IS NULL OR EXISTS
+                   (SELECT 1 FROM patient_coverages pc WHERE pc.id=:coverage_id AND pc.clinic_id=c.id AND pc.patient_id=:patient_id))
+            ON CONFLICT (clinic_id,idempotency_key) DO UPDATE SET id=eligibility_requests.id
+            RETURNING id,patient_id,coverage_id,payer_name,status,provider,provider_reference,response,
+                      requested_at,responded_at,benefits
+        """),{
+            **data.model_dump(),"status":result.status,"provider":result.provider,
+            "provider_reference":result.provider_reference,
+            "response":__import__("json").dumps({"reason":result.reason} if result.reason else {}),
+            "correlation_id":getattr(request.state,"request_id",None)
+        })).mappings().first()
+        if not row: raise HTTPException(404,"patient or coverage not found")
+        await append_event(s,organization_id=tenant.organization_id,actor=tenant.user_id,
+                           action="eligibility.checked",resource_type="eligibility_request",
+                           resource_id=row["id"],outcome=row["status"],request_id=getattr(request.state,"request_id",None))
+        return dict(row)
 
 @router.get("/benefits")
 async def list_benefits(coverage_id:str,tenant:TenantContext=Depends(require_permission("insurance:read"))):
