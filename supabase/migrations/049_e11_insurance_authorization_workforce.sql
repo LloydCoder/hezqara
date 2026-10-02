@@ -119,6 +119,6 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS e11_tenant_select ON %I',t);
     EXECUTE format('DROP POLICY IF EXISTS e11_tenant_write ON %I',t);
     EXECUTE format('CREATE POLICY e11_tenant_select ON %I FOR SELECT TO authenticated USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
-    EXECUTE format('CREATE POLICY e11_tenant_write ON %I FOR INSERT, UPDATE, DELETE TO authenticated USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
+    EXECUTE format('CREATE POLICY e11_tenant_write ON %I FOR ALL TO authenticated USING (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true))) WITH CHECK (clinic_id IN (SELECT id FROM clinics WHERE clerk_org_id=current_setting(''app.clerk_org_id'',true)))',t);
   END LOOP;
 END $$;
