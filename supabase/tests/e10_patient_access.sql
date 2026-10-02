@@ -6,7 +6,7 @@ INSERT INTO clinics(id,name,clerk_org_id) VALUES
  ('ci-e10-b','CI E10 B','ci_e10_org_b')
 ON CONFLICT (id) DO NOTHING;
 
-SET ROLE authenticated;
+SET ROLE service_role;
 SELECT set_config('app.clerk_org_id','ci_e10_org_a',false);
 
 INSERT INTO patients(id,clinic_id,first_name,last_name)
@@ -23,6 +23,17 @@ VALUES ('ci-e10-slot-a','ci-e10-a','ci-e10-schedule-a','provider-a',
 ON CONFLICT (id) DO NOTHING;
 
 SET CONSTRAINTS ALL IMMEDIATE;
+
+RESET ROLE;
+SET ROLE authenticated;
+SELECT set_config('app.clerk_org_id','ci_e10_org_a',false);
+
+DO $
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM provider_schedules WHERE id='ci-e10-schedule-a') THEN
+    RAISE EXCEPTION 'tenant A cannot read its own schedule';
+  END IF;
+END $;
 
 SELECT set_config('app.clerk_org_id','ci_e10_org_b',false);
 
