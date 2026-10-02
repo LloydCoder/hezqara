@@ -1,6 +1,7 @@
 -- Migration 052: E14 document, fax and referral intelligence.
 
 CREATE UNIQUE INDEX IF NOT EXISTS documents_clinic_id_uidx ON documents(clinic_id,id);
+CREATE UNIQUE INDEX IF NOT EXISTS referrals_v2_clinic_id_uidx ON referrals_v2(clinic_id,id);
 
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents FORCE ROW LEVEL SECURITY;
