@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS scribe_transcripts (
       FOREIGN KEY (clinic_id,encounter_id) REFERENCES scribe_encounters(clinic_id,id)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS scribe_transcripts_clinic_id_uidx ON scribe_transcripts(clinic_id,id);
+
 CREATE TABLE IF NOT EXISTS scribe_notes (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     clinic_id TEXT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
