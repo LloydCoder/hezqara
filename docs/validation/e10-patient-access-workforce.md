@@ -35,6 +35,7 @@ FHIR resources are generated as an internal mapping boundary only. Provider-spec
 - Migration 045: cross-tenant composite-key integrity.
 - Migration 046: booking/action idempotency.
 - Migration 047: waitlist idempotency.
+- Migration 048: authenticated-role least-privilege grants.
 - backend/app/domains/patient_access/fhir.py: FHIR mapping functions.
 - backend/tests/test_e10_patient_access.py: schema/state/FHIR unit coverage.
 - supabase/tests/e10_patient_access.sql: tenant isolation and composite-FK proof.
