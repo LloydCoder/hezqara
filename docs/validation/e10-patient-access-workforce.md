@@ -14,7 +14,7 @@ Deliver a governed patient-access workforce covering access requests, structured
 - First-class provider schedules and bookable slots.
 - Transactional slot booking with row locking and tenant-scoped idempotency.
 - Appointment rescheduling and cancellation with tenant-scoped replay protection.
-- Waitlist primitives with explicit priority and notification channel.
+- Waitlist lifecycle with create, deterministic matching, cancellation, explicit priority/channel, and tenant-scoped idempotency.
 - Audit events for access and scheduling side effects.
 - Composite foreign keys preventing cross-tenant patient, schedule, slot and appointment references.
 - FHIR R4 Schedule, Slot and Appointment mapping boundary.
@@ -34,6 +34,7 @@ FHIR resources are generated as an internal mapping boundary only. Provider-spec
 - Migration 044: E10 patient-access domain.
 - Migration 045: cross-tenant composite-key integrity.
 - Migration 046: booking/action idempotency.
+- Migration 047: waitlist idempotency.
 - backend/app/domains/patient_access/fhir.py: FHIR mapping functions.
 - backend/tests/test_e10_patient_access.py: schema/state/FHIR unit coverage.
 - supabase/tests/e10_patient_access.sql: tenant isolation and composite-FK proof.
