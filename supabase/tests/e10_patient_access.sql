@@ -27,12 +27,11 @@ RESET ROLE;
 SET ROLE authenticated;
 SELECT set_config('app.clerk_org_id','ci_e10_org_a',false);
 
-DO $
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM provider_schedules WHERE id='ci-e10-schedule-a') THEN
-    RAISE EXCEPTION 'tenant A cannot read its own schedule';
+DO 'BEGIN
+  IF NOT EXISTS (SELECT 1 FROM provider_schedules WHERE id=''ci-e10-schedule-a'') THEN
+    RAISE EXCEPTION ''tenant A cannot read its own schedule'';
   END IF;
-END $;
+END';
 
 SELECT set_config('app.clerk_org_id','ci_e10_org_b',false);
 
