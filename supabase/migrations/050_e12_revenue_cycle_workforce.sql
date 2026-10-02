@@ -1,6 +1,7 @@
 -- Migration 050: E12 revenue cycle workforce hardening.
 
 CREATE UNIQUE INDEX IF NOT EXISTS claims_clinic_id_uidx ON claims(clinic_id,id);
+CREATE UNIQUE INDEX IF NOT EXISTS denials_clinic_id_uidx ON denials(clinic_id,id);
 
 ALTER TABLE claims ADD COLUMN IF NOT EXISTS creation_idempotency_key TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS claims_clinic_creation_idempotency_uidx
