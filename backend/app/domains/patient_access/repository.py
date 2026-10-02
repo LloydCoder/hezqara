@@ -94,10 +94,11 @@ class PatientAccessRepository:
     async def create_waitlist(self, clinic_id, data):
         result=await self.session.execute(text("""
             INSERT INTO waitlist_entries
-                (clinic_id,patient_id,provider_id,service_type,requested_start,requested_end,priority,notification_channel)
-            VALUES (:clinic_id,:patient_id,:provider_id,:service_type,:requested_start,:requested_end,:priority,:notification_channel)
+                (clinic_id,patient_id,provider_id,service_type,requested_start,requested_end,priority,notification_channel,idempotency_key)
+            VALUES (:clinic_id,:patient_id,:provider_id,:service_type,:requested_start,:requested_end,:priority,:notification_channel,:idempotency_key)
+            ON CONFLICT (clinic_id,idempotency_key) DO UPDATE SET updated_at=waitlist_entries.updated_at
             RETURNING id,patient_id,provider_id,service_type,requested_start,requested_end,priority,status,
-                      notification_channel,created_at,updated_at
+                      notification_channel,idempotency_key,created_at,updated_at
         """), {"clinic_id":clinic_id,**data})
         return dict(result.mappings().one())
 
@@ -229,3 +230,30 @@ class PatientAccessRepository:
             VALUES (:clinic_id,:appointment_id,:action,:key)
             ON CONFLICT (clinic_id,idempotency_key) DO NOTHING
         """), {"clinic_id":clinic_id,"appointment_id":appointment_id,"action":action,"key":idempotency_key})
+
+    async def cancel_waitlist(self, clinic_id, entry_id):
+        result=await self.session.execute(text("""
+            UPDATE waitlist_entries SET status='cancelled',updated_at=NOW()
+            WHERE clinic_id=:clinic_id AND id=:entry_id AND status IN ('active','contacted')
+            RETURNING id,patient_id,provider_id,service_type,requested_start,requested_end,priority,status,
+                      notification_channel,idempotency_key,created_at,updated_at
+        """), {"clinic_id":clinic_id,"entry_id":entry_id})
+        row=result.mappings().first()
+        if not row: raise ValueError("waitlist entry not found or cannot be cancelled")
+        return dict(row)
+
+    async def match_waitlist(self, clinic_id, provider_id, service_type, start, end, limit):
+        result=await self.session.execute(text("""
+            SELECT id,patient_id,provider_id,service_type,requested_start,requested_end,priority,status,
+                   notification_channel,idempotency_key,created_at,updated_at
+            FROM waitlist_entries
+            WHERE clinic_id=:clinic_id AND status='active'
+              AND (:provider_id IS NULL OR provider_id=:provider_id)
+              AND (:service_type IS NULL OR service_type=:service_type)
+              AND (requested_start IS NULL OR requested_start <= :end)
+              AND (requested_end IS NULL OR requested_end >= :start)
+            ORDER BY priority ASC, created_at ASC
+            LIMIT :limit
+        """), {"clinic_id":clinic_id,"provider_id":provider_id,"service_type":service_type,
+               "start":start,"end":end,"limit":limit})
+        return [dict(r) for r in result.mappings().all()]
