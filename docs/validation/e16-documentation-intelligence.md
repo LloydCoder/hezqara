@@ -1,26 +1,22 @@
 # E16 — Documentation Intelligence
 
-Status: IMPLEMENTED — awaiting CI/evidence gate
+Status: IMPLEMENTED — awaiting CI/evidence gate.
 
 ## Objective
 
-Provide evidence-backed documentation quality and workflow intelligence without granting the AI clinical authority.
+Provide evidence-backed documentation quality and workflow intelligence without granting AI clinical authority.
 
 ## Implemented
 
 - Deterministic completeness checks for core documentation sections.
 - Explicit follow-up extraction as a proposal, never an autonomous clinical action.
 - Uncertainty surfacing.
-- Quality scores with versioned ruleset provenance.
-- Field/finding-level confidence and source references.
+- Bounded quality scoring with versioned ruleset provenance.
+- Finding-level confidence and source references.
 - Human review state for generated insights.
 - Tenant isolation and composite relational integrity.
 - Read/review API boundaries.
-- No autonomous diagnosis or treatment recommendation.
-
-## Architectural boundary
-
-E16 evaluates and structures documentation. It does not sign, commit, diagnose, prescribe, or independently alter the authoritative clinical record.
+- No autonomous diagnosis, treatment recommendation, triage or clinical decision-making.
 
 ## Exit gates
 
