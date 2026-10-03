@@ -6,6 +6,6 @@ Flow:
 
 encounter → transcript → draft → clinician review/approval → documentation intelligence → human-reviewable evidence/workflow signals.
 
-The E16 persistence model is tenant-scoped through clinic composite foreign keys and PostgreSQL RLS/FORCE RLS. Every proposed fact records an extractor version and source reference. Quality checks are explicit records rather than hidden model prose.
+The persistence model is tenant-scoped through composite clinic keys and PostgreSQL RLS/FORCE RLS. Every quality check and insight carries versioned ruleset/model metadata and source references. Insights remain proposed until explicitly reviewed.
 
-The initial implementation deliberately uses deterministic section checks and the already-approved structured note output. More advanced longitudinal extraction can be added within E16 without changing the authority boundary.
+The initial implementation is intentionally deterministic: it checks expected documentation sections, surfaces follow-up language and uncertainty, and records findings as reviewable evidence. It does not diagnose, prescribe, triage, or commit clinical actions.
