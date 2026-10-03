@@ -32,7 +32,7 @@ DO 'BEGIN
   IF EXISTS (SELECT 1 FROM documentation_insights WHERE id=''ci-e16-insight-a'') THEN
     RAISE EXCEPTION ''cross-tenant E16 insight read'';
   END IF;
-END;
+END';
 
 RESET ROLE;
 ROLLBACK;
