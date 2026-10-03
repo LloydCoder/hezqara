@@ -225,3 +225,22 @@ class AIGovernanceService:
             max_retries=decision.max_retries,
             safety_threshold=decision.safety_threshold,
         )
+
+    async def tool_policies(self):
+        clinic=await self._clinic_id()
+        r=await self.session.execute(text("select id,tool_key,interface_type,risk_tier,tenant_scoped,side_effect,approval_required,idempotent,allowed_data_classes,allowed_actions,status,version from ai_tool_policies where clinic_id=:clinic order by tool_key"),{"clinic":clinic})
+        return [dict(x._mapping) for x in r]
+
+    async def authorize_tool(self, tool_key, interface_type, data_classes=(), action=None):
+        clinic=await self._clinic_id()
+        row=(await self.session.execute(text("select * from ai_tool_policies where clinic_id=:clinic and tool_key=:tool and status='active'"),{"clinic":clinic,"tool":tool_key})).mappings().first()
+        if not row:
+            return {"allowed":False,"reason":"TOOL_NOT_GOVERNED"}
+        if row["interface_type"] != interface_type or not row["tenant_scoped"]:
+            return {"allowed":False,"reason":"TOOL_BOUNDARY_VIOLATION"}
+        if not set(data_classes).issubset(set(row["allowed_data_classes"] or [])):
+            return {"allowed":False,"reason":"DATA_CLASS_DENIED"}
+        actions=set(row["allowed_actions"] or [])
+        if action and actions and action not in actions:
+            return {"allowed":False,"reason":"ACTION_DENIED"}
+        return {"allowed":not row["approval_required"],"approval_required":bool(row["approval_required"]),"side_effect":bool(row["side_effect"]),"risk_tier":int(row["risk_tier"]),"tool_key":tool_key,"interface_type":interface_type}
