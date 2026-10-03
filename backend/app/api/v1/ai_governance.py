@@ -86,3 +86,24 @@ async def create_result(payload:ResultCreate,tenant:TenantContext=Depends(requir
         case=(await s.execute(text("select expected from ai_evaluation_cases where clinic_id=:tenant and id=:id"),{'tenant':tenant.organization_id,'id':payload.case_id})).mappings().first()
         if not case:raise HTTPException(status_code=404,detail='evaluation case not found')
         result=evaluate_case(payload.observed,case['expected']);await s.execute(text("insert into ai_evaluation_results(clinic_id,run_id,case_id,passed,safety_passed,score,latency_ms,token_usage,failure_category,observed,evidence) values(:tenant,:run,:case,:passed,:safety,:score,:latency,:tokens,:failure,cast(:observed as jsonb),cast(:evidence as jsonb))"),{'tenant':tenant.organization_id,'run':payload.run_id,'case':payload.case_id,'passed':result['passed'],'safety':result['safety_passed'],'score':result['score'],'latency':payload.latency_ms,'tokens':payload.token_usage,'failure':result['failure_category'],'observed':__import__('json').dumps(payload.observed),'evidence':__import__('json').dumps(payload.observed.get('evidence',[]))});return result
+
+class ToolPolicyCreate(BaseModel):
+    tool_key:str=Field(min_length=2,max_length=200);interface_type:str='mcp';risk_tier:int=Field(ge=0,le=5);tenant_scoped:bool=True;side_effect:bool=False;approval_required:bool=False;idempotent:bool=True;allowed_data_classes:list[str]=[];allowed_actions:list[str]=[]
+
+@router.get('/tools')
+async def tool_policies(tenant:TenantContext=Depends(require_permission('ai:governance:read'))):
+    async with tenant_session_context(tenant.organization_id) as s:return await AIGovernanceService(s,tenant.organization_id).tool_policies()
+
+@router.post('/tools',status_code=201)
+async def create_tool_policy(payload:ToolPolicyCreate,request:Request,tenant:TenantContext=Depends(require_permission('ai:governance:manage'))):
+    if payload.interface_type not in {'mcp','native','fhir','rest'}:raise HTTPException(422,detail='invalid tool interface')
+    if payload.side_effect and payload.risk_tier>=3 and not payload.approval_required:raise HTTPException(422,detail='high-risk side effects require approval')
+    async with tenant_session_context(tenant.organization_id) as s:
+        clinic=await AIGovernanceService(s,tenant.organization_id)._clinic_id()
+        r=await s.execute(text("insert into ai_tool_policies(clinic_id,tool_key,interface_type,risk_tier,tenant_scoped,side_effect,approval_required,idempotent,allowed_data_classes,allowed_actions) values(:clinic,:tool,:interface,:risk,:tenant_scoped,:side_effect,:approval,:idempotent,cast(:data as jsonb),cast(:actions as jsonb)) on conflict(clinic_id,tool_key) do update set interface_type=excluded.interface_type,risk_tier=excluded.risk_tier,tenant_scoped=excluded.tenant_scoped,side_effect=excluded.side_effect,approval_required=excluded.approval_required,idempotent=excluded.idempotent,allowed_data_classes=excluded.allowed_data_classes,allowed_actions=excluded.allowed_actions,updated_at=now() returning id,tool_key,interface_type,risk_tier,tenant_scoped,side_effect,approval_required,idempotent,allowed_data_classes,allowed_actions,status,version"),{'clinic':clinic,'tool':payload.tool_key,'interface':payload.interface_type,'risk':payload.risk_tier,'tenant_scoped':payload.tenant_scoped,'side_effect':payload.side_effect,'approval':payload.approval_required,'idempotent':payload.idempotent,'data':__import__('json').dumps(payload.allowed_data_classes),'actions':__import__('json').dumps(payload.allowed_actions)})
+        return dict(r.mappings().one())
+
+@router.post('/tools/authorize')
+async def authorize_tool(tool_key:str,interface_type:str='mcp',action:str|None=None,data_classes:str='',tenant:TenantContext=Depends(require_permission('ai:governance:read'))):
+    classes=[x for x in data_classes.split(',') if x]
+    async with tenant_session_context(tenant.organization_id) as s:return await AIGovernanceService(s,tenant.organization_id).authorize_tool(tool_key,interface_type,classes,action)
