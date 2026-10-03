@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS documentation_quality_checks (
     reviewed_at TIMESTAMPTZ
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS documentation_quality_checks_clinic_id_uidx ON documentation_quality_checks(clinic_id,id);
+
 CREATE TABLE IF NOT EXISTS documentation_insights (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     clinic_id TEXT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
