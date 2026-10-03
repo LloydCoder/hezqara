@@ -1,0 +1,10 @@
+BEGIN;
+INSERT INTO clinics(id,name,clerk_org_id) VALUES ('ci-e17-a','CI E17 A','ci_e17_org_a'),('ci-e17-b','CI E17 B','ci_e17_org_b') ON CONFLICT (id) DO NOTHING;
+INSERT INTO patients(id,clinic_id,first_name,last_name) VALUES ('ci-e17-patient-a','ci-e17-a','E17','Patient') ON CONFLICT (id) DO NOTHING;
+INSERT INTO care_gaps(id,clinic_id,patient_id,gap_code,description) VALUES ('ci-e17-gap-a','ci-e17-a','ci-e17-patient-a','synthetic-gap','Synthetic care gap') ON CONFLICT (id) DO NOTHING;
+INSERT INTO outreach_proposals(id,clinic_id,patient_id,care_gap_id,channel,body,reason,idempotency_key) VALUES ('ci-e17-proposal-a','ci-e17-a','ci-e17-patient-a','ci-e17-gap-a','email','Synthetic outreach.','Synthetic evidence.','ci-e17-idempotent') ON CONFLICT (id) DO NOTHING;
+SET ROLE authenticated; SELECT set_config('app.clerk_org_id','ci_e17_org_a',false);
+DO 'BEGIN IF NOT EXISTS (SELECT 1 FROM outreach_proposals WHERE id=''ci-e17-proposal-a'') THEN RAISE EXCEPTION ''tenant A cannot read own outreach''; END IF; END';
+SELECT set_config('app.clerk_org_id','ci_e17_org_b',false);
+DO 'BEGIN IF EXISTS (SELECT 1 FROM outreach_proposals WHERE id=''ci-e17-proposal-a'') THEN RAISE EXCEPTION ''cross-tenant outreach read''; END IF; END';
+RESET ROLE; ROLLBACK;
