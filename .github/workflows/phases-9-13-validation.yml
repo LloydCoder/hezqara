@@ -1,4 +1,4 @@
-name: HEZQARA Phases 9-15 Validation
+name: HEZQARA Phases 9-16 Validation
 on:
   push:
     branches: ["implementation/e4-interoperability", "implementation/e3-durable-execution", "implementation/e2-tenant-isolation", "implementation/e1-final", "implementation/e5-enterprise-security", "implementation/e6-commercial-platform", "implementation/e7-first-clinic-vertical-slice", "main"]
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: hezqara-phases-9-15-${{ github.event.pull_request.number || github.ref }}
+  group: hezqara-phases-9-16-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   backend:
@@ -88,6 +88,9 @@ jobs:
       - name: Prove E15 ambient documentation isolation and integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e15_ambient_clinical_documentation.sql
+      - name: Prove E16 documentation intelligence isolation and integrity
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e16_documentation_intelligence.sql
       - name: Prove workflow referential tenant integrity
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/workflow_tenant_integrity.sql
