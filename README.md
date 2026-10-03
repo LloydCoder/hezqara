@@ -6,7 +6,7 @@
 
 HEZQARA is a multi-tenant healthcare operations platform for clinic front offices. It combines tenant-isolated healthcare workflows, governed AI execution, healthcare interoperability, durable background execution, commercial controls, and evidence-backed operational controls.
 
-> **Engineering status:** E1–E8 and the post-E8 forensic hardening gate are verified on main by the repository automated validation suite. E9 is the current implementation phase. This is an engineering verification statement—not a claim of HIPAA, GDPR, NDPA, SOC 2, ISO 27001, FHIR/SMART certification, clinical efficacy, customer ROI, SLA attainment, or arbitrary production-scale proof.
+> **Engineering status:** E1–E8 and the post-E8 forensic hardening gate are verified on main by the repository automated validation suite. E9–E15 are implemented on main; E16 is the current implementation phase. This is an engineering verification statement—not a claim of HIPAA, GDPR, NDPA, SOC 2, ISO 27001, FHIR/SMART certification, clinical efficacy, customer ROI, SLA attainment, or arbitrary production-scale proof.
 
 ## Architecture at a glance
 
@@ -51,9 +51,9 @@ The browser never establishes tenant authority. Client-provided tenant/clinic id
 | E7 | First-clinic synthetic vertical slice | Verified |
 | E8 | Production proving and operating maturity | Verified |
 | Post-E8 | Forensic hardening of operational evidence and usage quotas | Verified |
-| E9 | Product & Architecture Finalization | In progress |
+| E9 | Product & Architecture Finalization | Verified |\n| E10 | Patient Access Workforce | Verified |\n| E11 | Insurance & Authorization Workforce | Verified |\n| E12 | Revenue Cycle Workforce | Verified |\n| E13 | Patient Financial Workforce | Verified |\n| E14 | Document, Fax & Referral Intelligence | Verified |\n| E15 | Ambient Clinical Documentation / AI Scribe | Verified |\n| E16 | Documentation Intelligence | In progress |
 
-See docs/roadmap/enterprise-e9-e24.md for the frozen E9–E24 enterprise sequence and docs/validation/e9-product-architecture-finalization.md for the E9 evidence ledger.
+See docs/roadmap/enterprise-e9-e24.md for the frozen E9–E24 enterprise sequence and docs/validation/e16-documentation-intelligence.md for the current E16 evidence ledger.
 
 "Verified" means the repository acceptance gates for the documented control have passed. It does not mean the external deployment, providers, contracts, organizational safeguards, or regulatory obligations have been completed.
 
