@@ -137,6 +137,15 @@ jobs:
       - name: Prove E10 patient access isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e10_patient_access.sql
+      - name: Prove E17 patient engagement isolation
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e17_patient_engagement.sql
+      - name: Prove E18 unified workforce isolation
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e18_unified_workforce.sql
+      - name: Prove E20 AI governance tool isolation
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e20_ai_governance_mcp.sql
       - name: Install backend dependencies for production-like import
         working-directory: backend
         run: pip install -r requirements.txt
