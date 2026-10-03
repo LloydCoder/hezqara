@@ -1,6 +1,6 @@
 # E9 — Product & Architecture Finalization
 
-Status: VERIFIED
+Status: VERIFIED — superseded as current phase by E16
 Baseline commit: 44185903e40b08e941046125d7efb01cff67a73c
 Implementation branch: implementation/e9-product-architecture-finalization
 
@@ -13,7 +13,7 @@ Convert the verified E8/post-E8 platform into a single, explicit product and arc
 | Requirement | Status | Evidence / disposition |
 |---|---|---|
 | E8/post-E8 baseline reconciled | PASS | README and phase reconciliation document E1–E8 plus post-E8 hardening as verified engineering controls |
-| Current implementation phase determined | PASS | No E9–E24 product feature implementation is present on main; sequence begins at E9 |
+| Current implementation phase determined | PASS | E9 is frozen and subsequent phases E10–E15 are implemented on main; E16 is the current implementation phase |
 | Canonical product thesis | PASS | README and enterprise roadmap define governed AI workforce around the EHR |
 | Clinical authority boundary | PASS | Existing AI architecture and roadmap preserve clinician authority over consequential clinical documentation |
 | Canonical architecture layers | PASS | Existing architecture follows identity → authorization → domain/service → repository → PostgreSQL/RLS; AI adds governance/policy/approval/execution/validation/audit |
@@ -75,4 +75,4 @@ Hezqara owns healthcare workflow semantics, governance, approvals, evidence, aud
 
 ## Completion rule
 
-E9 completion evidence snapshot: canonical CI, E8 production proving, Security, and Phases 9–13 Validation passed on the validated implementation head. Vercel status remains an external deployment-system condition and no production deployment was attempted.
+E9 completion evidence snapshot: canonical CI, E8 production proving, Security, and the E9–E15 validation sequence passed on their validated implementation heads. Subsequent phase evidence is authoritative for E10–E15. Vercel status remains an external deployment-system condition and no production deployment was attempted.
