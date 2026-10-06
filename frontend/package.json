@@ -27,7 +27,7 @@
     "eslint-config-next": "16.3.3",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3",
+    "typescript": "^7.0.2",
     "braces": "file:vendor/braces"
   },
   "overrides": {
