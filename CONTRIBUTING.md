@@ -10,6 +10,10 @@ HEZQARA is proprietary software. Contributions are accepted only from authorized
 4. Preserve database-enforced controls; do not move security decisions into the browser.
 5. Update documentation when behavior, configuration, architecture or operational requirements change.
 
+## Branch and commit conventions
+
+Create a focused branch from main. Prefer Conventional Commit prefixes such as feat:, fix:, security:, docs:, test:, refactor:, chore: and ci:. Keep commits reviewable and avoid mixing unrelated migrations, refactors and documentation changes.
+
 ## Required engineering standards
 
 Changes must preserve:
@@ -24,30 +28,41 @@ Changes must preserve:
 - migration determinism and backward/forward deployment safety where applicable;
 - accessible and type-safe frontend behavior.
 
-## Tests
+## Local verification
 
-Run the smallest relevant local checks before opening a pull request. CI remains authoritative.
+Frontend:
 
-Frontend checks include lint, type-check, production build and E2E where applicable.
+~~~bash
+cd frontend
+npm ci
+npm run lint
+npm run type-check
+npm run build
+~~~
 
-Backend checks include compilation/import validation, unit/integration tests and database/RLS validation where applicable.
+Backend:
 
-Security checks include dependency scanning, secret scanning and SBOM generation.
+~~~bash
+cd backend
+python -m pip install -r requirements.txt
+pytest -q
+~~~
 
-Do not disable, weaken or bypass a security or validation gate to make a pull request green.
+Run database/RLS and E2E validation when the change affects those boundaries. CI remains authoritative.
+
+Security checks include dependency scanning, secret scanning and SBOM generation. Do not disable, weaken or bypass a security or validation gate to make a pull request green.
 
 ## Pull requests
 
 Describe:
 
-- what changed;
-- why it changed;
+- what changed and why;
 - security/tenant impact;
 - migration impact;
 - configuration changes;
 - test evidence;
 - documentation changes;
-- any deployment or provider prerequisites.
+- deployment/provider prerequisites.
 
 Keep debugging branches and obsolete diagnostic pull requests closed once their work has been incorporated into the canonical branch.
 
