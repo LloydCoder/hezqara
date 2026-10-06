@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability reporting
+    url: https://github.com/LloydCoder/hezqara/security
+    about: Use GitHub's private vulnerability reporting/security workflow. Never publish exploitable details in a public issue.
+  - name: Documentation
+    url: https://github.com/LloydCoder/hezqara/tree/main/docs
+    about: Read the authoritative architecture, security, operations and validation documentation first.
