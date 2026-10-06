@@ -1,5 +1,5 @@
 ## Summary
-<!-- What does this PR do? -->
+<!-- What changed and why? -->
 
 ## Type of change
 - [ ] Bug fix
@@ -7,23 +7,26 @@
 - [ ] Infrastructure / deployment change
 - [ ] Security fix
 - [ ] Documentation
+- [ ] Dependency update
 
-## Testing
-- [ ] Tests written first (TDD RED → GREEN)
-- [ ] All existing tests still passing (`pytest tests/ -q`)
-- [ ] New tests cover the change
+## Verification
+- [ ] Relevant tests pass locally
+- [ ] CI checks pass
+- [ ] Dependency/security checks pass
+- [ ] No security gate was weakened or bypassed
 
-## HIPAA / Security checklist
-- [ ] No PHI hardcoded in any file
-- [ ] No secrets or API keys committed
-- [ ] HIPAA audit log fires for any new PHI-touching operation
-- [ ] New endpoints have rate limiting if public-facing
-- [ ] AI Shield bridge called for new agent prompts
+## Security / tenancy / healthcare
+- [ ] No PHI hardcoded or disclosed
+- [ ] No secrets or credentials committed
+- [ ] Tenant authorization remains server-side
+- [ ] PostgreSQL RLS/FORCE RLS remains authoritative where applicable
+- [ ] AI governance/approval boundaries remain intact where applicable
+- [ ] Webhook/replay controls preserved where applicable
 
-## Ecosystem
-- [ ] FusionOps bridge notified of any new event types
-- [ ] No direct product-to-product connections added
-- [ ] `.env.example` updated if new env vars added
+## Documentation and operations
+- [ ] README/docs updated when behavior or configuration changed
+- [ ] .env.example updated when required
+- [ ] Migration/deployment implications documented
 
 ## Related issues
 Closes #
