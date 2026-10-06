@@ -30,7 +30,7 @@ jobs:
       - working-directory: backend
         run: pip-audit -r requirements.txt
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
-        with: {node-version: '22'}
+        with: {node-version: '24'}
       - working-directory: frontend
         run: npm ci --no-audit --no-fund && npm audit --audit-level=high
   source-hygiene:

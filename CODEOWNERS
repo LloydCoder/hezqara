@@ -1,0 +1,11 @@
+# HEZQARA ownership
+# Keep security-sensitive paths under explicit maintainer ownership.
+
+* @LloydCoder
+/backend/ @LloydCoder
+/frontend/ @LloydCoder
+/supabase/ @LloydCoder
+/.github/ @LloydCoder
+/docs/security/ @LloydCoder
+/SECURITY.md @LloydCoder
+/LICENSE @LloydCoder

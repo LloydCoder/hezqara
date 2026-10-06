@@ -1,0 +1,58 @@
+# HEZQARA — Full LLM Context Index
+
+This file is an orientation index, not a replacement for source code or authoritative documentation.
+
+## Authority order
+
+1. Executable source and tests.
+2. Database migrations and RLS/security tests.
+3. Architecture/security/operational documents.
+4. Validation evidence.
+5. README and other summaries.
+6. Marketing copy.
+
+## Core boundaries
+
+HEZQARA is a multi-tenant healthcare operations platform. Tenant authority is established server-side through authenticated organization context and verified tenant context. Database RLS/FORCE RLS is a defense-in-depth enforcement boundary.
+
+AI is treated as an untrusted execution participant. AI output is not an authorization authority. Consequential actions require the documented policy, approval, validation and side-effect controls.
+
+HEZQARA is administrative automation infrastructure and does not claim to diagnose, triage, prescribe, or make treatment decisions. AI Scribe produces drafts for clinician review/edit/approval.
+
+## Main components
+
+### Frontend
+
+Location: `frontend/`
+
+Next.js 16, React 19 and TypeScript. The frontend targets Node.js 24.x and is deployed to Vercel. Browser-visible `NEXT_PUBLIC_*` values must never contain secrets.
+
+### Backend
+
+Location: `backend/`
+
+FastAPI/Python API, domain services, workers and tests. Authorization decisions belong on the server and are reinforced at the database layer.
+
+### Database
+
+Location: `supabase/`
+
+PostgreSQL/Supabase migrations and RLS/security validation. Tenant isolation must remain database-enforced.
+
+### Documentation
+
+Location: `docs/`
+
+Contains architecture, AI governance, security, reliability, interoperability, commercial, operations, roadmap and validation evidence.
+
+## Enterprise sequence
+
+E1–E8 establish the foundation and production-proving baseline. E9–E24 cover product architecture, patient access, insurance authorization, revenue cycle, patient financial workflows, documents/referrals, ambient clinical documentation, documentation intelligence, engagement/care gaps, unified workforce, Command Center, AI governance/MCP, interoperability productionization, enterprise security/compliance readiness, reliability/DR, and commercialization/GA.
+
+## Security evidence
+
+Security CI includes dependency auditing, secret scanning, source hygiene, SBOM generation, API security, integration security, AI security and FHIR validation. A passing repository workflow does not establish external certification.
+
+## Dependency security exception
+
+The frontend currently uses a root npm override for `braces` to a reviewed upstream security-fix commit because the public npm release line has no patched version for CVE-2026-93687. The override is temporary and must be removed once the upstream fix is released. The repository also pins `postcss-selector-parser` to 7.1.6, the fixed release for the 2026 selector-parsing CPU-exhaustion advisory.
