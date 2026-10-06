@@ -3,7 +3,7 @@ uvicorn[standard]==0.35.0
 pydantic==2.11.2
 pydantic-settings==2.6.1
 sqlalchemy[asyncio]==2.0.36
-asyncpg==0.30.0
+asyncpg==0.31.0
 alembic==1.14.0
 clerk-backend-api==7.0.0
 svix==1.99.1
