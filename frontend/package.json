@@ -31,7 +31,7 @@
   },
   "overrides": {
     "eslint": "9.39.3",
-    "braces": "github:FSDevelop/braces#28d440b5dd449dbf1fe6f3506cf94ecca4d02660",
+    "braces": "file:vendor/braces",
     "postcss-selector-parser": "7.1.6"
   },
   "engines": {
