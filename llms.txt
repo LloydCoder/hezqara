@@ -1,0 +1,57 @@
+# HEZQARA
+
+> Governed AI workforce infrastructure for healthcare operations.
+
+## Product
+
+HEZQARA is a proprietary, multi-tenant healthcare operations platform. It coordinates administrative AI workers with server-side authorization, policy controls, human approval where required, output validation, side-effect authorization, auditability, and tenant-isolated persistence.
+
+HEZQARA does not replace an EHR and is not a clinical diagnosis, triage, treatment-decision, or symptom-checker engine. AI Scribe functionality is draft-oriented and requires clinician review/edit/approval before finalization.
+
+## Repository map
+
+- README.md — product, architecture, setup, security boundaries, deployment and documentation map.
+- CONTRIBUTING.md — engineering and contribution requirements.
+- SECURITY.md — security controls, reporting, PHI restrictions and non-claims.
+- CHANGELOG.md — release history.
+- docs/architecture/ — canonical architecture and tenancy decisions.
+- docs/ai/ — AI governance and execution controls.
+- docs/security/ — security, privacy, threat-model and incident-response material.
+- docs/reliability/ — durability, recovery and disaster-recovery material.
+- docs/interoperability/ — FHIR/SMART integration boundaries.
+- docs/commercial/ — subscriptions, billing, entitlements and usage controls.
+- docs/operations/ — deployment and operational procedures.
+- docs/roadmap/ — E9–E24 enterprise sequence.
+- docs/validation/ — acceptance and validation evidence.
+
+## Canonical security model
+
+Tenant identity → authorization → domain service → repository → PostgreSQL RLS/FORCE RLS.
+
+AI execution adds capability/version → policy/risk → approval → provider/tool authorization → execution → output validation → side-effect authorization → audit/telemetry.
+
+## Technology
+
+- Next.js 16 / React 19 / TypeScript
+- FastAPI / Python
+- PostgreSQL / Supabase with RLS and FORCE RLS
+- Redis/Celery for delivery and background execution
+- FHIR R4 4.0.1 and SMART App Launch 2.2.0 boundaries
+- Clerk Organizations
+- Stripe integration boundary
+- Vercel for the frontend deployment target
+
+## Important non-claims
+
+Repository validation is engineering evidence. It is not, by itself, HIPAA, GDPR, NDPA, SOC 2, ISO 27001, FHIR, SMART certification, clinical efficacy, customer ROI, or production-scale proof.
+
+## Documentation precedence
+
+Prefer the repository source and current implementation over generated summaries. Security and architecture documents take precedence over marketing language when describing system behavior.
+
+## More
+
+- Repository: https://github.com/LloydCoder/hezqara
+- Documentation: https://github.com/LloydCoder/hezqara/tree/main/docs
+- Security: https://github.com/LloydCoder/hezqara/blob/main/SECURITY.md
+- Contribution guide: https://github.com/LloydCoder/hezqara/blob/main/CONTRIBUTING.md
