@@ -1,7 +1,7 @@
 # E9 — Product & Architecture Finalization
 
-Status: VERIFIED — superseded as current phase by E16
-Baseline commit: 44185903e40b08e941046125d7efb01cff67a73c
+Status: REOPENED FOR P2 FORENSIC RECONCILIATION — exit pending canonical contract CI
+Baseline commit: 2f58cfbed58ad13f0e0ae5b11becdafe61ddb535
 Implementation branch: implementation/e9-product-architecture-finalization
 
 ## Objective
@@ -17,7 +17,7 @@ Convert the verified E8/post-E8 platform into a single, explicit product and arc
 | Canonical product thesis | PASS | README and enterprise roadmap define governed AI workforce around the EHR |
 | Clinical authority boundary | PASS | Existing AI architecture and roadmap preserve clinician authority over consequential clinical documentation |
 | Canonical architecture layers | PASS | Existing architecture follows identity → authorization → domain/service → repository → PostgreSQL/RLS; AI adds governance/policy/approval/execution/validation/audit |
-| Enterprise workforce ontology | PASS | E9 contract defines Workforces → Agents → Capabilities → Workflows → Tools → Policies → Evidence |
+| Enterprise workforce ontology | PASS | Machine-checkable E9 contract now defines canonical phases, 13 workforce keys, owning phase and authority chain; runtime registry equality is CI-tested |
 | Phase ownership boundaries | PASS | E9–E24 frozen roadmap assigns each major capability to one phase |
 | Interoperability baseline | PASS | Existing implementation states FHIR R4 4.0.1 and SMART App Launch 2.2.0; US Core 9.0.0 is recorded for E21 compatibility validation |
 | Provenance requirement | PASS | FHIR Provenance is treated as the interoperability-level provenance contract where FHIR resources are generated or updated |
@@ -26,7 +26,7 @@ Convert the verified E8/post-E8 platform into a single, explicit product and arc
 | Evidence-led completion model | PASS | This ledger is the phase evidence record; CI and tests remain necessary but do not substitute for architectural/product evidence |
 | Security scan regression | PASS | Exact-value Gitleaks allowlist applied; Security workflow passed on the validated E9 head |
 | Vercel status | EXTERNAL BLOCKER / NON-PHASE | Current GitHub status reports Vercel deployment rate-limited for 24h; no production deployment will be attempted |
-| E9 implementation | PASS | E9 contract, roadmap, README reconciliation and evidence ledger are implemented; canonical CI, E8 proving, security and phase validation are green |
+| E9 implementation | P2 REMEDIATION | E9 was reopened because the previous evidence was prose-only; P2 adds a machine-checkable product/workforce contract, runtime registry equality test and reconciled public workforce catalog |
 
 ## Architecture invariants
 
@@ -64,6 +64,7 @@ Hezqara owns healthcare workflow semantics, governance, approvals, evidence, aud
 - CI: relevant workflows must be green after the change.
 - Operational: no production deployment is triggered.
 - Product: E10–E24 ownership is unambiguous.
+- Contract: the runtime workforce registry and public workforce catalog agree with the canonical E9 workforce taxonomy.
 
 ## External standards evidence
 
@@ -76,3 +77,8 @@ Hezqara owns healthcare workflow semantics, governance, approvals, evidence, aud
 ## Completion rule
 
 E9 completion evidence snapshot: canonical CI, E8 production proving, Security, and the E9–E15 validation sequence passed on their validated implementation heads. Subsequent phase evidence is authoritative for E10–E15. Vercel status remains an external deployment-system condition and no production deployment was attempted.
+
+
+## P2 reconciliation finding
+
+The prior E9 evidence asserted a canonical ontology but did not enforce it as a machine-checkable contract. P2 closes that gap without implementing E10–E24 domain behavior. The new contract is authoritative for phase/workforce ownership; later phases own their domain semantics and production integrations.
