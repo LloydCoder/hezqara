@@ -61,3 +61,14 @@ Open Dependabot PRs include major/minor upgrades across Clerk, ESLint, React, Ty
 | Vercel production configuration | Open blocker |
 | Mobile navigation | Open blocker |
 | Dependency modernization | Open; serial compatibility gates |
+
+
+## Evidence rule
+
+P0 is complete only when its repository assertions are reproducible on the settled baseline and the P0 workflow is green. “Engineering verified” is not equivalent to production proven or independently assured. This distinction is mandatory for all subsequent E1–E24 gates.
+
+## External reference alignment
+
+The workflow uses least-privilege read-only GitHub Actions permissions and pinned action SHAs. This follows GitHub’s current Actions security guidance. citeturn1search0turn1search8
+
+Healthcare assurance claims remain bounded to engineering evidence; HIPAA’s Security Rule requires appropriate administrative, physical, and technical safeguards for ePHI, and compliance cannot be inferred from a repository test suite alone. citeturn1search1turn1search2
