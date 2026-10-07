@@ -68,3 +68,19 @@ def test_fhir_appointment_mapping():
     assert resource["resourceType"]=="Appointment"
     assert resource["status"]=="booked"
     assert resource["slot"][0]["reference"]=="Slot/sl1"
+
+
+@pytest.mark.asyncio
+async def test_access_request_update_uses_locked_row_when_repository_supports_it():
+    class LockedRepository(FakeRepository):
+        def __init__(self):
+            super().__init__()
+            self.locked=False
+
+        async def get_access_request_for_update(self, clinic_id, request_id):
+            self.locked=True
+            return self.rows[0]
+
+    repo=LockedRepository()
+    await PatientAccessService(repo).update_access_request("clinic","r1","in_progress")
+    assert repo.locked is True
