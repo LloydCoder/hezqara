@@ -192,13 +192,13 @@ AI output is untrusted data. AI cannot bypass tenant isolation or authorize its 
 | Security | Secret/dependency scanning, SBOM, API security, AI security, RLS validation |
 | Commercial | Subscription, entitlement, usage and quota controls |
 
-## Verified engineering sequence
+## Enterprise engineering sequence
 
-E1–E8 establish the foundation and production-proving baseline. E9–E24 cover product architecture, patient access, insurance authorization, revenue cycle, patient financial workflows, documents/referrals, ambient clinical documentation, documentation intelligence, engagement/care gaps, unified workforce, Command Center, AI governance/MCP, interoperability productionization, enterprise security/compliance readiness, reliability/DR, and commercialization/GA.
+E1–E8 establish the foundation and production-proving baseline. E9–E24 define the enterprise sequence covering product architecture, patient access, insurance authorization, revenue cycle, patient financial workflows, documents/referrals, ambient clinical documentation, documentation intelligence, engagement/care gaps, unified workforce, Command Center, AI governance/MCP, interoperability productionization, enterprise security/compliance readiness, reliability/DR, and commercialization/GA.
 
-See [docs/roadmap/enterprise-e9-e24.md](docs/roadmap/enterprise-e9-e24.md) and the validation evidence under [docs/validation/](docs/validation/).
+The current phase status is governed by the forensic evidence ledger, not by phase labels or historical PR titles. See [docs/roadmap/enterprise-e9-e24.md](docs/roadmap/enterprise-e9-e24.md) and [docs/validation/p0-forensic-reconciliation.md](docs/validation/p0-forensic-reconciliation.md).
 
-"Verified" means the repository acceptance gates for the documented control passed. It does not mean that external providers, contracts, organizational safeguards, regulatory obligations, or production deployment requirements are complete.
+"Engineering verified" means the repository acceptance gates for the documented control passed. It does not mean that external providers, contracts, organizational safeguards, regulatory obligations, independent assurance, or production deployment requirements are complete.
 
 ## Documentation
 
