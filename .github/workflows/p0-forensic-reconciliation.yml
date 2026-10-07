@@ -1,0 +1,64 @@
+name: HEZQARA P0 Forensic Reconciliation
+
+on:
+  push:
+    branches: [main, 'implementation/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hezqara-p0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Require canonical evidence documents
+        run: |
+          set -euo pipefail
+          required=(
+            docs/validation/README.md
+            docs/validation/p0-forensic-reconciliation.md
+            docs/roadmap/enterprise-e9-e24.md
+            docs/operations/e8-production-proving.md
+            docs/operations/vercel-deployment.md
+          )
+          for path in "${required[@]}"; do
+            test -s "$path" || { echo "missing canonical evidence file: $path"; exit 1; }
+          done
+
+      - name: Reject unsupported release claims
+        run: |
+          set -euo pipefail
+          if grep -RniE 'HIPAA certified|GDPR certified|NDPA certified|SOC 2 certified|ISO 27001 certified|clinically proven|production proven'             docs/validation docs/roadmap README.md; then
+            echo "unsupported certification/production claim found"
+            exit 1
+          fi
+
+      - name: Enforce healthcare safety boundary
+        run: |
+          set -euo pipefail
+          grep -q 'does not diagnose' README.md
+          grep -q 'does not.*triage' README.md
+          grep -q 'does not.*prescrib' README.md
+          grep -q 'clinician review' README.md
+
+      - name: Enforce synthetic-data rule
+        run: |
+          set -euo pipefail
+          grep -RniE 'Production PHI must never|production PHI' docs/validation docs/operations README.md >/dev/null
+
+      - name: Detect unfinished application markers
+        run: |
+          set -euo pipefail
+          if grep -RniE 'NotImplementedError|TODO[[:space:]]*$|FIXME[[:space:]]*$' backend/app frontend/src; then
+            echo "unfinished placeholder found in application source"
+            exit 1
+          fi
