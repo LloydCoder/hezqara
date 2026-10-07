@@ -12,6 +12,9 @@ class FakeRepository:
         self.rows=[{"id":"r1","status":"new"}]
     async def list_access_requests(self, clinic_id, limit, offset):
         return self.rows
+
+    async def get_access_request_for_update(self, clinic_id, request_id):
+        return next((row for row in self.rows if row["id"] == request_id), None)
     async def update_access_request(self, clinic_id, request_id, status):
         self.rows[0]["status"]=status
         return self.rows[0]
