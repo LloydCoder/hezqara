@@ -10,7 +10,7 @@ svix==2.6.1
 httpx==0.28.1
 anthropic==1.11.0
 openai==1.57.0
-retell-sdk==4.5.0
+retell-sdk==6.0.1
 celery==5.4.0
 redis==5.2.0
 stripe==16.0.0
