@@ -125,6 +125,9 @@ jobs:
       - name: Prove Phase 9 isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/phase9_rls.sql
+      - name: Prove P1 structural E1-E8 tenant security contract
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/p1_e1_e8_forensic.sql
       - name: Prove E5 enterprise security and privacy evidence
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e5_enterprise_security.sql
