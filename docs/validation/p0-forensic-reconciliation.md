@@ -69,6 +69,6 @@ P0 is complete only when its repository assertions are reproducible on the settl
 
 ## External reference alignment
 
-The workflow uses least-privilege read-only GitHub Actions permissions and pinned action SHAs. This follows GitHub’s current Actions security guidance. citeturn1search0turn1search8
+The workflow uses least-privilege read-only GitHub Actions permissions and pinned action SHAs. This follows GitHub’s current Actions security guidance.
 
-Healthcare assurance claims remain bounded to engineering evidence; HIPAA’s Security Rule requires appropriate administrative, physical, and technical safeguards for ePHI, and compliance cannot be inferred from a repository test suite alone. citeturn1search1turn1search2
+Healthcare assurance claims remain bounded to engineering evidence; HIPAA’s Security Rule requires appropriate administrative, physical, and technical safeguards for ePHI, and compliance cannot be inferred from a repository test suite alone.
