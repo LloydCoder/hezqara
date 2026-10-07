@@ -44,6 +44,9 @@ jobs:
       - name: Validate post-E8 forensic hardening
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/post_e8_forensic.sql
+      - name: Validate P1 structural E1-E8 tenant security contract
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/p1_e1_e8_forensic.sql
       - name: Install backend dependencies
         working-directory: backend
         run: pip install -r requirements.txt ruff
