@@ -65,7 +65,7 @@ Open Dependabot PRs include major/minor upgrades across Clerk, ESLint, React, Ty
 
 ## Evidence rule
 
-P0 is complete only when its repository assertions are reproducible on the settled baseline and the P0 workflow is green. “Engineering verified” is not equivalent to production proven or independently assured. This distinction is mandatory for all subsequent E1–E24 gates.
+P0 is complete only when its repository assertions are reproducible on the settled baseline and the P0 workflow is green. “Engineering verified” is not equivalent to supported by production evidence or independently assured. This distinction is mandatory for all subsequent E1–E24 gates.
 
 ## External reference alignment
 
