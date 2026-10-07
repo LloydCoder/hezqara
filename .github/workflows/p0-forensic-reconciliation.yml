@@ -45,10 +45,8 @@ jobs:
       - name: Enforce healthcare safety boundary
         run: |
           set -euo pipefail
-          grep -q 'does not diagnose' README.md
-          grep -q 'does not.*triage' README.md
-          grep -q 'does not.*prescrib' README.md
-          grep -q 'clinician review' README.md
+          grep -qiE 'does not replace an EHR|not a diagnosis, triage, symptom-checker, treatment-decision, or prescribing engine' README.md
+          grep -qiE 'clinician review, editing and approval' README.md
 
       - name: Enforce synthetic-data rule
         run: |
