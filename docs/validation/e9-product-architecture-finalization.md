@@ -1,7 +1,7 @@
 # E9 — Product & Architecture Finalization
 
-Status: REOPENED FOR P2 FORENSIC RECONCILIATION — exit pending canonical contract CI
-Baseline commit: 2f58cfbed58ad13f0e0ae5b11becdafe61ddb535
+Status: VERIFIED — P2 product architecture reconciliation complete
+Baseline commit: e531ef43fe98fdf9f20d57076938937d3cc03144
 Implementation branch: implementation/e9-product-architecture-finalization
 
 ## Objective
@@ -26,7 +26,7 @@ Convert the verified E8/post-E8 platform into a single, explicit product and arc
 | Evidence-led completion model | PASS | This ledger is the phase evidence record; CI and tests remain necessary but do not substitute for architectural/product evidence |
 | Security scan regression | PASS | Exact-value Gitleaks allowlist applied; Security workflow passed on the validated E9 head |
 | Vercel status | EXTERNAL BLOCKER / NON-PHASE | Current GitHub status reports Vercel deployment rate-limited for 24h; no production deployment will be attempted |
-| E9 implementation | P2 REMEDIATION | E9 was reopened because the previous evidence was prose-only; P2 adds a machine-checkable product/workforce contract, runtime registry equality test and reconciled public workforce catalog |
+| E9 implementation | PASS | P2 adds a machine-checkable product/workforce contract, runtime registry equality test and reconciled public workforce catalog; full CI, Security, E8 proving, phase validation and P0 are green |
 
 ## Architecture invariants
 
@@ -82,3 +82,8 @@ E9 completion evidence snapshot: canonical CI, E8 production proving, Security, 
 ## P2 reconciliation finding
 
 The prior E9 evidence asserted a canonical ontology but did not enforce it as a machine-checkable contract. P2 closes that gap without implementing E10–E24 domain behavior. The new contract is authoritative for phase/workforce ownership; later phases own their domain semantics and production integrations.
+
+
+## P2 completion evidence
+
+P2 closed the identified E9 ontology-enforcement gap without introducing E10–E24 domain behavior. The canonical contract, runtime registry equality test and public workforce catalog reconciliation are now part of the verified repository baseline.
