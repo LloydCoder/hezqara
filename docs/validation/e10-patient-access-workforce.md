@@ -13,6 +13,7 @@ Deliver a governed patient-access workforce covering access requests, structured
 - Structured pre-visit intake submission model; patient-provided responses are untrusted until reviewed.
 - First-class provider schedules and bookable slots.
 - Transactional slot booking with row locking and tenant-scoped idempotency.
+- Access-request state transitions use a row-level lock inside the tenant transaction to prevent concurrent lifecycle races.
 - Appointment rescheduling and cancellation with tenant-scoped replay protection.
 - Waitlist lifecycle with create, deterministic matching, cancellation, explicit priority/channel, and tenant-scoped idempotency.
 - Audit events for access and scheduling side effects.
@@ -55,6 +56,7 @@ HL7 FHIR R4 defines Schedule as an availability container, Slot as bookable time
 - [x] Audit events.
 - [x] Automated tests.
 - [x] Database/RLS/integrity proof.
+- [x] Concurrent access-request transition hardening.
 - [ ] CI green on the implementation branch/PR.
 - [ ] Security and E8 regression green.
 - [ ] Final evidence snapshot and merge to main.

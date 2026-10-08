@@ -26,6 +26,17 @@ class PatientAccessRepository:
         """), {"clinic_id":clinic_id,"limit":limit,"offset":offset})
         return [dict(r) for r in result.mappings().all()]
 
+    async def get_access_request_for_update(self, clinic_id, request_id):
+        result=await self.session.execute(text("""
+            SELECT id,patient_id,status,channel,request_type,reason,requested_start,requested_end,
+                   assigned_agent,idempotency_key,created_at,updated_at
+            FROM patient_access_requests
+            WHERE clinic_id=:clinic_id AND id=:request_id
+            FOR UPDATE
+        """), {"clinic_id":clinic_id,"request_id":request_id})
+        row=result.mappings().first()
+        return dict(row) if row else None
+
     async def update_access_request(self, clinic_id, request_id, status):
         result=await self.session.execute(text("""
             UPDATE patient_access_requests SET status=:status,updated_at=NOW()
