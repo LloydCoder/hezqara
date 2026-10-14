@@ -5,4 +5,4 @@
 # Code quality and test tooling
 pytest-mock==3.14.0
 ruff==0.16.10
-mypy==1.13.0
+mypy==2.4.0
