@@ -89,7 +89,7 @@ test.describe("mobile marketing navigation", () => {
   test("choosing a mobile navigation link closes the menu", async ({ page }) => {
     const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
     const disclosure = page.locator("details").filter({ has: mobileNav });
-    await page.getByRole("button", { name: "Toggle navigation menu" }).click();
+    await page.locator('summary[aria-controls="mobile-primary-navigation"]').click();
     await expect(disclosure).toHaveAttribute("open", "");
     await mobileNav.getByRole("link", { name: "Solutions" }).click();
 
@@ -102,7 +102,7 @@ test("desktop primary navigation remains visible without the mobile disclosure b
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/");
   await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Toggle navigation menu" })).toBeHidden();
+  await expect(page.locator('summary[aria-controls="mobile-primary-navigation"]')).toBeHidden();
 });
 
 test("narrow 320px viewport keeps the logo and menu trigger within the header", async ({ page }) => {
@@ -111,7 +111,7 @@ test("narrow 320px viewport keeps the logo and menu trigger within the header", 
 
   const header = page.locator("header");
   const logo = await page.getByRole("link", { name: "HEZQARA home" }).boundingBox();
-  const trigger = await page.getByRole("button", { name: "Toggle navigation menu" }).boundingBox();
+  const trigger = await page.locator('summary[aria-controls="mobile-primary-navigation"]').boundingBox();
   const headerBox = await header.boundingBox();
 
   if (!logo || !trigger || !headerBox) {
