@@ -20,6 +20,7 @@ const isPublicRoute = createRouteMatcher([
   "/sitemap.xml",
   "/api/health",
   "/api/v1/health",
+  "/api/v1/ready",
 ]);
 
 const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
