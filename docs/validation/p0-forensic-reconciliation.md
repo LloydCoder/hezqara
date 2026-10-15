@@ -100,7 +100,7 @@ The post-merge CI, Security, E8 Production Proving, P0 Forensic Reconciliation, 
 
 - **Completed:** public health/SEO route handling, production-safe canonical URL fallback, no-localhost API fail-closed behavior, regression tests, and post-merge forensic verification.
 - **Still blocked by external configuration:** no Vercel project environment variables were listed at inspection time. Real Clerk configuration and an actually deployed/reachable FastAPI origin must be supplied by the owner; credentials and endpoints must not be fabricated.
-- **Still open in the repository:** accessible mobile navigation for the marketing header and its responsive regression tests.
+- **Resolved in PR #107:** accessible mobile navigation and responsive/keyboard regression tests; the change passed CI, Security, E8 Production Proving, P0 reconciliation, and phase validation before and after merge.
 - **Not established by these checks:** authenticated production workflows, tenant-isolation smoke tests against a live backend, worker health, provider integrations, backup/restore evidence, external assurance, or customer/pilot validation.
 
 The P0 public-route and mobile-navigation repository-code subphases are complete. The broader P0 ledger remains open until the external production prerequisites are satisfied or explicitly dispositioned.
@@ -118,3 +118,16 @@ The P0 public-route and mobile-navigation repository-code subphases are complete
 - Production authentication/backend configuration remains an external release blocker. No secrets or environment values were invented, committed or changed.
 
 The audit connector could not currently read the Vercel project's environment inventory due to a permission-denied response. The previously recorded 2026-10-15 live inspection found no listed project environment variables; the owner must verify and configure the required production values before authenticated production smoke tests can pass.
+
+
+## Addendum — E25 dependency-readiness forensic finding (2026-10-15)
+
+### P0-008 — Frontend readiness previously treated API liveness as platform readiness
+
+**Finding:** the frontend `/api/health` endpoint probed the backend `/health` route. That route intentionally reports process liveness and returns HTTP 200 without proving database connectivity, durable-job schema availability, or worker heartbeat. With Clerk configured, a live but operationally degraded API could therefore be reported as ready.
+
+**Implementation:** [PR #109](https://github.com/LloydCoder/hezqara/pull/109) adds a separate backend `/ready` endpoint backed by the existing E8 readiness checks, changes the frontend probe to use `/ready`, adds a bounded probe timeout, exposes the minimal `/api/v1/ready` rewrite, and covers healthy/degraded/unavailable outcomes with backend tests.
+
+**Safety properties:** readiness returns HTTP 200 only when all checks are healthy; dependency failure returns HTTP 503; raw exception messages, credentials, connection strings and patient data are not returned.
+
+**Disposition:** code-level remediation is covered by PR #109 and must pass all required checks on its exact final head before merge. E25 remains externally blocked until the owner configures real production authentication/API/database/worker infrastructure and verifies authenticated production smoke tests. CI cannot satisfy that external gate.
