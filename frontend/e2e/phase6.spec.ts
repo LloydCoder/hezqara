@@ -67,7 +67,6 @@ test.describe("mobile marketing navigation", () => {
     }
     await expect(mobileNav.getByRole("link", { name: "Sign in" })).toBeVisible();
     await expect(mobileNav.getByRole("link", { name: "Get started" })).toBeVisible();
-
   });
 
   test("Escape closes the menu and restores focus to its trigger", async ({ page }) => {
@@ -108,9 +107,10 @@ test("narrow 320px viewport keeps the logo and menu trigger within the header", 
   const trigger = await page.getByRole("button", { name: "Open navigation menu" }).boundingBox();
   const headerBox = await header.boundingBox();
 
-  expect(logo).not.toBeNull();
-  expect(trigger).not.toBeNull();
-  expect(headerBox).not.toBeNull();
-  expect(logo!.x + logo!.width).toBeLessThanOrEqual(trigger!.x);
-  expect(trigger!.x + trigger!.width).toBeLessThanOrEqual(headerBox!.x + headerBox!.width);
+  if (!logo || !trigger || !headerBox) {
+    throw new Error("Expected header, logo, and mobile menu to have measurable layout boxes.");
+  }
+
+  expect(logo.x + logo.width).toBeLessThanOrEqual(trigger.x);
+  expect(trigger.x + trigger.width).toBeLessThanOrEqual(headerBox.x + headerBox.width);
 });
