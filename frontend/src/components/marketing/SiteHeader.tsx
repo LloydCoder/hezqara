@@ -22,7 +22,7 @@ export function SiteHeader() {
           <Link href={"/sign-in" as Route} className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex">
             Sign in
           </Link>
-          <Link href={"/sign-up" as Route} className="inline-flex rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+          <Link href={"/sign-up" as Route} className="inline-flex rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 max-[360px]:hidden sm:px-4">
             See HEZQARA
           </Link>
           <SiteMobileNav />
