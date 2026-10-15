@@ -17,13 +17,13 @@ test.describe("public application smoke", () => {
     const response = await request.get("/health");
     expect(response.status()).toBe(200);
     await expect(response).toBeOK();
-    await expect(response).toHaveJSON({ status: "ok", service: "hezqara-frontend", scope: "liveness" });
+    expect(await response.json()).toEqual({ status: "ok", service: "hezqara-frontend", scope: "liveness" });
   });
 
   test("API readiness fails clearly when deployment configuration is absent", async ({ request }) => {
     const response = await request.get("/api/health");
     expect(response.status()).toBe(503);
-    await expect(response).toHaveJSON({
+    expect(await response.json()).toEqual({
       status: "not_ready",
       service: "hezqara-frontend",
       checks: { authenticationConfigured: false, apiOriginConfigured: false },
