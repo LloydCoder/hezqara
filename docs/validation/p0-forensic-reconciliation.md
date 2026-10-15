@@ -1,6 +1,6 @@
 # P0 — Forensic Reconciliation & Evidence Ledger
 
-**Current baseline at reconciliation:** `f5d2672864d3cb3d79aa293484f46e0ca764546b`  
+**Current baseline at reconciliation:** `df8d218283f0a111ae34b30543a9c05a60da7943`  
 **Repository:** `LloydCoder/hezqara`  
 **Reconciliation date:** 2026-10-15
 
@@ -29,19 +29,19 @@ Required values must be provided by the owner and stored in Vercel's environment
 
 The API URL must identify an actually deployed, reachable backend service. The frontend Vercel project does not itself deploy FastAPI, PostgreSQL/Supabase, Redis or Celery workers.
 
-**Disposition:** code-side public route and fail-closed fallback hardening is in progress in the P0 deployment-contract change. Production authentication and backend connectivity remain an external configuration/release blocker until real values and live smoke evidence are available.
+**Disposition:** code-side public route and fail-closed fallback hardening merged in PR #105 (`df8d218283f0a111ae34b30543a9c05a60da7943`) and was verified on the production Vercel deployment. Production authentication and backend connectivity remain an external configuration/release blocker until real values and live smoke evidence are available.
 
 ### P0-004 — Production configuration must not silently use localhost
 
 A production Next.js build must not implicitly rewrite API calls to `http://localhost:8004`. Local development may retain that default; production without an API origin must fail clearly and must not pretend that backend requests are healthy.
 
-**Disposition:** addressed by the P0 deployment-contract change; verify via CI and deployed route checks before closure.
+**Disposition:** addressed by merged PR #105. CI and production build passed; deployed API requests now return an explicit 503 when the backend origin is absent instead of silently targeting localhost.
 
 ### P0-005 — Health, robots and sitemap public contract
 
 Live inspection found `/health`, `/api/v1/health`, `/robots.txt` and `/sitemap.xml` returning HTTP 503 before route handling because the authentication proxy treated them as protected. The `/health` rewrite also conflated frontend liveness with backend health, and SEO metadata defaulted to localhost.
 
-**Disposition:** addressed by the P0 deployment-contract change: expose public health/SEO paths, separate frontend health from API proxying, and use a production-safe canonical URL fallback. Verify deployed responses after merge.
+**Disposition:** addressed by merged PR #105 and verified on the production deployment: `/health`, `/robots.txt`, and `/sitemap.xml` return HTTP 200; `/api/health` reports `not_ready` with missing configuration; `/api/v1/health` returns `backend_not_configured` with HTTP 503. The 503 responses are expected while the real authentication and backend configuration are absent.
 
 ### P0-006 — Mobile navigation
 
@@ -51,7 +51,7 @@ The current homepage markup exposes the primary navigation only at the large-scr
 
 ### P0-007 — Dependency modernization
 
-The reviewed backend and frontend dependency batches were consolidated to avoid overlapping lockfile/requirements changes and merged as PR #103 and PR #104 on 2026-10-15. The resulting main revision is `f5d2672864d3cb3d79aa293484f46e0ca764546b`; the latest observed CI, Security, E8 Production Proving, P0 Forensic Reconciliation and Phases 9–16 Validation runs on that revision succeeded.
+The reviewed backend and frontend dependency batches were consolidated to avoid overlapping lockfile/requirements changes and merged as PR #103 and PR #104 on 2026-10-15. Their resulting revision was `f5d2672864d3cb3d79aa293484f46e0ca764546b`; the later P0 deployment-contract PR #105 was merged as `df8d218283f0a111ae34b30543a9c05a60da7943`. CI, Security, E8 Production Proving, P0 Forensic Reconciliation, and Phases 9–16 Validation all passed on the current post-merge revision.
 
 **Disposition:** merged and automated checks green on the stated revision. Reopen if later dependency or source changes invalidate the evidence.
 
@@ -73,3 +73,30 @@ A phase is complete only when implementation, relevant automated verification, f
 ## External reference alignment
 
 The workflow uses least-privilege GitHub Actions permissions and pinned action SHAs. Healthcare assurance claims remain bounded to evidence. Applicable privacy, contractual and security obligations require separate assessment and cannot be self-certified by a repository test suite.
+
+
+## Post-merge P0 deployment-contract verification — 2026-10-15
+
+**Implementation PR:** [#105](https://github.com/LloydCoder/hezqara/pull/105)  
+**Merged main revision:** `df8d218283f0a111ae34b30543a9c05a60da7943`
+
+Production Vercel smoke checks against the deployment for this revision returned:
+
+| Endpoint | Observed result | Interpretation |
+|---|---|---|
+| `/health` | HTTP 200 | Frontend liveness is public and independent of API configuration |
+| `/robots.txt` | HTTP 200 | Public SEO endpoint; canonical sitemap URL is not localhost |
+| `/sitemap.xml` | HTTP 200 | Public sitemap uses the production Vercel domain fallback |
+| `/api/health` | HTTP 503, `not_ready` | Correctly reports missing authentication configuration and unreachable/unconfigured API |
+| `/api/v1/health` | HTTP 503, `backend_not_configured` | Explicit fail-closed result; no implicit production localhost target |
+
+The post-merge CI, Security, E8 Production Proving, P0 Forensic Reconciliation, and Phases 9–16 Validation workflows passed on the merged revision. The Vercel production deployment reached `READY`. The Vercel runtime-error query returned no grouped runtime errors in the preceding 24 hours.
+
+## Current P0 disposition
+
+- **Completed:** public health/SEO route handling, production-safe canonical URL fallback, no-localhost API fail-closed behavior, regression tests, and post-merge forensic verification.
+- **Still blocked by external configuration:** no Vercel project environment variables were listed at inspection time. Real Clerk configuration and an actually deployed/reachable FastAPI origin must be supplied by the owner; credentials and endpoints must not be fabricated.
+- **Still open in the repository:** accessible mobile navigation for the marketing header and its responsive regression tests.
+- **Not established by these checks:** authenticated production workflows, tenant-isolation smoke tests against a live backend, worker health, provider integrations, backup/restore evidence, external assurance, or customer/pilot validation.
+
+The P0 public-route subphase is complete. The broader P0 ledger remains open until the mobile-navigation item is implemented and the external production prerequisites are satisfied or explicitly dispositioned.
