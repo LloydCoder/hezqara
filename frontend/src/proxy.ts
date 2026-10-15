@@ -15,7 +15,11 @@ const isPublicRoute = createRouteMatcher([
   "/compliance(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/health",
+  "/robots.txt",
+  "/sitemap.xml",
   "/api/health",
+  "/api/v1/health",
 ]);
 
 const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
