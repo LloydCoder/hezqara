@@ -26,7 +26,7 @@ test.describe("public application smoke", () => {
     expect(await response.json()).toEqual({
       status: "not_ready",
       service: "hezqara-frontend",
-      checks: { authenticationConfigured: false, apiOriginConfigured: false },
+      checks: { authenticationConfigured: false, apiOriginConfigured: false, apiReachable: false },
     });
   });
 
