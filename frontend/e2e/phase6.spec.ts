@@ -12,4 +12,33 @@ test.describe("public application smoke", () => {
     await expect(page).toHaveTitle(/HEZQARA/i);
     await expect(page.getByRole("heading").first()).toBeVisible();
   });
+
+  test("frontend liveness is public and independent of API configuration", async ({ request }) => {
+    const response = await request.get("/health");
+    expect(response.status()).toBe(200);
+    await expect(response).toBeOK();
+    expect(await response.json()).toEqual({ status: "ok", service: "hezqara-frontend", scope: "liveness" });
+  });
+
+  test("API readiness fails clearly when deployment configuration is absent", async ({ request }) => {
+    const response = await request.get("/api/health");
+    expect(response.status()).toBe(503);
+    expect(await response.json()).toEqual({
+      status: "not_ready",
+      service: "hezqara-frontend",
+      checks: { authenticationConfigured: false, apiOriginConfigured: false, apiReachable: false },
+    });
+  });
+
+  test("robots and sitemap are public and never emit localhost canonical URLs", async ({ request }) => {
+    const robots = await request.get("/robots.txt");
+    expect(robots.status()).toBe(200);
+    expect(await robots.text()).toContain("https://hezqara.vercel.app/sitemap.xml");
+
+    const sitemap = await request.get("/sitemap.xml");
+    expect(sitemap.status()).toBe(200);
+    const sitemapBody = await sitemap.text();
+    expect(sitemapBody).toContain("https://hezqara.vercel.app/");
+    expect(sitemapBody).not.toContain("localhost");
+  });
 });
