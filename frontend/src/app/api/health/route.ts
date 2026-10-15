@@ -1,18 +1,32 @@
 export const dynamic = "force-dynamic";
 
-export function GET(): Response {
-  const authConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-  const apiConfigured = Boolean(process.env.HEZQARA_API_INTERNAL_URL);
+export async function GET(): Promise<Response> {
+  const authenticationConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const apiOrigin = process.env.HEZQARA_API_INTERNAL_URL?.replace(/\/+$/, "");
 
-  const ready = authConfigured && apiConfigured;
+  let apiReachable = false;
+  if (apiOrigin) {
+    try {
+      const response = await fetch(`${apiOrigin}/health`, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(2_500),
+      });
+      apiReachable = response.ok;
+    } catch {
+      apiReachable = false;
+    }
+  }
+
+  const ready = authenticationConfigured && apiReachable;
 
   return Response.json(
     {
       status: ready ? "ready" : "not_ready",
       service: "hezqara-frontend",
       checks: {
-        authenticationConfigured: authConfigured,
-        apiOriginConfigured: apiConfigured,
+        authenticationConfigured,
+        apiOriginConfigured: Boolean(apiOrigin),
+        apiReachable,
       },
     },
     {
