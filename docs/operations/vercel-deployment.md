@@ -26,7 +26,7 @@ The public `/health` endpoint is a process-liveness signal only. It must not be 
 
 The API `/ready` endpoint checks database connectivity, the durable-job schema, and a recent healthy worker heartbeat. It returns HTTP 200 only when every dependency is healthy and HTTP 503 otherwise. Its response contains dependency status only; it must never return credentials, connection strings, provider responses, or patient data.
 
-The frontend `/api/health` endpoint checks that the Clerk publishable key is configured and that the server-side API origin responds successfully to `/ready`. It returns HTTP 503 when configuration is missing or the API is not ready. The rewrite `/api/v1/ready` exposes the same minimal readiness contract to authorized monitoring clients; the route is public but deliberately contains no secrets or tenant data.
+The frontend `/api/health` endpoint checks that the Clerk publishable key is configured and that the server-side API origin responds successfully to `/ready`. It returns HTTP 503 when configuration is missing or the API is not ready. The rewrite `/api/v1/ready` exposes the same minimal readiness contract to monitoring clients. The route is public and deliberately contains no secrets or tenant data.
 
 A successful liveness check is not a readiness check. A Vercel deployment marked READY is not evidence that PostgreSQL, Redis/Celery workers, authentication, or healthcare providers are configured.
 
