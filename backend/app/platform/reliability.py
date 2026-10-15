@@ -14,6 +14,7 @@ async def _clinic_id(session, organization_id: str) -> str:
     return str(clinic)
 
 async def readiness(session) -> dict:
+    """Check each readiness dependency independently and fail closed on errors."""
     checks = {}
     try:
         await session.execute(text("select 1"))
@@ -25,9 +26,20 @@ async def readiness(session) -> dict:
         checks["durable_jobs"] = "ok"
     except Exception:
         checks["durable_jobs"] = "unavailable"
-    worker = (await session.execute(text("select public.healthy_worker_count(interval '2 minutes')"))).scalar_one()
-    checks["worker_heartbeat"] = "ok" if worker > 0 else "degraded"
-    return {"status":"ready" if all(v=="ok" for v in checks.values()) else "degraded","checks":checks,"generated_at":datetime.now(timezone.utc)}
+    try:
+        worker = (
+            await session.execute(
+                text("select public.healthy_worker_count(interval '2 minutes')")
+            )
+        ).scalar_one()
+        checks["worker_heartbeat"] = "ok" if worker > 0 else "degraded"
+    except Exception:
+        checks["worker_heartbeat"] = "unavailable"
+    return {
+        "status": "ready" if all(value == "ok" for value in checks.values()) else "degraded",
+        "checks": checks,
+        "generated_at": datetime.now(timezone.utc),
+    }
 
 async def operational_snapshot(session, organization_id: str) -> dict:
     clinic = await _clinic_id(session, organization_id)
