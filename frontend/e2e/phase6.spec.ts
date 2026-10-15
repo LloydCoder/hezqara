@@ -98,3 +98,19 @@ test("desktop primary navigation remains visible without the mobile disclosure b
   await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
   await expect(page.getByRole("button", { name: /navigation menu/ })).toBeHidden();
 });
+
+test("narrow 320px viewport keeps the logo and menu trigger within the header", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto("/");
+
+  const header = page.locator("header");
+  const logo = await page.getByRole("link", { name: "HEZQARA home" }).boundingBox();
+  const trigger = await page.getByRole("button", { name: "Open navigation menu" }).boundingBox();
+  const headerBox = await header.boundingBox();
+
+  expect(logo).not.toBeNull();
+  expect(trigger).not.toBeNull();
+  expect(headerBox).not.toBeNull();
+  expect(logo!.x + logo!.width).toBeLessThanOrEqual(trigger!.x);
+  expect(trigger!.x + trigger!.width).toBeLessThanOrEqual(headerBox!.x + headerBox!.width);
+});
