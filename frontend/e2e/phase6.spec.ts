@@ -84,7 +84,7 @@ test.describe("mobile marketing navigation", () => {
     await page.getByRole("button", { name: "Open navigation menu" }).click();
     await mobileNav.getByRole("link", { name: "Solutions" }).click();
 
-    await expect(page).toHaveURL(/\\/solutions$/);
+    await expect(page).toHaveURL(/\/solutions$/);
     await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
   });
 });
