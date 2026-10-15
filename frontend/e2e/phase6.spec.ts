@@ -42,3 +42,74 @@ test.describe("public application smoke", () => {
     expect(sitemapBody).not.toContain("localhost");
   });
 });
+
+
+test.describe("mobile marketing navigation", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+  });
+
+  test("mobile menu exposes all primary links with correct disclosure state", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Toggle navigation menu" });
+    const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+    await expect(trigger).toBeVisible();
+    await expect(mobileNav).toBeHidden();
+
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(mobileNav).toBeVisible();
+
+    for (const label of ["Product", "AI workforce", "Solutions", "How it works", "Security"]) {
+      await expect(mobileNav.getByRole("link", { name: label })).toBeVisible();
+    }
+    await expect(mobileNav.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(mobileNav.getByRole("link", { name: "Get started" })).toBeVisible();
+  });
+
+  test("Escape closes the menu and restores focus to its trigger", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Toggle navigation menu" });
+    const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+    await trigger.click();
+    await expect(mobileNav).toBeVisible();
+
+    await page.keyboard.press("Escape");
+
+    await expect(mobileNav).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
+  test("choosing a mobile navigation link closes the menu", async ({ page }) => {
+    const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+    await page.getByRole("button", { name: "Toggle navigation menu" }).click();
+    await expect(mobileNav).toBeVisible();
+    await mobileNav.getByRole("link", { name: "Solutions" }).click();
+
+    await expect(page).toHaveURL(/\/solutions$/);
+    await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
+  });
+});
+
+test("desktop primary navigation remains visible without the mobile disclosure button", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Toggle navigation menu" })).toBeHidden();
+});
+
+test("narrow 320px viewport keeps the logo and menu trigger within the header", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto("/");
+
+  const header = page.locator("header");
+  const logo = await page.getByRole("link", { name: "HEZQARA home" }).boundingBox();
+  const trigger = await page.getByRole("button", { name: "Toggle navigation menu" }).boundingBox();
+  const headerBox = await header.boundingBox();
+
+  if (!logo || !trigger || !headerBox) {
+    throw new Error("Expected header, logo, and mobile menu to have measurable layout boxes.");
+  }
+
+  expect(logo.x + logo.width).toBeLessThanOrEqual(trigger.x);
+  expect(trigger.x + trigger.width).toBeLessThanOrEqual(headerBox.x + headerBox.width);
+});
