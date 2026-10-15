@@ -42,3 +42,56 @@ test.describe("public application smoke", () => {
     expect(sitemapBody).not.toContain("localhost");
   });
 });
+
+
+test.describe("mobile marketing navigation", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+  });
+
+  test("mobile menu exposes all primary links with correct disclosure state", async ({ page }) => {
+    const trigger = page.getByRole("button", { name: "Open navigation menu" });
+    const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect(mobileNav).toBeHidden();
+
+    await trigger.click();
+    await expect(page.getByRole("button", { name: "Close navigation menu" })).toHaveAttribute("aria-expanded", "true");
+    await expect(mobileNav).toBeVisible();
+
+    for (const label of ["Product", "AI workforce", "Solutions", "How it works", "Security"]) {
+      await expect(mobileNav.getByRole("link", { name: label })).toBeVisible();
+    }
+  });
+
+  test("Escape closes the menu and restores focus to its trigger", async ({ page }) => {
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+
+    const trigger = page.getByRole("button", { name: "Open navigation menu" });
+    await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect(trigger).toBeFocused();
+  });
+
+  test("choosing a mobile navigation link closes the menu", async ({ page }) => {
+    const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await mobileNav.getByRole("link", { name: "Solutions" }).click();
+
+    await expect(page).toHaveURL(/\\/solutions$/);
+    await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
+  });
+});
+
+test("desktop primary navigation remains visible without the mobile disclosure button", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /navigation menu/ })).toBeHidden();
+});
