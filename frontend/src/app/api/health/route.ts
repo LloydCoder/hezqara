@@ -7,7 +7,7 @@ export async function GET(): Promise<Response> {
   let apiReachable = false;
   if (apiOrigin) {
     try {
-      const response = await fetch(`${apiOrigin}/health`, {
+      const response = await fetch(`${apiOrigin}/ready`, {
         cache: "no-store",
         signal: AbortSignal.timeout(2_500),
       });

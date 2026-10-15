@@ -15,6 +15,7 @@ Do not collapse these categories.
 - [P0 forensic reconciliation](p0-forensic-reconciliation.md)
 - [P1 E1–E8 revalidation](p1-e1-e8-revalidation.md)
 - [E9–E24 roadmap](../roadmap/enterprise-e9-e24.md)
+- [Post-E24 operational maturity sequence](../roadmap/post-e24-operational-maturity.md)
 - [E8 production proving](../operations/e8-production-proving.md)
 - [Vercel deployment topology](../operations/vercel-deployment.md)
 
