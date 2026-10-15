@@ -1,74 +1,75 @@
 # P0 — Forensic Reconciliation & Evidence Ledger
 
-**Baseline commit:** `a1b99d53840016f1271580e6b349787c9f0525d0`  
-**Repository:** `LloydCoder/hezqara`
+**Current baseline at reconciliation:** `f5d2672864d3cb3d79aa293484f46e0ca764546b`  
+**Repository:** `LloydCoder/hezqara`  
+**Reconciliation date:** 2026-10-15
 
-## Findings
+## Findings and current disposition
 
 ### P0-001 — Phase completion must be separated from production readiness
-The repository contains substantial E1–E24 implementation and validation material, but repository code cannot establish live provider contracts, production credentials, cloud topology, legal agreements, independent testing, clinical/documentation evaluation, customer ROI or production-scale evidence.
 
-**Disposition:** maturity model and documentation corrected.
+E1–E24 implementation and validation records exist in the repository. Code and CI cannot establish live provider contracts, production credentials, executed legal agreements, independent assurance, clinical/documentation efficacy, customer ROI or production-scale SLO attainment.
 
-### P0-002 — Canonical roadmap/evidence index was not safely materialized
-The README referenced roadmap and validation material that was not reliably present at the referenced canonical paths.
+**Disposition:** distinction remains mandatory. External readiness is not inferred from CI.
 
-**Disposition:** canonical roadmap and validation index created in this phase.
+### P0-002 — Canonical roadmap and evidence index
 
-### P0-003 — Vercel production configuration is incomplete
-The deployment topology requires `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `HEZQARA_API_INTERNAL_URL`. Production values cannot be invented or committed.
+The canonical E9–E24 roadmap and validation index are present and covered by the P0 evidence-contract workflow.
 
-**Disposition:** tracked as a release blocker for the deployment sequence.
+**Disposition:** repository-documentation requirement implemented; phase evidence must continue to track the current commit.
+
+### P0-003 — Vercel authentication and backend environment
+
+A live Vercel inspection on 2026-10-15 found the `hezqara` project had no listed project environment variables. The homepage rendered, but protected and health/SEO routes returned HTTP 503 with the message that authentication was not configured. The project also has no verified custom production domain in the inspected domain listing.
+
+Required values must be provided by the owner and stored in Vercel's environment configuration, not invented or committed:
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `HEZQARA_API_INTERNAL_URL`
+- `NEXT_PUBLIC_SITE_URL` (recommended canonical URL)
+
+The API URL must identify an actually deployed, reachable backend service. The frontend Vercel project does not itself deploy FastAPI, PostgreSQL/Supabase, Redis or Celery workers.
+
+**Disposition:** code-side public route and fail-closed fallback hardening is in progress in the P0 deployment-contract change. Production authentication and backend connectivity remain an external configuration/release blocker until real values and live smoke evidence are available.
 
 ### P0-004 — Production configuration must not silently use localhost
-Development defaults such as `http://localhost:8004` are unsafe as implicit production configuration.
 
-**Disposition:** production fail-fast/configuration contract is a later deployment gate.
+A production Next.js build must not implicitly rewrite API calls to `http://localhost:8004`. Local development may retain that default; production without an API origin must fail clearly and must not pretend that backend requests are healthy.
 
-### P0-005 — Health, robots and sitemap need one explicit public contract
-Prior forensic inspection identified inconsistent public routing and localhost fallbacks around health, robots and sitemap behavior.
+**Disposition:** addressed by the P0 deployment-contract change; verify via CI and deployed route checks before closure.
 
-**Disposition:** retained as an explicit deployment-contract work item.
+### P0-005 — Health, robots and sitemap public contract
 
-### P0-006 — Mobile navigation is a correctness/accessibility issue
-The marketing navigation and dashboard information architecture require real mobile interaction semantics and regression coverage.
+Live inspection found `/health`, `/api/v1/health`, `/robots.txt` and `/sitemap.xml` returning HTTP 503 before route handling because the authentication proxy treated them as protected. The `/health` rewrite also conflated frontend liveness with backend health, and SEO metadata defaulted to localhost.
 
-**Disposition:** dedicated frontend/mobile sequence.
+**Disposition:** addressed by the P0 deployment-contract change: expose public health/SEO paths, separate frontend health from API proxying, and use a production-safe canonical URL fallback. Verify deployed responses after merge.
 
-### P0-007 — Dependency PRs require compatibility review
-Open Dependabot PRs include major/minor upgrades across Clerk, ESLint, React, TypeScript, Tailwind, Stripe, Redis, Alembic, FastAPI, SQLAlchemy and Retell.
+### P0-006 — Mobile navigation
 
-**Disposition:** merge only after the individual PR's relevant CI and targeted compatibility evidence are green.
+The current homepage markup exposes the primary navigation only at the large-screen breakpoint and does not provide an equivalent mobile menu in the inspected header.
 
-## Exit criteria
+**Disposition:** open. Implement an accessible mobile navigation and add interaction/responsive regression coverage in a separate serial change.
 
-- canonical P0 ledger committed;
-- E9–E24 roadmap committed;
-- validation index committed;
-- README and roadmap claims follow the evidence hierarchy;
-- CI verifies canonical evidence and safety boundaries;
-- P0 workflow is green.
+### P0-007 — Dependency modernization
 
-## Status
+The reviewed backend and frontend dependency batches were consolidated to avoid overlapping lockfile/requirements changes and merged as PR #103 and PR #104 on 2026-10-15. The resulting main revision is `f5d2672864d3cb3d79aa293484f46e0ca764546b`; the latest observed CI, Security, E8 Production Proving, P0 Forensic Reconciliation and Phases 9–16 Validation runs on that revision succeeded.
 
-| Control | State |
-|---|---|
-| Maturity model | Implemented |
-| E9–E24 roadmap | Implemented |
-| Validation index | Implemented |
-| Production-readiness separation | Implemented |
-| External-assurance separation | Implemented |
-| Vercel production configuration | Open blocker |
-| Mobile navigation | Open blocker |
-| Dependency modernization | Open; serial compatibility gates |
+**Disposition:** merged and automated checks green on the stated revision. Reopen if later dependency or source changes invalidate the evidence.
 
+## Required release gates
+
+1. Required CI/security/E2E/database checks are green on the exact candidate commit.
+2. Public health, robots and sitemap endpoints return their intended responses on the deployed frontend.
+3. Clerk organization/tenant mapping is verified with real configured credentials.
+4. The frontend reaches a real backend origin; no production localhost fallback is present.
+5. Tenant-isolation checks and authenticated smoke tests pass against the deployed environment.
+6. Worker liveness, durable-job health, backups/restores, provider connectivity, monitoring and rollback are evidenced.
+7. External contracts, privacy obligations and independent assurance are handled before making corresponding public claims.
+8. Mobile navigation work is completed and validated before marking P0 fully closed.
 
 ## Evidence rule
 
-P0 is complete only when its repository assertions are reproducible on the settled baseline and the P0 workflow is green. “Engineering verified” is not equivalent to supported by production evidence or independently assured. This distinction is mandatory for all subsequent E1–E24 gates.
+A phase is complete only when implementation, relevant automated verification, forensic review, documentation reconciliation and release evidence all agree on the same revision. Engineering CI is not regulatory certification or proof of production-scale operation.
 
 ## External reference alignment
 
-The workflow uses least-privilege read-only GitHub Actions permissions and pinned action SHAs. This follows GitHub’s current Actions security guidance.
-
-Healthcare assurance claims remain bounded to engineering evidence; HIPAA’s Security Rule requires appropriate administrative, physical, and technical safeguards for ePHI, and compliance cannot be inferred from a repository test suite alone.
+The workflow uses least-privilege GitHub Actions permissions and pinned action SHAs. Healthcare assurance claims remain bounded to evidence. Applicable privacy, contractual and security obligations require separate assessment and cannot be self-certified by a repository test suite.
