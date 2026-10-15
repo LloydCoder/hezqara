@@ -29,7 +29,7 @@ export function SiteMobileNav() {
         id="mobile-primary-navigation"
         popover="auto"
         aria-label="Mobile primary navigation"
-        className="fixed inset-x-0 top-16 m-0 w-full max-w-none border-b border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur"
+        className="fixed inset-x-0 top-16 m-0 w-full max-w-none border-0 border-b border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur"
       >
         <ul className="mx-auto grid max-w-7xl gap-1 sm:grid-cols-2">
           {siteNavigation.map(([label, href]) => (
