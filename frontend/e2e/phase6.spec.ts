@@ -51,7 +51,7 @@ test.describe("mobile marketing navigation", () => {
   });
 
   test("mobile menu exposes all primary links with correct disclosure state", async ({ page }) => {
-    const trigger = page.getByRole("button", { name: "Toggle navigation menu" });
+    const trigger = page.locator('summary[aria-controls="mobile-primary-navigation"]');
     const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
     const disclosure = page.locator("details").filter({ has: mobileNav });
 
@@ -59,7 +59,8 @@ test.describe("mobile marketing navigation", () => {
     await expect(disclosure).not.toHaveAttribute("open");
     await expect(mobileNav).toBeHidden();
 
-    await trigger.click();
+    await trigger.focus();
+    await page.keyboard.press("Enter");
     await expect(disclosure).toHaveAttribute("open", "");
     await expect(mobileNav).toBeVisible();
 
@@ -71,7 +72,7 @@ test.describe("mobile marketing navigation", () => {
   });
 
   test("Escape closes the menu and restores focus to its trigger", async ({ page }) => {
-    const trigger = page.getByRole("button", { name: "Toggle navigation menu" });
+    const trigger = page.locator('summary[aria-controls="mobile-primary-navigation"]');
     const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
     const disclosure = page.locator("details").filter({ has: mobileNav });
     await trigger.click();
