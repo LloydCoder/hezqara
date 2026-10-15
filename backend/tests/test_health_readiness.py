@@ -85,3 +85,27 @@ def test_readiness_fails_closed_without_leaking_connection_errors(monkeypatch):
         },
     }
     assert "connection details" not in response.body.decode()
+
+
+
+def test_readiness_handles_worker_probe_failure_independently():
+    from app.platform.reliability import readiness
+
+    class Result:
+        def scalar_one(self):
+            return 1
+
+    class WorkerProbeFailureSession:
+        async def execute(self, statement):
+            if "healthy_worker_count" in str(statement):
+                raise RuntimeError("worker heartbeat function unavailable")
+            return Result()
+
+    result = asyncio.run(readiness(WorkerProbeFailureSession()))
+
+    assert result["status"] == "degraded"
+    assert result["checks"] == {
+        "database": "ok",
+        "durable_jobs": "ok",
+        "worker_heartbeat": "unavailable",
+    }
