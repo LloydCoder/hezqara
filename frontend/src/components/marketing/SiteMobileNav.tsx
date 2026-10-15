@@ -65,6 +65,22 @@ export function SiteMobileNav() {
             </li>
           ))}
         </ul>
+        <div className="mx-auto mt-3 grid max-w-7xl gap-2 border-t border-slate-200 pt-3 sm:grid-cols-2">
+          <Link
+            href={"/sign-in" as Route}
+            onClick={closeMenu}
+            className="flex min-h-11 items-center justify-center rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+          >
+            Sign in
+          </Link>
+          <Link
+            href={"/sign-up" as Route}
+            onClick={closeMenu}
+            className="flex min-h-11 items-center justify-center rounded-lg bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+          >
+            Get started
+          </Link>
+        </div>
       </nav>
     </>
   );
