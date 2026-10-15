@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -18,8 +20,9 @@ async def health() -> dict[str, str]:
 async def ready() -> JSONResponse:
     """Report dependency readiness without exposing credentials or infrastructure details."""
     try:
-        async with system_session_context() as session:
-            result = await readiness(session)
+        async with asyncio.timeout(2.0):
+            async with system_session_context() as session:
+                result = await readiness(session)
     except Exception:
         # A missing DATABASE_URL, failed connection, or unavailable schema must
         # fail closed. Do not turn an API process that cannot serve work into ready.
