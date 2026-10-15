@@ -1,6 +1,6 @@
 # Final Forensic Audit — Post E24
 
-Status: COMPLETE — RELEASE GATE PASSED
+Status: E1–E24 ENGINEERING AUDIT COMPLETE — PRODUCTION RELEASE STILL BLOCKED BY EXTERNAL PREREQUISITES
 
 Audit date: 2026-10-03
 Repository: LloydCoder/hezqara
@@ -54,11 +54,11 @@ Those remain external release prerequisites and must be completed before making 
 
 ## Vercel production gate
 
-The Vercel production deployment gate is now unlocked from the engineering-phase perspective because E24 and the final repository audit are complete and the required automated workflows are green. Production deployment must still use the documented production secrets/configuration and must not be interpreted as regulatory certification.
+The engineering-phase sequence through E24 is complete, but that does not authorize an authenticated production launch. Production authentication and backend connectivity were still unconfigured in the latest recorded live inspection. Keep production launch blocked until the owner configures the real production environment, deploys the API/workers/database dependencies, and verifies authenticated tenant-isolation and health smoke tests. A frontend deployment marked READY is not sufficient and is not regulatory certification.
 
 ## Final release rule
 
-No unresolved repository blocker remains in the audited scope. Any future change that affects a verified phase reopens that phase's evidence gate and must restore green CI/security/E2E evidence before release.
+The 2026-10-03 audited scope found no unresolved repository blocker at that time. Subsequent addenda are authoritative for later changes and blockers. Production release remains blocked until real authentication/backend configuration and the external prerequisites above are verified. Any future change that affects a verified phase reopens that phase's evidence gate and must restore green CI/security/E2E evidence before release.
 
 
 ## Addendum — Post-merge P0 deployment-contract forensic audit (2026-10-15)
@@ -98,3 +98,31 @@ The Vercel runtime-error query returned no grouped runtime errors for the preced
 The P0 public health/SEO/deployment-contract subphase is **implemented, merged, CI-verified, and smoke-tested on the deployed frontend**. The full P0 release ledger is not closed: mobile navigation and real production authentication/backend configuration remain outstanding. These are explicit blockers, not inferred successes.
 
 Any later change to proxy routing, API rewrites, authentication configuration, or environment handling reopens the relevant security and deployment evidence gates.
+
+
+## Addendum — Post-merge mobile navigation forensic audit (2026-10-15)
+
+**Audited main revision:** `b26f996d649adffc9d20d7cf6ade11efce0cae38`  
+**Implementation:** [PR #107 — accessible responsive mobile navigation](https://github.com/LloydCoder/hezqara/pull/107)
+
+### Implementation audit
+
+- The desktop primary navigation remains available at the large-screen breakpoint.
+- A shared navigation definition now drives both desktop and mobile links.
+- The mobile disclosure exposes primary links and authentication/onboarding actions.
+- Native popover behaviour plus route-close handling is covered by Playwright tests for keyboard activation, Escape dismissal/focus restoration, route navigation, desktop preservation and a 320px viewport.
+- No backend authorization, tenant boundary, secret or database contract was changed by this UI hardening.
+
+### Workflow evidence
+
+All required automated workflows passed on the PR head and again on the post-merge main revision:
+
+- [HEZQARA CI](https://github.com/LloydCoder/hezqara/actions/runs/38760326869)
+- [HEZQARA Security](https://github.com/LloydCoder/hezqara/actions/runs/38760326991)
+- [HEZQARA E8 Production Proving](https://github.com/LloydCoder/hezqara/actions/runs/38760326888)
+- [HEZQARA P0 Forensic Reconciliation](https://github.com/LloydCoder/hezqara/actions/runs/38760326933)
+- [HEZQARA Phases 9–16 Validation](https://github.com/LloydCoder/hezqara/actions/runs/38760326926)
+
+### Current disposition
+
+The mobile-navigation repository blocker is closed. This audit does not claim that Hezqara is production-ready: the last recorded live Vercel inspection found no project environment variables, and the current audit connector was denied access to re-check that inventory. The owner must verify/configure `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `HEZQARA_API_INTERNAL_URL`, and a canonical public site URL as appropriate; deploy the API, database and workers in a production-capable runtime; then provide live authenticated tenant-isolation, health, recovery and provider-connectivity evidence. No credential value is fabricated or committed.
