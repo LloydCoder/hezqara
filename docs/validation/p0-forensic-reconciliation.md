@@ -103,7 +103,7 @@ The post-merge CI, Security, E8 Production Proving, P0 Forensic Reconciliation, 
 - **Still open in the repository:** accessible mobile navigation for the marketing header and its responsive regression tests.
 - **Not established by these checks:** authenticated production workflows, tenant-isolation smoke tests against a live backend, worker health, provider integrations, backup/restore evidence, external assurance, or customer/pilot validation.
 
-The P0 public-route subphase is complete. The broader P0 ledger remains open until the mobile-navigation item is implemented and the external production prerequisites are satisfied or explicitly dispositioned.
+The P0 public-route and mobile-navigation repository-code subphases are complete. The broader P0 ledger remains open until the external production prerequisites are satisfied or explicitly dispositioned.
 
 
 ## Addendum — Post-merge mobile navigation audit (2026-10-15)
