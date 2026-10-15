@@ -65,6 +65,9 @@ test.describe("mobile marketing navigation", () => {
     for (const label of ["Product", "AI workforce", "Solutions", "How it works", "Security"]) {
       await expect(mobileNav.getByRole("link", { name: label })).toBeVisible();
     }
+    await expect(mobileNav.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(mobileNav.getByRole("link", { name: "Get started" })).toBeVisible();
+
   });
 
   test("Escape closes the menu and restores focus to its trigger", async ({ page }) => {
