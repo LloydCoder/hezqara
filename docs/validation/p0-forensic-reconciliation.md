@@ -1,6 +1,6 @@
 # P0 — Forensic Reconciliation & Evidence Ledger
 
-**Current baseline at reconciliation:** `df8d218283f0a111ae34b30543a9c05a60da7943`  
+**Current baseline at reconciliation:** `b26f996d649adffc9d20d7cf6ade11efce0cae38`  
 **Repository:** `LloydCoder/hezqara`  
 **Reconciliation date:** 2026-10-15
 
@@ -45,9 +45,13 @@ Live inspection found `/health`, `/api/v1/health`, `/robots.txt` and `/sitemap.x
 
 ### P0-006 — Mobile navigation
 
-The current homepage markup exposes the primary navigation only at the large-screen breakpoint and does not provide an equivalent mobile menu in the inspected header.
+The primary navigation is now available through a native popover-based mobile disclosure while preserving the desktop navigation. The menu exposes shared primary links and sign-in/get-started actions, supports keyboard activation and Escape dismissal, closes after route selection, and is covered at mobile and 320px viewport widths.
 
-**Disposition:** open. Implement an accessible mobile navigation and add interaction/responsive regression coverage in a separate serial change.
+**Implementation:** [PR #107](https://github.com/LloydCoder/hezqara/pull/107), merged as `b26f996d649adffc9d20d7cf6ade11efce0cae38`.
+
+**Verification:** CI, Security, E8 Production Proving, P0 Forensic Reconciliation, and Phases 9–16 Validation passed on the exact PR head; the same five workflows passed after merge on the canonical `main` revision.
+
+**Disposition:** resolved as a repository-code blocker. This does not resolve the separate production authentication/backend configuration blocker recorded under P0-003.
 
 ### P0-007 — Dependency modernization
 
@@ -100,3 +104,17 @@ The post-merge CI, Security, E8 Production Proving, P0 Forensic Reconciliation, 
 - **Not established by these checks:** authenticated production workflows, tenant-isolation smoke tests against a live backend, worker health, provider integrations, backup/restore evidence, external assurance, or customer/pilot validation.
 
 The P0 public-route subphase is complete. The broader P0 ledger remains open until the mobile-navigation item is implemented and the external production prerequisites are satisfied or explicitly dispositioned.
+
+
+## Addendum — Post-merge mobile navigation audit (2026-10-15)
+
+**Audited revision:** `b26f996d649adffc9d20d7cf6ade11efce0cae38`  
+**Change:** [PR #107](https://github.com/LloydCoder/hezqara/pull/107)
+
+- The change was reviewed and merged only after the exact PR head passed CI, Security, E8 Production Proving, P0 Forensic Reconciliation, and Phases 9–16 Validation.
+- All five workflows also passed on the post-merge `main` revision.
+- The implementation adds keyboard-operable mobile navigation, route-close behaviour, shared link definitions and Playwright checks for disclosure state, Escape/focus restoration, navigation close, desktop preservation and a 320px layout.
+- The post-merge repository had zero open PRs and zero open non-PR issues at the time of this audit.
+- Production authentication/backend configuration remains an external release blocker. No secrets or environment values were invented, committed or changed.
+
+The audit connector could not currently read the Vercel project's environment inventory due to a permission-denied response. The previously recorded 2026-10-15 live inspection found no listed project environment variables; the owner must verify and configure the required production values before authenticated production smoke tests can pass.
