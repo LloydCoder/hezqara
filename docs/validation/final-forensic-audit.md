@@ -126,3 +126,23 @@ All required automated workflows passed on the PR head and again on the post-mer
 ### Current disposition
 
 The mobile-navigation repository blocker is closed. This audit does not claim that Hezqara is production-ready: the last recorded live Vercel inspection found no project environment variables, and the current audit connector was denied access to re-check that inventory. The owner must verify/configure `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `HEZQARA_API_INTERNAL_URL`, and a canonical public site URL as appropriate; deploy the API, database and workers in a production-capable runtime; then provide live authenticated tenant-isolation, health, recovery and provider-connectivity evidence. No credential value is fabricated or committed.
+
+
+## Addendum — E25 dependency-readiness code audit (2026-10-15)
+
+**Implementation:** [PR #109](https://github.com/LloydCoder/hezqara/pull/109)  
+**Code implementation commit:** `f5ce0d2a4dea1539800272ededec64b38830a9f6`
+
+### Forensic findings and repairs
+
+- Separated process liveness (`GET /health`) from dependency readiness (`GET /ready`).
+- Readiness checks database connectivity, durable-job schema access, and recent worker heartbeat independently. A worker-check exception now yields a degraded result instead of escaping as an unhandled server error.
+- Bounded readiness execution to two seconds so the frontend's 2.5-second probe can fail closed.
+- The frontend readiness endpoint now probes `/ready`; a reachable process with an unavailable database/schema/worker cannot produce a ready response.
+- Added a minimal public `/api/v1/ready` rewrite for monitoring. It exposes status checks only, not credentials, connection strings, provider payloads or patient data.
+- Added backend tests for healthy readiness, degraded worker heartbeat, worker probe exceptions, database-session failure, HTTP 503 fail-closed behavior and non-disclosure of exception text.
+- No database migration, tenant authorization policy, or provider credential was changed by this subphase.
+
+### Disposition
+
+The code-level readiness gap is addressed by PR #109, subject to the required workflows passing on the exact final PR head and post-merge main revision. **E25 itself is not complete**: the latest recorded Vercel inspection found no project environment variables, and the current connector could not re-read the inventory due to access denial. The owner must configure the actual Clerk publishable key and reachable API origin, deploy the database and worker services, and provide authenticated tenant-isolation/readiness/recovery smoke evidence. Do not start E26 until this E25 external gate is closed.
