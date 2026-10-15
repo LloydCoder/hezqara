@@ -53,7 +53,7 @@ const groups: readonly NavGroup[] = [
 export function Sidebar({ authConfigured = false }: { authConfigured?: boolean }) {
   const pathname = usePathname();
   const accountControl = authConfigured ? (
-    <UserButton afterSignOutUrl="/" />
+    <UserButton />
   ) : (
     <span className="text-xs text-slate-400">Authentication unavailable</span>
   );
