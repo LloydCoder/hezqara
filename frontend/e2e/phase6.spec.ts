@@ -51,15 +51,16 @@ test.describe("mobile marketing navigation", () => {
   });
 
   test("mobile menu exposes all primary links with correct disclosure state", async ({ page }) => {
-    const trigger = page.getByRole("button", { name: "Open navigation menu" });
+    const trigger = page.getByRole("button", { name: "Toggle navigation menu" });
     const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+    const disclosure = page.locator("details").filter({ has: mobileNav });
 
     await expect(trigger).toBeVisible();
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect(disclosure).not.toHaveAttribute("open");
     await expect(mobileNav).toBeHidden();
 
     await trigger.click();
-    await expect(page.getByRole("button", { name: "Close navigation menu" })).toHaveAttribute("aria-expanded", "true");
+    await expect(disclosure).toHaveAttribute("open", "");
     await expect(mobileNav).toBeVisible();
 
     for (const label of ["Product", "AI workforce", "Solutions", "How it works", "Security"]) {
@@ -70,20 +71,25 @@ test.describe("mobile marketing navigation", () => {
   });
 
   test("Escape closes the menu and restores focus to its trigger", async ({ page }) => {
-    await page.getByRole("button", { name: "Open navigation menu" }).click();
-    await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeVisible();
+    const trigger = page.getByRole("button", { name: "Toggle navigation menu" });
+    const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
+    const disclosure = page.locator("details").filter({ has: mobileNav });
+    await trigger.click();
+    await expect(disclosure).toHaveAttribute("open", "");
+    await expect(mobileNav).toBeVisible();
 
     await page.keyboard.press("Escape");
 
-    const trigger = page.getByRole("button", { name: "Open navigation menu" });
-    await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await expect(disclosure).not.toHaveAttribute("open");
+    await expect(mobileNav).toBeHidden();
     await expect(trigger).toBeFocused();
   });
 
   test("choosing a mobile navigation link closes the menu", async ({ page }) => {
     const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
-    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    const disclosure = page.locator("details").filter({ has: mobileNav });
+    await page.getByRole("button", { name: "Toggle navigation menu" }).click();
+    await expect(disclosure).toHaveAttribute("open", "");
     await mobileNav.getByRole("link", { name: "Solutions" }).click();
 
     await expect(page).toHaveURL(/\/solutions$/);
@@ -95,7 +101,7 @@ test("desktop primary navigation remains visible without the mobile disclosure b
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/");
   await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /navigation menu/ })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Toggle navigation menu" })).toBeHidden();
 });
 
 test("narrow 320px viewport keeps the logo and menu trigger within the header", async ({ page }) => {
@@ -104,7 +110,7 @@ test("narrow 320px viewport keeps the logo and menu trigger within the header", 
 
   const header = page.locator("header");
   const logo = await page.getByRole("link", { name: "HEZQARA home" }).boundingBox();
-  const trigger = await page.getByRole("button", { name: "Open navigation menu" }).boundingBox();
+  const trigger = await page.getByRole("button", { name: "Toggle navigation menu" }).boundingBox();
   const headerBox = await header.boundingBox();
 
   if (!logo || !trigger || !headerBox) {
