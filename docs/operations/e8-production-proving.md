@@ -13,6 +13,12 @@ E8 is the final product-development phase in the HEZQARA roadmap. Its purpose is
 - Tenant-scoped operational snapshots expose only the requesting clinic's workload/incident state.
 - Production claims require measured evidence; schema existence alone is not treated as proof.
 
+## Liveness and readiness contract
+
+`GET /health` is process liveness only and intentionally does not depend on infrastructure. `GET /ready` is the API dependency-readiness contract: database connectivity, durable-job schema access, and recent worker heartbeat must all be healthy for HTTP 200. Any unavailable dependency yields HTTP 503 without leaking exception text or secrets.
+
+The frontend `/api/health` endpoint must probe the backend `/ready` endpoint, not `/health`. This prevents a live but non-operational API process from being reported as a ready platform. CI tests cover healthy, degraded-worker, and database-unavailable outcomes. Live production readiness still requires the real database and worker services to be configured and healthy.
+
 ## Release gate
 
 A production release requires:
