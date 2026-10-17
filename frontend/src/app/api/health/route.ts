@@ -1,7 +1,9 @@
+import { isClerkConfigured } from "@/lib/clerk-config";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
-  const authenticationConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const authenticationConfigured = isClerkConfigured();
   const apiOrigin = process.env.HEZQARA_API_INTERNAL_URL?.replace(/\/+$/, "");
 
   let apiReachable = false;
