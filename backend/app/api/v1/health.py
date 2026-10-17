@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
@@ -7,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.infrastructure.database import system_session_context
 from app.platform.reliability import readiness
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
 
 
@@ -23,9 +25,10 @@ async def ready() -> JSONResponse:
         async with asyncio.timeout(2.0):
             async with system_session_context() as session:
                 result = await readiness(session)
-    except Exception:
-        # A missing DATABASE_URL, failed connection, or unavailable schema must
-        # fail closed. Do not turn an API process that cannot serve work into ready.
+    except Exception as exc:
+        # Log only the exception class: driver messages may contain infrastructure
+        # details. Public responses remain generic and fail closed.
+        logger.error("Readiness evaluation aborted (%s)", type(exc).__name__)
         result = {
             "status": "degraded",
             "checks": {
