@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isClerkConfigured } from "@/lib/clerk-config";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -23,7 +24,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/v1/ready",
 ]);
 
-const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const clerkConfigured = isClerkConfigured();
 
 export default clerkConfigured
   ? clerkMiddleware(async (auth, request) => {
