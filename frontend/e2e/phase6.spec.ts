@@ -20,6 +20,17 @@ test.describe("public application smoke", () => {
     expect(await response.json()).toEqual({ status: "ok", service: "hezqara-frontend", scope: "liveness" });
   });
 
+  test("production rejects Clerk test credentials instead of enabling development auth", async ({ page, request }) => {
+    const response = await request.get("/api/health");
+    expect(response.status()).toBe(503);
+    const health = await response.json();
+    expect(health.checks.authenticationConfigured).toBe(false);
+
+    await page.goto("/sign-in");
+    await expect(page.getByRole("status")).toContainText("Configure production Clerk live keys");
+    await expect(page.locator('script[src*="clerk.accounts.dev"]')).toHaveCount(0);
+  });
+
   test("API readiness fails clearly when deployment configuration is absent", async ({ request }) => {
     const response = await request.get("/api/health");
     expect(response.status()).toBe(503);
@@ -85,7 +96,7 @@ test.describe("mobile marketing navigation", () => {
     await expect(mobileNav).toBeVisible();
     await mobileNav.getByRole("link", { name: "Solutions" }).click();
 
-    await expect(page).toHaveURL(/\/solutions$/);
+    await expect(page).toHaveURL(/\\/solutions$/);
     await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
   });
 });
