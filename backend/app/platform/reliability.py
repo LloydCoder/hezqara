@@ -13,6 +13,28 @@ DEFAULT_SLOS = (
 )
 
 
+def _safe_database_error_context(exc: Exception) -> tuple[str, str, bool]:
+    """Return allow-listed DB failure metadata; never return exception text or connection details."""
+    original = getattr(exc, "orig", None)
+    sqlstate = getattr(original, "sqlstate", None) or getattr(original, "pgcode", None)
+    if not isinstance(sqlstate, str) or len(sqlstate) != 5 or not sqlstate.isalnum():
+        sqlstate = "unknown"
+    original_type = type(original).__name__ if original is not None else type(exc).__name__
+    # Exception class names are runtime identifiers; never include str(exc), repr(exc), DSNs or parameters.
+    return original_type, sqlstate, bool(getattr(exc, "connection_invalidated", False))
+
+
+def _log_readiness_failure(check_name: str, exc: Exception) -> None:
+    original_type, sqlstate, connection_invalidated = _safe_database_error_context(exc)
+    logger.warning(
+        "Readiness %s check failed (exception=%s sqlstate=%s connection_invalidated=%s)",
+        check_name,
+        original_type,
+        sqlstate,
+        connection_invalidated,
+    )
+
+
 async def _clinic_id(session, organization_id: str) -> str:
     clinic = await session.scalar(text("select id from clinics where clerk_org_id=:org"), {"org": organization_id})
     if not clinic:
@@ -27,14 +49,14 @@ async def readiness(session) -> dict:
         await session.execute(text("select 1"))
         checks["database"] = "ok"
     except Exception as exc:
-        logger.warning("Readiness database connectivity check failed (%s)", type(exc).__name__)
+        _log_readiness_failure("database connectivity", exc)
         checks["database"] = "unavailable"
 
     try:
         await session.execute(text("select count(*) from platform_jobs"))
         checks["durable_jobs"] = "ok"
     except Exception as exc:
-        logger.warning("Readiness durable-job schema check failed (%s)", type(exc).__name__)
+        _log_readiness_failure("durable-job schema", exc)
         checks["durable_jobs"] = "unavailable"
 
     try:
@@ -45,7 +67,7 @@ async def readiness(session) -> dict:
         ).scalar_one()
         checks["worker_heartbeat"] = "ok" if worker > 0 else "degraded"
     except Exception as exc:
-        logger.warning("Readiness worker-heartbeat check failed (%s)", type(exc).__name__)
+        _log_readiness_failure("worker-heartbeat", exc)
         checks["worker_heartbeat"] = "unavailable"
 
     return {
