@@ -96,7 +96,7 @@ test.describe("mobile marketing navigation", () => {
     await expect(mobileNav).toBeVisible();
     await mobileNav.getByRole("link", { name: "Solutions" }).click();
 
-    await expect(page).toHaveURL(/\\/solutions$/);
+    await expect(page).toHaveURL(/\/solutions$/);
     await expect(page.getByRole("navigation", { name: "Mobile primary navigation" })).toBeHidden();
   });
 });
