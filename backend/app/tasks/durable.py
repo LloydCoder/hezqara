@@ -20,6 +20,17 @@ def _run_async(coro):
         _worker_loop_pid = pid
     return _worker_loop.run_until_complete(coro)
 
+@celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=30)
+def heartbeat_worker(self):
+    """Persist a periodic heartbeat from an actual Celery worker process."""
+    return _run_async(_heartbeat_worker())
+
+async def _heartbeat_worker():
+    worker_id=f"{os.uname().nodename}:{os.getpid()}"
+    async with system_session_context() as session:
+        await record_worker_heartbeat(session,worker_id,'hezqara',0)
+    return {"status":"ok","worker_id":worker_id}
+
 @celery_app.task(bind=True,acks_late=True,task_reject_on_worker_lost=True,max_retries=0,time_limit=300,soft_time_limit=240)
 def run_platform_job(self, job_id: str):
     return _run_async(_run_platform_job(job_id))
