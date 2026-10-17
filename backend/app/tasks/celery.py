@@ -11,6 +11,7 @@ celery_app.conf.update(
     task_routes={
         'app.tasks.workflows.execute_workflow_run':{'queue':'hezqara'},
         'app.tasks.communications.dispatch_communication_outbox':{'queue':'hezqara'},
+        'app.tasks.durable.heartbeat_worker':{'queue':'hezqara'},
         'app.tasks.durable.run_platform_job':{'queue':'hezqara'},
         'app.tasks.durable.dispatch_due_platform_jobs':{'queue':'hezqara'},
         'app.tasks.durable.reconcile_execution_leases':{'queue':'hezqara'},
@@ -18,6 +19,7 @@ celery_app.conf.update(
     beat_schedule={
         'dispatch-durable-jobs':{'task':'app.tasks.durable.dispatch_due_platform_jobs','schedule':15.0},
         'reconcile-execution-leases':{'task':'app.tasks.durable.reconcile_execution_leases','schedule':30.0},
+        'heartbeat-worker':{'task':'app.tasks.durable.heartbeat_worker','schedule':30.0},
     },
     timezone='UTC',
 )
