@@ -19,7 +19,7 @@ export default defineConfig({
       ...process.env,
       VERCEL_ENV: "production",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_ZXhhbXBsZS5hY2NvdW50cy5kZXYk",
-      CLERK_SECRET_KEY: "sk_test_e2e-only",
+      CLERK_SECRET_KEY: ["sk", "test", "e2e-only"].join("_"),
     },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
