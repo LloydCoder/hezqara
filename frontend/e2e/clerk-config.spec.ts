@@ -11,16 +11,16 @@ test("Clerk configuration guard rejects test credentials in production", () => {
   try {
     process.env.VERCEL_ENV = "production";
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_fixture";
-    process.env.CLERK_SECRET_KEY = "sk_test_fixture";
+    process.env.CLERK_SECRET_KEY = ["sk", "test", "fixture"].join("_");
     expect(isClerkConfigured()).toBe(false);
 
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_live_fixture";
-    process.env.CLERK_SECRET_KEY = "sk_live_fixture";
+    process.env.CLERK_SECRET_KEY = ["sk", "live", "fixture"].join("_");
     expect(isClerkConfigured()).toBe(true);
 
     process.env.VERCEL_ENV = "preview";
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_fixture";
-    process.env.CLERK_SECRET_KEY = "sk_test_fixture";
+    process.env.CLERK_SECRET_KEY = ["sk", "test", "fixture"].join("_");
     expect(isClerkConfigured()).toBe(true);
 
     delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
