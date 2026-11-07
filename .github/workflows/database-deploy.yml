@@ -3,8 +3,13 @@ name: HEZQARA Production Database Migrations
 on:
   workflow_dispatch:
     inputs:
+      dry_run_only:
+        description: "Run the migration dry run only. Review its output before a separate apply run."
+        required: true
+        type: boolean
+        default: true
       confirm_production:
-        description: "Confirm that the pending repository migrations should be applied to the HEZQARA production database."
+        description: "For the second run only: confirm that the reviewed migration plan should be applied to HEZQARA production."
         required: true
         type: boolean
         default: false
@@ -19,7 +24,7 @@ concurrency:
 jobs:
   deploy:
     name: Review and apply production migrations
-    if: github.ref == 'refs/heads/main' && inputs.confirm_production == true
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -54,8 +59,14 @@ jobs:
           supabase migration list --linked
           supabase db push --linked --dry-run
 
+      - name: Stop after dry run unless apply was explicitly confirmed
+        if: inputs.dry_run_only == true || inputs.confirm_production != true
+        run: echo "Dry run complete. Review the migration plan. To apply, dispatch again with dry_run_only=false and confirm_production=true."
+
       - name: Apply reviewed repository migrations
+        if: inputs.dry_run_only == false && inputs.confirm_production == true
         run: supabase db push --linked --yes
 
       - name: Verify remote migration history
+        if: inputs.dry_run_only == false && inputs.confirm_production == true
         run: supabase migration list --linked
