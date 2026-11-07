@@ -49,9 +49,10 @@ BEGIN
   END IF;
 
   IF has_function_privilege('anon', 'public.healthy_worker_count(interval)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'public.healthy_worker_count(interval)', 'EXECUTE')
-     OR NOT has_function_privilege('service_role', 'public.healthy_worker_count(interval)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'healthy_worker_count has an invalid execution grant';
+     OR NOT has_function_privilege('authenticated', 'public.healthy_worker_count(interval)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.healthy_worker_count(interval)', 'EXECUTE')
+     OR (SELECT prosecdef FROM pg_proc WHERE oid='public.healthy_worker_count(interval)'::regprocedure) THEN
+    RAISE EXCEPTION 'healthy_worker_count must be invoker-security and available only to authenticated/service_role';
   END IF;
 
   IF has_function_privilege('anon', 'public.recover_expired_execution_leases(timestamp with time zone)', 'EXECUTE')
