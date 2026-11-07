@@ -91,12 +91,12 @@ BEGIN
   WHERE p.schemaname = 'public'
     AND (
       (p.qual IS NOT NULL AND (
-        regexp_count(p.qual, 'current_setting\\(') > regexp_count(p.qual, '\\( SELECT current_setting\\(')
-        OR regexp_count(p.qual, 'auth\\.[a-z_][a-z0-9_]*\\(\\)') > regexp_count(p.qual, '\\( SELECT auth\\.[a-z_][a-z0-9_]*\\(\\)')
+        regexp_count(p.qual, 'current_setting\(') > regexp_count(p.qual, '\( SELECT current_setting\(')
+        OR regexp_count(p.qual, 'auth\.[a-z_][a-z0-9_]*\(\)') > regexp_count(p.qual, '\( SELECT auth\.[a-z_][a-z0-9_]*\(\)')
       ))
       OR (p.with_check IS NOT NULL AND (
-        regexp_count(p.with_check, 'current_setting\\(') > regexp_count(p.with_check, '\\( SELECT current_setting\\(')
-        OR regexp_count(p.with_check, 'auth\\.[a-z_][a-z0-9_]*\\(\\)') > regexp_count(p.with_check, '\\( SELECT auth\\.[a-z_][a-z0-9_]*\\(\\)')
+        regexp_count(p.with_check, 'current_setting\(') > regexp_count(p.with_check, '\( SELECT current_setting\(')
+        OR regexp_count(p.with_check, 'auth\.[a-z_][a-z0-9_]*\(\)') > regexp_count(p.with_check, '\( SELECT auth\.[a-z_][a-z0-9_]*\(\)')
       ))
     );
 
