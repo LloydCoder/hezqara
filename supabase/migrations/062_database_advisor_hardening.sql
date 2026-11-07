@@ -220,3 +220,8 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+
+-- Explicit composite index for the duplicated E2/launch lead-event references.
+-- Both constraints use the same (clinic_id, lead_id) order.
+CREATE INDEX IF NOT EXISTS idx_fk_growth_campaign_events_clinic_lead_062
+  ON public.growth_campaign_events (clinic_id, lead_id);
