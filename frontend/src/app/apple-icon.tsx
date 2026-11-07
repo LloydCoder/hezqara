@@ -4,15 +4,25 @@ export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
 export default function AppleIcon() {
+  const dimension = 128;
+  const bar = dimension * 0.0917;
+  const dot = dimension * 0.15;
+  const stroke = "#FFFFFF";
+  const teal = "#2DD4BF";
+  const common = { position: "absolute" as const, backgroundColor: stroke, borderRadius: bar };
+  const node = { position: "absolute" as const, width: dot, height: dot, borderRadius: dot, backgroundColor: teal };
   return new ImageResponse(
-    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#0B1220", borderRadius: 34 }}>
-      <svg width={128} height={128} viewBox="0 0 120 120">
-        <path d="M22 10V110M98 10V110M22 60H98M60 22V98" fill="none" stroke="#FFFFFF" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="60" cy="22" r="9" fill="#2DD4BF" />
-        <circle cx="60" cy="98" r="9" fill="#2DD4BF" />
-        <circle cx="22" cy="60" r="9" fill="#2DD4BF" />
-        <circle cx="98" cy="60" r="9" fill="#2DD4BF" />
-      </svg>
+    <div style={{ width: 180, height: 180, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#0B1220", borderRadius: 36 }}>
+      <div style={{ position: "relative", width: dimension, height: dimension, display: "flex" }}>
+        <div style={{ ...common, left: dimension * 0.137, top: dimension * 0.083, width: bar, height: dimension * 0.834 }} />
+        <div style={{ ...common, left: dimension * 0.771, top: dimension * 0.083, width: bar, height: dimension * 0.834 }} />
+        <div style={{ ...common, left: dimension * 0.137, top: dimension * 0.454, width: dimension * 0.726, height: bar }} />
+        <div style={{ ...common, left: dimension * 0.454, top: dimension * 0.183, width: bar, height: dimension * 0.634 }} />
+        <div style={{ ...node, left: dimension * 0.425, top: dimension * 0.108 }} />
+        <div style={{ ...node, left: dimension * 0.425, top: dimension * 0.742 }} />
+        <div style={{ ...node, left: dimension * 0.062, top: dimension * 0.425 }} />
+        <div style={{ ...node, left: dimension * 0.696, top: dimension * 0.425 }} />
+      </div>
     </div>,
     size,
   );
