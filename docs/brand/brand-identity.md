@@ -23,7 +23,9 @@ This document records the canonical implementation rules for the HEZQARA web app
 | `/brand/hezqara-mark-small-size-full-color.svg` | Heavier mark below 32 px on light surfaces |
 | `/brand/hezqara-mark-small-size-reversed.svg` | Heavier mark below 32 px on dark surfaces |
 | `/brand/hezqara-logo-mark-reversed.svg` | Standalone mark on dark surfaces |
-| `/favicon.svg` | Browser favicon; includes light/dark colour handling |
+| `/favicon.ico` | Broad browser favicon fallback |
+| `/favicon.svg` | Primary vector browser favicon |
+| `/apple-touch-icon.png` | iOS home-screen icon |
 | `/safari-pinned-tab.svg` | Safari pinned tab |
 | `/site.webmanifest` | Application name and icon metadata |
 
@@ -65,7 +67,9 @@ Do not make HIPAA, GDPR, ISO 27001 or other compliance claims unless the certifi
 - Below 120 px wide, use the compact horizontal lockup without tagline.
 - Below 32 px tall, use the supplied heavier small-size mark.
 - Maintain clear space equal to half the mark height.
-- Use SVG for web logos and favicons; set explicit image dimensions to prevent layout shift.
+- Use supplied SVG artwork for web logos and vector favicons; use the supplied PNG for the Apple touch icon.
+- Keep the web manifest and browser icon links pointed at real, tested static assets.
+- Use the HEZQARA Open Graph image endpoint for social previews; do not bake the temporary Vercel hostname into the artwork.
 - Keep light and dark logo variants matched to their actual backgrounds.
 - Update the Open Graph image and canonical domain when the final production domain is selected.
 
