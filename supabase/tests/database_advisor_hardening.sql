@@ -67,18 +67,22 @@ BEGIN
 
   WITH actions(action) AS (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE')),
   effective_policies AS (
-    SELECT p.tablename, p.roles, actions.action, p.policyname
+    SELECT p.tablename, actions.action, p.policyname
     FROM pg_policies p
     CROSS JOIN actions
     WHERE p.schemaname = 'public'
       AND p.permissive = 'PERMISSIVE'
       AND (p.cmd = 'ALL' OR p.cmd = actions.action)
+      AND (
+        p.roles @> ARRAY['authenticated']::name[]
+        OR p.roles @> ARRAY['public']::name[]
+      )
   )
   SELECT count(*) INTO multiple_policy_groups
   FROM (
-    SELECT tablename, roles, action
+    SELECT tablename, action
     FROM effective_policies
-    GROUP BY tablename, roles, action
+    GROUP BY tablename, action
     HAVING count(*) > 1
   ) duplicates;
 
