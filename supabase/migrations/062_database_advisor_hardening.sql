@@ -64,6 +64,7 @@ DECLARE
   fk record;
   column_sql text;
   index_name text;
+  suffix integer;
 BEGIN
   FOR fk IN
     SELECT c.conrelid, c.conkey, n.nspname AS schema_name, t.relname AS table_name,
@@ -95,13 +96,16 @@ BEGIN
       FROM unnest(fk.column_names) AS cols(col_name);
 
       index_name := 'idx_fk_' || substr(md5(fk.table_name || ':' || array_to_string(fk.column_names, ':')), 1, 20);
+      suffix := 0;
+      WHILE to_regclass(format('%I.%I', fk.schema_name, index_name)) IS NOT NULL LOOP
+        suffix := suffix + 1;
+        index_name := 'idx_fk_' || substr(md5(fk.table_name || ':' || array_to_string(fk.column_names, ':')), 1, 16) || '_' || suffix::text;
+      END LOOP;
 
-      IF to_regclass(format('%I.%I', fk.schema_name, index_name)) IS NULL THEN
-        EXECUTE format(
-          'CREATE INDEX %I ON %I.%I (%s)',
-          index_name, fk.schema_name, fk.table_name, column_sql
-        );
-      END IF;
+      EXECUTE format(
+        'CREATE INDEX %I ON %I.%I (%s)',
+        index_name, fk.schema_name, fk.table_name, column_sql
+      );
     END IF;
   END LOOP;
 END $$;
