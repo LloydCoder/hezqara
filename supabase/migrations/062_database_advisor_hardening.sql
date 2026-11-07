@@ -15,8 +15,10 @@ ALTER FUNCTION public.prevent_appointment_overlap()
 ALTER FUNCTION public.enforce_platform_usage_limit()
   SET search_path TO pg_catalog, public, pg_temp;
 ALTER FUNCTION public.healthy_worker_count(interval)
+  SECURITY INVOKER
   SET search_path TO pg_catalog, public, pg_temp;
 ALTER FUNCTION public.recover_expired_execution_leases(timestamp with time zone)
+  SECURITY INVOKER
   SET search_path TO pg_catalog, public, pg_temp;
 ALTER FUNCTION public.workflow_step_runs_set_idempotency()
   SET search_path TO pg_catalog, public, pg_temp;
@@ -36,29 +38,24 @@ REVOKE ALL ON FUNCTION public.workflow_step_runs_set_idempotency() FROM PUBLIC, 
 -- These operational functions are callable by trusted backend/service-role processes only.
 REVOKE ALL ON FUNCTION public.next_queue_number(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.next_queue_number(text) TO service_role;
-REVOKE ALL ON FUNCTION public.healthy_worker_count(interval) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.healthy_worker_count(interval) TO service_role;
+REVOKE ALL ON FUNCTION public.healthy_worker_count(interval) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.healthy_worker_count(interval) TO authenticated, service_role;
+-- The function is now invoker-security. Authenticated callers see zero rows because
+-- worker_heartbeats has an explicit false RLS policy; service_role retains operational visibility.
+GRANT SELECT ON public.worker_heartbeats TO authenticated;
 REVOKE ALL ON FUNCTION public.recover_expired_execution_leases(timestamp with time zone) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.recover_expired_execution_leases(timestamp with time zone) TO service_role;
 
 -- Keep the single canonical tenant policy on each affected table. The removed
 -- policies have the same predicate and only caused permissive-policy OR duplication.
 DROP POLICY IF EXISTS e11_tenant_write ON public.authorizations;
-DROP POLICY IF EXISTS phase6_tenant_write ON public.authorizations;
 DROP POLICY IF EXISTS e11_tenant_select ON public.authorizations;
-DROP POLICY IF EXISTS phase6_tenant_select ON public.authorizations;
 DROP POLICY IF EXISTS e11_tenant_write ON public.eligibility_requests;
-DROP POLICY IF EXISTS phase6_tenant_write ON public.eligibility_requests;
 DROP POLICY IF EXISTS e11_tenant_select ON public.eligibility_requests;
-DROP POLICY IF EXISTS phase6_tenant_select ON public.eligibility_requests;
 DROP POLICY IF EXISTS e11_tenant_write ON public.patient_coverages;
-DROP POLICY IF EXISTS phase6_tenant_write ON public.patient_coverages;
 DROP POLICY IF EXISTS e11_tenant_select ON public.patient_coverages;
-DROP POLICY IF EXISTS phase6_tenant_select ON public.patient_coverages;
 DROP POLICY IF EXISTS e11_tenant_write ON public.records_v2;
-DROP POLICY IF EXISTS phase6_tenant_write ON public.records_v2;
 DROP POLICY IF EXISTS e11_tenant_select ON public.records_v2;
-DROP POLICY IF EXISTS phase6_tenant_select ON public.records_v2;
 
 -- Add one btree index for each distinct FK column set that lacks a suitable
 -- leading-column index. This improves joins and parent-row update/delete checks.
