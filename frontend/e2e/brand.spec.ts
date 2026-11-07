@@ -45,7 +45,7 @@ test.describe("official HEZQARA brand identity", () => {
     expect(tokens.font).toContain("Inter");
   });
 
-  test("publishes valid favicon, Apple, Android and Open Graph assets", async ({ page, request }) => {
+  test("publishes valid favicon, Apple and Open Graph assets", async ({ page, request }) => {
     await page.goto("/");
     const favicon = page.locator("link[rel='icon'][type='image/svg+xml']");
     await expect(favicon).toHaveAttribute("href", "/favicon.svg");
