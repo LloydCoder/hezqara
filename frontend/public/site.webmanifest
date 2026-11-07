@@ -1,0 +1,16 @@
+{
+  "name": "HEZQARA",
+  "short_name": "HEZQARA",
+  "description": "The governed AI workforce for healthcare",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#0F2A47",
+  "background_color": "#0B1220",
+  "display": "standalone"
+}
