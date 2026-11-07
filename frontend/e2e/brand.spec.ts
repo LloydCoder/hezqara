@@ -56,7 +56,7 @@ test.describe("official HEZQARA brand identity", () => {
     await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", /\/opengraph-image/);
     await expect(page.locator("meta[name='twitter:image']")).toHaveAttribute("content", /\/opengraph-image/);
 
-    for (const path of ["/favicon.svg", "/safari-pinned-tab.svg"]) {
+    for (const path of ["/favicon.svg", "/favicon.ico", "/safari-pinned-tab.svg"]) {
       const response = await request.get(path);
       expect(response.status(), path).toBe(200);
     }
