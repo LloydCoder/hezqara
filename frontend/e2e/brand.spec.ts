@@ -56,6 +56,9 @@ test.describe("official HEZQARA brand identity", () => {
     await expect(appleIcon).toHaveAttribute("href", "/apple-touch-icon.png");
     await expect(page.locator("link[rel='manifest']")).toHaveAttribute("href", "/site.webmanifest");
     await expect(page.locator("meta[name='theme-color']")).toHaveAttribute("content", "#0F2A47");
+    const canonicalUrl = await page.locator("link[rel='canonical']").getAttribute("href");
+    const openGraphUrl = await page.locator("meta[property='og:url']").getAttribute("content");
+    expect(canonicalUrl).toBe(openGraphUrl);
     await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", new RegExp("/opengraph-image.svg"));
     await expect(page.locator("meta[name='twitter:image']")).toHaveAttribute("content", new RegExp("/opengraph-image.svg"));
 
