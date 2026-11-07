@@ -4,13 +4,15 @@ import { isClerkConfigured } from "@/lib/clerk-config";
 import "@/styles/brand.css";
 import "./globals.css";
 
-// Temporary production alias; override NEXT_PUBLIC_SITE_URL when the owned custom domain is attached.\nconst siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://hezqara-yvj6.vercel.app";
+// Temporary production alias; override NEXT_PUBLIC_SITE_URL when the owned custom domain is attached.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://hezqara-yvj6.vercel.app";
 const socialImage = "/opengraph-image.svg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: "HEZQARA — The governed AI workforce for healthcare", template: "%s — HEZQARA" },
-  description: "A governed AI workforce for healthcare front-office operations, with human oversight and accountable execution.",\n  alternates: { canonical: siteUrl },
+  description: "A governed AI workforce for healthcare front-office operations, with human oversight and accountable execution.",
+  alternates: { canonical: siteUrl },
   applicationName: "HEZQARA",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "48x48" }],
