@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: { default: "HEZQARA — The governed AI workforce for healthcare", template: "%s — HEZQARA" },
   description: "A governed AI workforce for healthcare front-office operations, with human oversight and accountable execution.",
   applicationName: "HEZQARA",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "48x48" }],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   robots: { index: true, follow: true },
   manifest: "/site.webmanifest",
   openGraph: {

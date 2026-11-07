@@ -50,7 +50,7 @@ test.describe("official HEZQARA brand identity", () => {
     const favicon = page.locator("link[rel='icon'][type='image/svg+xml']");
     await expect(favicon).toHaveAttribute("href", "/favicon.svg");
     const appleIcon = page.locator("link[rel='apple-touch-icon']");
-    await expect(appleIcon).toHaveCount(1);
+    await expect(appleIcon).toHaveAttribute("href", "/apple-touch-icon.png");
     await expect(page.locator("link[rel='manifest']")).toHaveAttribute("href", "/site.webmanifest");
     await expect(page.locator("meta[name='theme-color']")).toHaveAttribute("content", "#0F2A47");
     await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", /\/opengraph-image/);
@@ -60,13 +60,9 @@ test.describe("official HEZQARA brand identity", () => {
       const response = await request.get(path);
       expect(response.status(), path).toBe(200);
     }
-    for (const locator of [appleIcon]) {
-      const href = await locator.getAttribute("href");
-      expect(href).toBeTruthy();
-      const response = await request.get(href!);
-      expect(response.status(), href!).toBe(200);
-      expect(response.headers()["content-type"]).toContain("image/png");
-    }
+    const appleResponse = await request.get("/apple-touch-icon.png");
+    expect(appleResponse.status()).toBe(200);
+    expect(appleResponse.headers()["content-type"]).toContain("image/png");
 
     const officialLockup = await request.get("/brand/hezqara-logo-horizontal-tagline-full-color.svg");
     expect(officialLockup.status()).toBe(200);
@@ -80,6 +76,7 @@ test.describe("official HEZQARA brand identity", () => {
     const manifestBody = await manifest.json();
     expect(manifestBody.name).toBe("HEZQARA");
     expect(manifestBody.icons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ src: "/apple-touch-icon.png", sizes: "180x180", purpose: "any" }),
       expect.objectContaining({ src: "/favicon.svg", sizes: "any", purpose: "any" }),
     ]));
     for (const icon of manifestBody.icons) {
