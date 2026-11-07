@@ -53,8 +53,8 @@ test.describe("official HEZQARA brand identity", () => {
     await expect(appleIcon).toHaveAttribute("href", "/apple-touch-icon.png");
     await expect(page.locator("link[rel='manifest']")).toHaveAttribute("href", "/site.webmanifest");
     await expect(page.locator("meta[name='theme-color']")).toHaveAttribute("content", "#0F2A47");
-    await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", /\/opengraph-image.svg/);
-    await expect(page.locator("meta[name='twitter:image']")).toHaveAttribute("content", /\/opengraph-image.svg/);
+    await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", /\\/opengraph-image.svg/);
+    await expect(page.locator("meta[name='twitter:image']")).toHaveAttribute("content", /\\/opengraph-image.svg/);
 
     for (const path of ["/favicon.svg", "/favicon.ico", "/safari-pinned-tab.svg"]) {
       const response = await request.get(path);
@@ -87,5 +87,9 @@ test.describe("official HEZQARA brand identity", () => {
     const socialImage = await request.get("/opengraph-image.svg");
     expect(socialImage.status()).toBe(200);
     expect(socialImage.headers()["content-type"]).toContain("image/svg+xml");
+    const socialMarkup = await socialImage.text();
+    expect(socialMarkup).toContain('translate(93.35 67.15)');
+    expect(socialMarkup).toContain('fill="#5B6B7F"');
+    expect(socialMarkup).not.toContain('font-size="64"');
   });
 });
