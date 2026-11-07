@@ -14,7 +14,7 @@ export default function SignInPage() {
             <img src="/brand/hezqara-logo-horizontal-reversed.svg" alt="HEZQARA" width={179} height={48} className="h-12 w-auto" />
           </Link>
           <h1 className="mt-4 text-2xl font-black">Welcome back</h1>
-          <p className="mt-2 text-sm text-slate-400">Sign in to your healthcare operations workspace.</p>
+          <p className="mt-2 text-sm text-slate-300">Sign in to your healthcare operations workspace.</p>
         </div>
         {authenticationConfigured ? (
           <SignIn appearance={{ elements: { rootBox: "w-full", card: "w-full rounded-2xl border border-slate-200 shadow-xl", headerTitle: "hidden", headerSubtitle: "hidden" } }} />
