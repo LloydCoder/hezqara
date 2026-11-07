@@ -5,7 +5,7 @@ import "@/styles/brand.css";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://hezqara.vercel.app";
-const socialImage = "/opengraph-image";
+const socialImage = "/opengraph-image.svg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
