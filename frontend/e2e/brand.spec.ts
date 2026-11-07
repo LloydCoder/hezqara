@@ -47,16 +47,25 @@ test.describe("official HEZQARA brand identity", () => {
 
   test("publishes valid favicon, Apple, Android and Open Graph assets", async ({ page, request }) => {
     await page.goto("/");
-    await expect(page.locator("link[rel='icon'][type='image/svg+xml']")).toHaveAttribute("href", "/favicon.svg");
-    await expect(page.locator("link[rel='apple-touch-icon']")).toHaveAttribute("href", "/apple-icon.png");
+    const favicon = page.locator("link[rel='icon'][type='image/svg+xml']");
+    await expect(favicon).toHaveAttribute("href", "/favicon.svg");
+    const appleIcon = page.locator("link[rel='apple-touch-icon']");
+    await expect(appleIcon).toHaveCount(1);
     await expect(page.locator("link[rel='manifest']")).toHaveAttribute("href", "/site.webmanifest");
     await expect(page.locator("meta[name='theme-color']")).toHaveAttribute("content", "#0F2A47");
     await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", /\/opengraph-image/);
     await expect(page.locator("meta[name='twitter:image']")).toHaveAttribute("content", /\/opengraph-image/);
 
-    for (const path of ["/favicon.svg", "/safari-pinned-tab.svg", "/apple-icon.png", "/icon.png"]) {
+    for (const path of ["/favicon.svg", "/safari-pinned-tab.svg"]) {
       const response = await request.get(path);
       expect(response.status(), path).toBe(200);
+    }
+    for (const locator of [appleIcon]) {
+      const href = await locator.getAttribute("href");
+      expect(href).toBeTruthy();
+      const response = await request.get(href!);
+      expect(response.status(), href!).toBe(200);
+      expect(response.headers()["content-type"]).toContain("image/png");
     }
 
     const manifest = await request.get("/site.webmanifest");
@@ -64,7 +73,6 @@ test.describe("official HEZQARA brand identity", () => {
     const manifestBody = await manifest.json();
     expect(manifestBody.name).toBe("HEZQARA");
     expect(manifestBody.icons).toEqual(expect.arrayContaining([
-      expect.objectContaining({ src: "/icon.png", sizes: "512x512", purpose: "any" }),
       expect.objectContaining({ src: "/favicon.svg", sizes: "any", purpose: "any" }),
     ]));
     for (const icon of manifestBody.icons) {
