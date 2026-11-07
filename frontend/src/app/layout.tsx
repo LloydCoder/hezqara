@@ -13,11 +13,6 @@ export const metadata: Metadata = {
   description: "A governed AI workforce for healthcare front-office operations, with human oversight and accountable execution.",
   applicationName: "HEZQARA",
   robots: { index: true, follow: true },
-  icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    shortcut: ["/favicon.svg"],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-  },
   manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
@@ -45,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const content = (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0F2A47" />
       </head>
       <body>{children}</body>
