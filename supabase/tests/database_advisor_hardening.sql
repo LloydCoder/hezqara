@@ -3,6 +3,9 @@ DO $$
 DECLARE
   fk_without_index integer;
   missing_fk_details text;
+  multiple_policy_groups integer;
+  unoptimized_policy_calls integer;
+  duplicate_index_groups integer;
 BEGIN
   IF EXISTS (
     SELECT 1
@@ -62,15 +65,66 @@ BEGIN
     RAISE EXCEPTION 'recover_expired_execution_leases has an invalid execution grant';
   END IF;
 
-  IF EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND permissive = 'PERMISSIVE'
-    GROUP BY tablename, roles, cmd
+  WITH actions(action) AS (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE')),
+  effective_policies AS (
+    SELECT p.tablename, p.roles, actions.action, p.policyname
+    FROM pg_policies p
+    CROSS JOIN actions
+    WHERE p.schemaname = 'public'
+      AND p.permissive = 'PERMISSIVE'
+      AND (p.cmd = 'ALL' OR p.cmd = actions.action)
+  )
+  SELECT count(*) INTO multiple_policy_groups
+  FROM (
+    SELECT tablename, roles, action
+    FROM effective_policies
+    GROUP BY tablename, roles, action
     HAVING count(*) > 1
-  ) THEN
-    RAISE EXCEPTION 'duplicate permissive RLS policy groups remain';
+  ) duplicates;
+
+  IF multiple_policy_groups > 0 THEN
+    RAISE EXCEPTION '% overlapping permissive RLS policy groups remain', multiple_policy_groups;
+  END IF;
+
+  SELECT count(*) INTO unoptimized_policy_calls
+  FROM pg_policies p
+  WHERE p.schemaname = 'public'
+    AND (
+      (p.qual IS NOT NULL AND (
+        regexp_count(p.qual, 'current_setting\(') > regexp_count(p.qual, '\( SELECT current_setting\(')
+        OR regexp_count(p.qual, 'auth\.[a-z_][a-z0-9_]*\(\)') > regexp_count(p.qual, '\( SELECT auth\.[a-z_][a-z0-9_]*\(\)')
+      ))
+      OR (p.with_check IS NOT NULL AND (
+        regexp_count(p.with_check, 'current_setting\(') > regexp_count(p.with_check, '\( SELECT current_setting\(')
+        OR regexp_count(p.with_check, 'auth\.[a-z_][a-z0-9_]*\(\)') > regexp_count(p.with_check, '\( SELECT auth\.[a-z_][a-z0-9_]*\(\)')
+      ))
+    );
+
+  IF unoptimized_policy_calls > 0 THEN
+    RAISE EXCEPTION '% RLS policies still call stable context functions per row', unoptimized_policy_calls;
+  END IF;
+
+  SELECT count(*) INTO duplicate_index_groups
+  FROM (
+    SELECT i.indrelid, i.indkey, i.indclass, i.indcollation, i.indoption,
+           i.indpred, i.indexprs, i.indisunique, i.indnullsnotdistinct,
+           i.indnkeyatts, i.indnatts, i.indimmediate, am.oid
+    FROM pg_index i
+    JOIN pg_class t ON t.oid = i.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    JOIN pg_class ix ON ix.oid = i.indexrelid
+    JOIN pg_am am ON am.oid = ix.relam
+    WHERE n.nspname = 'public'
+      AND i.indisvalid
+      AND i.indisready
+    GROUP BY i.indrelid, i.indkey, i.indclass, i.indcollation, i.indoption,
+             i.indpred, i.indexprs, i.indisunique, i.indnullsnotdistinct,
+             i.indnkeyatts, i.indnatts, i.indimmediate, am.oid
+    HAVING count(*) > 1
+  ) duplicates;
+
+  IF duplicate_index_groups > 0 THEN
+    RAISE EXCEPTION '% duplicate index groups remain', duplicate_index_groups;
   END IF;
 
   SELECT count(*) INTO fk_without_index
