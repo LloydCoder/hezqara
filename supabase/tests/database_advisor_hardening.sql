@@ -2,6 +2,7 @@
 DO $$
 DECLARE
   fk_without_index integer;
+  missing_fk_details text;
 BEGIN
   IF EXISTS (
     SELECT 1
@@ -96,6 +97,33 @@ BEGIN
   );
 
   IF fk_without_index > 0 THEN
-    RAISE EXCEPTION '% foreign-key column sets remain without a leading btree index', fk_without_index;
+    SELECT string_agg(
+      format('%s.%s constraint %s columns %s', n.nspname, t.relname, c.conname,
+        array_agg(a.attname::text ORDER BY key_column.ordinality)::text),
+      '; '
+    )
+    INTO missing_fk_details
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    CROSS JOIN LATERAL unnest(c.conkey) WITH ORDINALITY AS key_column(attnum, ordinality)
+    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = key_column.attnum
+    WHERE c.contype = 'f'
+      AND n.nspname = 'public'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        JOIN pg_class ix ON ix.oid = i.indexrelid
+        JOIN pg_am am ON am.oid = ix.relam
+        WHERE i.indrelid = c.conrelid
+          AND i.indisvalid
+          AND i.indisready
+          AND i.indpred IS NULL
+          AND i.indexprs IS NULL
+          AND am.amname = 'btree'
+          AND (i.indkey::smallint[])[0:cardinality(c.conkey)-1] = c.conkey
+      )
+    GROUP BY c.conrelid, c.conkey, n.nspname, t.relname, c.conname;
+    RAISE EXCEPTION '% foreign-key column sets remain without a leading btree index: %', fk_without_index, missing_fk_details;
   END IF;
 END $$;
