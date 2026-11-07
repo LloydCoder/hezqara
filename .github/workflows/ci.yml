@@ -158,6 +158,9 @@ jobs:
       - name: Prove E23 reliability isolation
         env: {PGPASSWORD: postgres}
         run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/e23_reliability.sql
+      - name: Prove database advisor hardening
+        env: {PGPASSWORD: postgres}
+        run: psql -h 127.0.0.1 -U postgres -d hezqara_ci -v ON_ERROR_STOP=1 -f supabase/tests/database_advisor_hardening.sql
       - name: Install backend dependencies for production-like import
         working-directory: backend
         run: pip install -r requirements.txt
