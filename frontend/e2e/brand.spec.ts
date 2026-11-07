@@ -38,11 +38,14 @@ test.describe("official HEZQARA brand identity", () => {
         teal: root.getPropertyValue("--hz-teal").trim(),
         tealDeep: root.getPropertyValue("--hz-teal-deep").trim(),
         midnight: root.getPropertyValue("--hz-midnight").trim(),
+        mist: root.getPropertyValue("--hz-mist").trim(),
         font: body.fontFamily,
       };
     });
-    expect(tokens).toMatchObject({ navy: "#0f2a47", teal: "#14b8a6", tealDeep: "#0f766e", midnight: "#0b1220" });
+    expect(tokens).toMatchObject({ navy: "#0f2a47", teal: "#14b8a6", tealDeep: "#0f766e", midnight: "#0b1220", mist: "#9aa8ba" });
     expect(tokens.font).toContain("Inter");
+    const darkSecondary = await page.locator("main section.bg-slate-950 p.text-slate-300").first().evaluate(element => getComputedStyle(element).color);
+    expect(darkSecondary).toBe("rgb(154, 168, 186)");
   });
 
   test("publishes valid favicon, Apple and Open Graph assets", async ({ page, request }) => {
