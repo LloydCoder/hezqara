@@ -9,7 +9,7 @@ clerk-backend-api==7.0.0
 svix==2.8.0
 httpx==0.28.1
 anthropic==1.13.0
-openai==3.33.0
+openai==3.45.0
 retell-sdk==6.2.7
 celery==5.6.3
 redis==6.4.0
