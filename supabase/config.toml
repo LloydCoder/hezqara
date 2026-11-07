@@ -1,0 +1,3 @@
+# HEZQARA Supabase project configuration.
+# Production migrations are deployed only through the guarded workflow_dispatch job.
+project_id = "hezqara"

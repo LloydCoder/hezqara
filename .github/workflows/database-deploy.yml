@@ -1,0 +1,72 @@
+name: HEZQARA Production Database Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run_only:
+        description: "Run the migration dry run only. Review its output before a separate apply run."
+        required: true
+        type: boolean
+        default: true
+      confirm_production:
+        description: "For the second run only: confirm that the reviewed migration plan should be applied to HEZQARA production."
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hezqara-supabase-production-migrations
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Review and apply production migrations
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: rqsmlpcifvznwtmktzxi
+    steps:
+      - name: Check out the protected main branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+
+      - name: Validate deployment credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN}" || { echo "::error::Missing SUPABASE_ACCESS_TOKEN repository secret"; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD}" || { echo "::error::Missing SUPABASE_DB_PASSWORD repository secret"; exit 1; }
+          test "${SUPABASE_PROJECT_REF}" = "rqsmlpcifvznwtmktzxi"
+
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb
+        with:
+          version: 3.0.0
+
+      - name: Link the exact production project
+        run: supabase link --project-ref "${SUPABASE_PROJECT_REF}"
+
+      - name: Show migration plan
+        run: |
+          set -euo pipefail
+          supabase migration list --linked
+          supabase db push --linked --dry-run
+
+      - name: Stop after dry run unless apply was explicitly confirmed
+        if: inputs.dry_run_only == true || inputs.confirm_production != true
+        run: echo "Dry run complete. Review the migration plan. To apply, dispatch again with dry_run_only=false and confirm_production=true."
+
+      - name: Apply reviewed repository migrations
+        if: inputs.dry_run_only == false && inputs.confirm_production == true
+        run: supabase db push --linked --yes
+
+      - name: Verify remote migration history
+        if: inputs.dry_run_only == false && inputs.confirm_production == true
+        run: supabase migration list --linked
