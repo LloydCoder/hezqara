@@ -68,6 +68,13 @@ test.describe("official HEZQARA brand identity", () => {
       expect(response.headers()["content-type"]).toContain("image/png");
     }
 
+    const officialLockup = await request.get("/brand/hezqara-logo-horizontal-tagline-full-color.svg");
+    expect(officialLockup.status()).toBe(200);
+    const lockupSource = await officialLockup.text();
+    expect(lockupSource).toContain('translate(93.35 56.73)');
+    expect(lockupSource).toContain('translate(93.35 67.15)');
+    expect(lockupSource).toContain('fill="#5B6B7F"');
+
     const manifest = await request.get("/site.webmanifest");
     expect(manifest.status()).toBe(200);
     const manifestBody = await manifest.json();
