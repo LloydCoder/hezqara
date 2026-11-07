@@ -1,20 +1,40 @@
 import { expect, test } from "@playwright/test";
 
+const marketingRoutes = [
+  "/",
+  "/product",
+  "/workforce",
+  "/solutions",
+  "/how-it-works",
+  "/security",
+  "/compliance",
+  "/enterprise",
+  "/contact",
+  "/pricing",
+];
+
 test.describe("official HEZQARA brand identity", () => {
-  test("uses the approved horizontal logo in the public header", async ({ page }) => {
-    await page.goto("/");
-    const headerLogo = page.locator("header a[aria-label='HEZQARA home'] img");
-    await expect(headerLogo).toBeVisible();
-    await expect(headerLogo).toHaveAttribute("src", "/brand/hezqara-logo-horizontal-full-color.svg");
-    const desktopLogo = page.locator("header picture source");
-    await expect(desktopLogo).toHaveAttribute("srcset", "/brand/hezqara-logo-horizontal-tagline-full-color.svg");
+  test("uses the approved logo in the public header and footer across marketing routes", async ({ page }) => {
+    for (const route of marketingRoutes) {
+      await page.goto(route);
+      const headerLogo = page.locator("header a[aria-label='HEZQARA home'] img");
+      await expect(headerLogo, `header logo on ${route}`).toBeVisible();
+      await expect(headerLogo).toHaveAttribute("src", "/brand/hezqara-logo-horizontal-full-color.svg");
+      await expect(page.locator("header picture source")).toHaveAttribute("srcset", "/brand/hezqara-logo-horizontal-tagline-full-color.svg");
+
+      const footer = page.locator("footer");
+      await expect(footer.locator("img[alt='HEZQARA']")).toBeVisible();
+      await expect(footer).toContainText("A governed AI workforce for healthcare front-office operations.");
+    }
   });
 
-  test("uses the approved logo and official descriptor in the footer", async ({ page }) => {
-    await page.goto("/");
-    const footer = page.locator("footer");
-    await expect(footer.locator("img[alt='HEZQARA']")).toBeVisible();
-    await expect(footer).toContainText("A governed AI workforce for healthcare front-office operations.");
+  test("uses the approved reversed compact logo on authentication screens", async ({ page }) => {
+    for (const route of ["/sign-in", "/sign-up"]) {
+      await page.goto(route);
+      const logo = page.locator("main a[aria-label='HEZQARA home'] img");
+      await expect(logo, `authentication logo on ${route}`).toBeVisible();
+      await expect(logo).toHaveAttribute("src", "/brand/hezqara-logo-horizontal-reversed.svg");
+    }
   });
 
   test("publishes the brand palette and Inter font tokens", async ({ page }) => {
@@ -39,23 +59,38 @@ test.describe("official HEZQARA brand identity", () => {
     expect(tokens.font).toContain("Inter");
   });
 
-  test("exposes working favicon and web manifest assets", async ({ page, request }) => {
+  test("publishes valid favicon, Apple, Android, maskable and Open Graph assets", async ({ page, request }) => {
     await page.goto("/");
     await expect(page.locator("link[rel='icon'][type='image/svg+xml']")).toHaveAttribute("href", "/favicon.svg");
+    await expect(page.locator("link[rel='icon'][sizes='48x48']")).toHaveAttribute("href", "/favicon.ico");
+    await expect(page.locator("link[rel='apple-touch-icon']")).toHaveAttribute("href", "/apple-touch-icon.png");
     await expect(page.locator("link[rel='manifest']")).toHaveAttribute("href", "/site.webmanifest");
     await expect(page.locator("meta[name='theme-color']")).toHaveAttribute("content", "#0F2A47");
+    await expect(page.locator("meta[property='og:image']")).toHaveAttribute("content", /\/opengraph-image/);
+    await expect(page.locator("meta[name='twitter:image']")).toHaveAttribute("content", /\/opengraph-image/);
 
-    const favicon = await request.get("/favicon.svg");
-    expect(favicon.status()).toBe(200);
-    expect(favicon.headers()["content-type"]).toContain("image/svg+xml");
+    for (const path of ["/favicon.ico", "/favicon.svg", "/safari-pinned-tab.svg", "/apple-touch-icon.png"]) {
+      const response = await request.get(path);
+      expect(response.status(), path).toBe(200);
+    }
 
     const manifest = await request.get("/site.webmanifest");
     expect(manifest.status()).toBe(200);
     const manifestBody = await manifest.json();
     expect(manifestBody.name).toBe("HEZQARA");
+    expect(manifestBody.icons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ src: "/icon-192.png", sizes: "192x192", purpose: "any" }),
+      expect.objectContaining({ src: "/icon-512.png", sizes: "512x512", purpose: "any" }),
+      expect.objectContaining({ src: "/icon-maskable-512.png", sizes: "512x512", purpose: "maskable" }),
+    ]));
+
     for (const icon of manifestBody.icons) {
       const response = await request.get(icon.src);
-      expect(response.status()).toBe(200);
+      expect(response.status(), icon.src).toBe(200);
     }
+
+    const socialImage = await request.get("/opengraph-image");
+    expect(socialImage.status()).toBe(200);
+    expect(socialImage.headers()["content-type"]).toContain("image/png");
   });
 });
