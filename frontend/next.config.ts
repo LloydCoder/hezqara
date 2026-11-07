@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   typedRoutes: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/opengraph-image.svg": ["./public/brand/hezqara-logo-horizontal-tagline-full-color.svg"],
+  },
   async rewrites() {
     if (!backendOrigin) {
       return [];

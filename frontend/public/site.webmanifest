@@ -1,0 +1,22 @@
+{
+  "name": "HEZQARA",
+  "short_name": "HEZQARA",
+  "description": "The governed AI workforce for healthcare",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#0F2A47",
+  "background_color": "#0B1220",
+  "display": "standalone"
+}

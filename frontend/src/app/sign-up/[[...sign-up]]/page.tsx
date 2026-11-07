@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SignUp } from "@clerk/nextjs";
 import { isClerkConfigured } from "@/lib/clerk-config";
 
@@ -9,9 +10,11 @@ export default function SignUpPage() {
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-7 text-center text-white">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-950">H</div>
+          <Link href="/" aria-label="HEZQARA home" className="mx-auto inline-flex items-center justify-center">
+            <img src="/brand/hezqara-logo-horizontal-reversed.svg" alt="HEZQARA" width={179} height={48} className="h-12 w-auto" />
+          </Link>
           <h1 className="mt-4 text-2xl font-black">Start with HEZQARA</h1>
-          <p className="mt-2 text-sm text-slate-400">Create your healthcare operations workspace.</p>
+          <p className="mt-2 text-sm text-slate-300">Create your healthcare operations workspace.</p>
         </div>
         {authenticationConfigured ? (
           <SignUp appearance={{ elements: { rootBox: "w-full", card: "w-full rounded-2xl border border-slate-200 shadow-xl", headerTitle: "hidden", headerSubtitle: "hidden" } }} />

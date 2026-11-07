@@ -2,14 +2,12 @@ import { SignUp } from "@clerk/nextjs";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-500 rounded-xl mb-4">
-            <span className="text-white font-bold text-lg">C</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Start your free trial</h1>
-          <p className="text-slate-500 text-sm mt-1">Answer every patient call from day one</p>
+        <div className="mb-8 text-center">
+          <img src="/brand/hezqara-logo-horizontal-full-color.svg" alt="HEZQARA" width={179} height={48} className="mx-auto h-10 w-auto" />
+          <h1 className="mt-5 text-2xl font-bold text-slate-900">Start your free trial</h1>
+          <p className="mt-1 text-sm text-slate-600">A governed AI workforce for healthcare front-office operations.</p>
         </div>
         <SignUp
           appearance={{
