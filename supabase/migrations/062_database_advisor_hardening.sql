@@ -1,5 +1,5 @@
 -- Migration 062: close Supabase database-advisor findings without weakening tenant controls.
--- Trigger functions are not public RPCs. Operational functions are restricted to service_role.
+-- Trigger functions are not public RPCs. Operational mutations are service_role-only; worker health is invoker/RLS-limited.
 -- All function search paths are explicit and place pg_catalog before application schemas.
 
 ALTER FUNCTION public.update_updated_at()
