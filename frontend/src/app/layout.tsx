@@ -4,8 +4,8 @@ import { isClerkConfigured } from "@/lib/clerk-config";
 import "@/styles/brand.css";
 import "./globals.css";
 
-// Temporary production alias; override NEXT_PUBLIC_SITE_URL when the owned custom domain is attached.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://hezqara-yvj6.vercel.app";
+// The production hostname is canonical; previews can override this at build time.
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://hezqara.tinlance.com").replace(/\/$/, "");
 const socialImage = "/opengraph-image.svg";
 
 export const metadata: Metadata = {
