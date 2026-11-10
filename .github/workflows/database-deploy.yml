@@ -46,7 +46,7 @@ jobs:
           test "${SUPABASE_PROJECT_REF}" = "rqsmlpcifvznwtmktzxi"
 
       - name: Install pinned Supabase CLI
-        uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13
         with:
           version: 3.0.0
 
